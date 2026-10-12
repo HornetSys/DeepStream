@@ -71,7 +71,7 @@ $ bevfusion/docker_build_bevfusion_image.sh ghcr.io/nvidia/deepstream:{xx.xx.xx}
 
 <Note>
 Replace {xx.xx.xx} with a version number greater than or equal to 7.0. The latest base image can be found at:
-https://ghcr.io/nvidia/
+https://ghcr.io/nvidia/deepstream
 
 For Blackwell serials platform, the NVCC build flags in the `bevfusion/bevfusion.Dockerfile` should be modified for the new GPU types. E.G. For GeForce RTX 5090, set `-gencode arch=compute_120,code=compute_120` with the `ARG CUDA_NVCC_FLAGS` part.
 

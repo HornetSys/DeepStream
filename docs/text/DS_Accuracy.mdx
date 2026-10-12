@@ -33,14 +33,14 @@ Here is a summary of PipeTuner's functionalities and requirements:
 | Dataset | Users need to provide the typical dataset for their use case. It should include a few sample videos, with bounding box and object ID ground truth annotated |
 | --- | --- |
 | Models | Users need to provide the required models, including the object detection model (for PGIE) and Re-ID models (Re-ID only required when using NvDCF_accuracy or NvDeepSORT tracker). They can be NVIDIA TAO models in DeepStream container, NGC, or customized pre-trained ONNX models |
-| Container | Users need to download PipeTuner from NGC and the DeepStream container from [ghcr.io/nvidia/](https://ghcr.io/nvidia/) |
+| Container | Users need to download PipeTuner from NGC and the DeepStream container from [ghcr.io/nvidia/deepstream](https://ghcr.io/nvidia/deepstream) |
 | Accuracy KPI | Users select one of the multi-object tracking KPIs: [HOTA](https://link.springer.com/article/10.1007/s11263-020-01375-2), [MOTA](https://link.springer.com/article/10.1155/2008/246309) or [IDF1](https://arxiv.org/abs/1609.01775) |
 
 ### Setup
 
 Overall steps to setup PipeTuner are as below.
 
-* **Download Container**: Pull PipeTuner from NGC and the DeepStream perception container from [ghcr.io/nvidia/](https://ghcr.io/nvidia/);
+* **Download Container**: Pull PipeTuner from NGC and the DeepStream perception container from [ghcr.io/nvidia/deepstream](https://ghcr.io/nvidia/deepstream);
 * **Download Sample Data**: Download and extract sample data from NGC resource;
 * **Data Preparation**: Users create their own dataset with the same format as sample data, and update configuration files to match their use case;
 * **Launch Tuning**: Launch the tuning pipeline using the desired configuration and data;

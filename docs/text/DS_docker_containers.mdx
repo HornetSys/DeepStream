@@ -2,7 +2,7 @@
 title: "Docker Containers"
 ---
 
-DeepStream 9.2 provides Docker containers for dGPU on x86 and ARM platforms (like SBSA, GH200, GB200, DGX Spark etc.,) and Jetson platforms. These containers provide a convenient, out-of-the-box way to deploy DeepStream applications by packaging all associated dependencies within the container. The associated Docker images are distributed through [ghcr.io/nvidia/](https://ghcr.io/nvidia/). They use the `nvidia-docker` package, which enables access to the required GPU resources from containers. This section describes the features supported by the DeepStream Docker container for dGPU on both x86 and ARM and Jetson platforms.
+DeepStream 9.2 provides Docker containers for dGPU on x86 and ARM platforms (like SBSA, GH200, GB200, DGX Spark etc.,) and Jetson platforms. These containers provide a convenient, out-of-the-box way to deploy DeepStream applications by packaging all associated dependencies within the container. The associated Docker images are distributed through [ghcr.io/nvidia/deepstream](https://ghcr.io/nvidia/deepstream). They use the `nvidia-docker` package, which enables access to the required GPU resources from containers. This section describes the features supported by the DeepStream Docker container for dGPU on both x86 and ARM and Jetson platforms.
 
 <Note>
 The DeepStream 9.2 containers for dGPU on x86, ARM SBSA/DGX Spark and Jetson are distinct, so you must get the right image for your platform.
@@ -45,7 +45,7 @@ $ docker run -it --rm --network=host --gpus all -e DISPLAY=$DISPLAY --device /de
 
 ## A Docker Container for dGPU
 
-Current DeepStream container images are distributed through [ghcr.io/nvidia/](https://ghcr.io/nvidia/). Both the dGPU and Jetson containers use the same `ghcr.io/nvidia/deepstream` image namespace.
+Current DeepStream container images are distributed through [ghcr.io/nvidia/deepstream](https://ghcr.io/nvidia/deepstream). Both the dGPU and Jetson containers use the same `ghcr.io/nvidia/deepstream` image namespace.
 Unlike the container in DeepStream 3.0, the dGPU DeepStream 9.2 container supports DeepStream application development within the container. It contains the same build tools and development libraries as the DeepStream 9.2 SDK.
 In a typical scenario, you build, execute and debug a DeepStream application within the DeepStream container. Once your application is ready, you can use the DeepStream 9.2 container as a base image to create your own Docker container holding your application files (binaries, libraries, models, configuration file, etc.,). Here is an example snippet of `Dockerfile` for creating your own Docker container:
 
@@ -70,7 +70,7 @@ Table below lists the docker containers for dGPU released with DeepStream 9.2:
 See the `DeepStream 9.2 Release Notes` for current container registry information.
 
 <Note>
-See [ghcr.io/nvidia/](https://ghcr.io/nvidia/) for the current dGPU container images.
+See [ghcr.io/nvidia/deepstream](https://ghcr.io/nvidia/deepstream) for the current dGPU container images.
 </Note>
 
 ## A Docker Container for Jetson
@@ -96,12 +96,12 @@ For the Jetson Triton Container an error message is printed "Failed to detect NV
 See the `DeepStream 9.2 Release Notes` for current container registry information.
 
 <Note>
-See [ghcr.io/nvidia/](https://ghcr.io/nvidia/) for the current Jetson container images.
+See [ghcr.io/nvidia/deepstream](https://ghcr.io/nvidia/deepstream) for the current Jetson container images.
 </Note>
 
 ## A Docker Container for dGPU on ARM (GH200, GB200, SBSA)
 
-Current DeepStream container images are distributed through [ghcr.io/nvidia/](https://ghcr.io/nvidia/). The dGPU on ARM image is `ghcr.io/nvidia/deepstream:<version>-triton-sbsa-dgx-spark`; Jetson images use the same `ghcr.io/nvidia/deepstream` namespace with their corresponding tags.
+Current DeepStream container images are distributed through [ghcr.io/nvidia/deepstream](https://ghcr.io/nvidia/deepstream). The dGPU on ARM image is `ghcr.io/nvidia/deepstream:<version>-triton-sbsa-dgx-spark`; Jetson images use the same `ghcr.io/nvidia/deepstream` namespace with their corresponding tags.
 Unlike the container in DeepStream 3.0, the dGPU DeepStream 9.2 container supports DeepStream application development within the container. It contains the same build tools and development libraries as the DeepStream 9.2 SDK.
 In a typical scenario, you build, execute and debug a DeepStream application within the DeepStream container. Once your application is ready, you can use the DeepStream 9.2 container as a base image to create your own Docker container holding your application files (binaries, libraries, models, configuration file, etc.,). Here is an example snippet of `Dockerfile` for creating your own Docker container:
 
@@ -125,7 +125,7 @@ Table below lists the docker containers for dGPU on ARM released with DeepStream
 See the `DeepStream 9.2 Release Notes` for current container registry information.
 
 <Note>
-See [ghcr.io/nvidia/](https://ghcr.io/nvidia/) for the current dGPU on ARM (SBSA) container images.
+See [ghcr.io/nvidia/deepstream](https://ghcr.io/nvidia/deepstream) for the current dGPU on ARM (SBSA) container images.
 </Note>
 
 ## A Docker Container for DGX Spark
@@ -186,7 +186,7 @@ DGX Spark-specific limitations, and known issues.
 
 <Note>
 Native DeepStream SDK installation on DGX Spark is **not** supported; use this
-container (or a derived image). See [ghcr.io/nvidia/](https://ghcr.io/nvidia/) for the current image tags.
+container (or a derived image). See [ghcr.io/nvidia/deepstream](https://ghcr.io/nvidia/deepstream) for the current image tags.
 </Note>
 
 ## Creating custom DeepStream dockers for dGPU or Jetson using DeepStreamSDK package

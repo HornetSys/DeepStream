@@ -134,7 +134,7 @@ Replace the filename with the specific asset you want to download from the relea
 
 Starting from DeepStream 9.1, all SDK packages are available through the GitHub releases page at https://github.com/NVIDIA/DeepStream/releases/tag/v9.1.0.
 
-DeepStream Docker container images are distributed through [ghcr.io/nvidia/](https://ghcr.io/nvidia/).
+DeepStream Docker container images are distributed through [ghcr.io/nvidia/deepstream](https://ghcr.io/nvidia/deepstream).
 
 ## 10. Where are the DS 9.1 public tar/deb files?
 
@@ -146,7 +146,7 @@ They are now located in the DeepStream mono-repo. See the DS 9.1 release tag:
 
 The legacy `deepstream-l4t` container repository will not be updated in future DeepStream releases, though old releases remain accessible to users.
 
-Current Jetson and dGPU container images are distributed through [ghcr.io/nvidia/](https://ghcr.io/nvidia/).
+Current Jetson and dGPU container images are distributed through [ghcr.io/nvidia/deepstream](https://ghcr.io/nvidia/deepstream).
 
 ## 12. Where did the DeepStream Open Source Dockers move to for DS 9.1? (previously https://github.com/NVIDIA-AI-IOT/deepstream_dockers)
 
@@ -182,7 +182,7 @@ This applies to all platforms (x86/Jetson/SBSA).
 
 DeepStream SDK release assets are **not** published for SBSA/DGX Spark. Use the official Docker container, which ships with DeepStream fully installed and all dependencies pre-configured:
 
-   https://ghcr.io/nvidia/
+   https://ghcr.io/nvidia/deepstream
 
 To modify a specific open-source component, clone the mono-repo inside the container and run `make` only in that component's directory. Since all prerequisites are already present in the container, there is no need to run the full `build/build.sh`:
 
