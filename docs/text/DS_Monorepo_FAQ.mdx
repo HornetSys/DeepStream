@@ -20,15 +20,23 @@ Navigate to the release corresponding to your DeepStream version and download th
 
 The [NVIDIA/DeepStream](https://github.com/NVIDIA/DeepStream) GitHub mono-repo is the unified platform for all DeepStream releases. DeepStream 9.0 introduced the mono-repo as the release channel. Starting from DeepStream 9.1, the mono-repo GitHub releases page is the single place for both the release and all downloadable SDK packages.
 
-## 4. What packages are available in the GitHub release assets?
+## 4. What packages are available in the DeepStream 9.2 GitHub release assets?
 
-The following packages are available for each DeepStream release:
+DeepStream 9.2 packages are available from the **Assets** section of the
+[DeepStream 9.2 release](https://github.com/NVIDIA/DeepStream/releases/tag/v9.2.0).
 
-* **Full DeepStream package** (tar and deb) — complete SDK for x86 and aarch64
-* **deepstream-binaries-x86** (tar and deb) — proprietary binary libraries only, for x86
-* **deepstream-binaries-aarch64** (tar and deb) — proprietary binary libraries only, for aarch64
-* **deepstream-sample-data** (tar and deb) — sample streams, configs, and models
-* **DeepStream Libraries wheel** (`.whl`) — the DeepStream Libraries Python wheel (e.g. `deepstream_libraries-1.4-cp312-cp312-linux_x86_64.whl`), for x86
+* **Full SDK tarballs**
+  * `deepstream_sdk_v9.2.0_x86_64.tbz2` — x86 dGPU
+  * `deepstream_sdk_v9.2.0_jetson.tbz2` — Jetson
+  * `deepstream_sdk_v9.2.0_sbsa.tbz2` — ARM SBSA/DGX Spark
+* **Full SDK Debian packages**
+  * `deepstream-9.2_9.2.0-1_amd64.deb` — x86 dGPU
+  * `deepstream-9.2_9.2.0-1_arm64.deb` — Jetson
+* **Binary-only packages** — `deepstream-binaries-x86` and
+  `deepstream-binaries-aarch64`, available as tarballs and Debian packages
+* **Sample data package** — `deepstream-sample-data`, available as a tarball
+  and Debian package
+* **DeepStream Libraries wheel** — Python wheel for x86
 
 ## 5. What is the difference between the full DeepStream package and the deepstream-binaries package?
 
@@ -180,11 +188,15 @@ This applies to all platforms (x86/Jetson/SBSA).
 
 ## 16. How do I build or modify DeepStream components on SBSA / DGX Spark?
 
-DeepStream SDK release assets are **not** published for SBSA/DGX Spark. Use the official Docker container, which ships with DeepStream fully installed and all dependencies pre-configured:
+Starting with DeepStream 9.2, the SBSA/DGX Spark SDK tarball
+`deepstream_sdk_v9.2.0_sbsa.tbz2` is published in the
+[DeepStream 9.2 release assets](https://github.com/NVIDIA/DeepStream/releases/tag/v9.2.0).
+
+You can also use the official Docker container, which ships with DeepStream fully installed and all dependencies pre-configured:
 
    https://ghcr.io/nvidia/deepstream
 
-To modify a specific open-source component, clone the mono-repo inside the container and run `make` only in that component's directory. Since all prerequisites are already present in the container, there is no need to run the full `build/build.sh`:
+To modify a specific open-source component inside the container, clone the mono-repo and run `make` only in that component's directory. Since all prerequisites are already present in the container, there is no need to run the full `build/build.sh`:
 
 ```bash
 $ git clone https://github.com/NVIDIA/DeepStream.git
