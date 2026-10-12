@@ -42,7 +42,7 @@ Launch the DeepStream Triton container and install the plugin dependencies:
 # Launch the DeepStream container
 sudo docker run -it --rm --runtime=nvidia --gpus all --network=host \
   -v $(pwd):/home/vllm_ds_plugin \
-  nvcr.io/nvidia/deepstream:9.2-triton-multiarch
+  ghcr.io/nvidia/deepstream:9.2-triton-multiarch
 
 # Inside the DeepStream container, install the dependencies
 cd /home/vllm_ds_plugin/deepstream-vllm-plugin

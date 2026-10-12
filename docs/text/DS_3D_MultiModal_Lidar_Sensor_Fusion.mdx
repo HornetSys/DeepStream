@@ -78,12 +78,12 @@ $ xhost +
 
 - Bevfusion and V2XFusion Setup difference.
 
-  - BEVFusion would build a new local docker image `deepstream-triton-bevfusion:{xx.xx}` on top of deepstream-triton base image `nvcr.io/nvidia/deepstream:{xx.xx.xx}-triton-multiarch` to install all CUDA-BEVFusion dependencies, build offline models, and setup triton server for gRPC remote inference on x86 dGPU. and client fusion pipeline could be running on x86 and Jetson.
+  - BEVFusion would build a new local docker image `deepstream-triton-bevfusion:{xx.xx}` on top of deepstream-triton base image `ghcr.io/nvidia/deepstream:{xx.xx.xx}-triton-multiarch` to install all CUDA-BEVFusion dependencies, build offline models, and setup triton server for gRPC remote inference on x86 dGPU. and client fusion pipeline could be running on x86 and Jetson.
 
-  - V2XFusion setup instructions inside deepstream-triton base container `nvcr.io/nvidia/deepstream:{xx.xx.xx}-triton-multiarch` and inference through Triton CAPI(native) locally. It also supports Jetson test on host without container if Triton dependencies installed manually.
+  - V2XFusion setup instructions inside deepstream-triton base container `ghcr.io/nvidia/deepstream:{xx.xx.xx}-triton-multiarch` and inference through Triton CAPI(native) locally. It also supports Jetson test on host without container if Triton dependencies installed manually.
 
   `deepstream-triton-bevfusion:{xx.xx}`, `{xx.xx}` is from deepstream sdk major.minor version number installed on local.
-  `nvcr.io/nvidia/deepstream:{xx.xx.xx}-triton-multiarch`, `{xx.xx.xx}` is matched from [DeepStream containers](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/deepstream) (the same `deepstream` multiarch repository serves both x86 and Jetson)
+  `ghcr.io/nvidia/deepstream:{xx.xx.xx}-triton-multiarch`, `{xx.xx.xx}` is matched from [DeepStream containers](https://ghcr.io/nvidia/) (the same `deepstream` multiarch repository serves both x86 and Jetson)
 
 ### BEVFusion pipeline Demo Setup
 
@@ -102,7 +102,7 @@ All the following command line for BEVFusion setup are run outside of the contai
 
     ```bash
     $ cd /opt/nvidia/deepstream/deepstream/sources/apps/sample_apps/deepstream-3d-lidar-sensor-fusion
-    $ bevfusion/docker_build_bevfusion_image.sh nvcr.io/nvidia/deepstream:{xx.xx.xx}-triton-multiarch
+    $ bevfusion/docker_build_bevfusion_image.sh ghcr.io/nvidia/deepstream:{xx.xx.xx}-triton-multiarch
     ```
 
     Download the models from https://nvidia.box.com/shared/static/t1t67uytge97tn4q7xteehtauutaqxz7 directly, then run the following command line to move the model to designated directory and build TensorRT engine files on x86 with dGPU.
@@ -151,7 +151,7 @@ All the following command line for BEVFusion setup are run outside of the contai
      -w /opt/nvidia/deepstream/deepstream/sources/apps/sample_apps/deepstream-3d-lidar-sensor-fusion \
      -v ./data:/opt/nvidia/deepstream/deepstream/sources/apps/sample_apps/deepstream-3d-lidar-sensor-fusion/data \
      -v ./bevfusion/model_root:/opt/nvidia/deepstream/deepstream/sources/apps/sample_apps/deepstream-3d-lidar-sensor-fusion/bevfusion/model_root \
-     nvcr.io/nvidia/deepstream:{xx.xx.xx}-triton-multiarch
+     ghcr.io/nvidia/deepstream:{xx.xx.xx}-triton-multiarch
     ```
 
     Start deepstream bevfusion pipeline, run cmdline inside of the container.
@@ -186,7 +186,7 @@ Refer to the detailed provided instructions in [DS3D V2XFusion Setup](/text/DS_3
      $ docker run $DOCKER_GPU_ARG -it --rm --ipc=host --net=host -v /tmp/.X11-unix:/tmp/.X11-unix \
       -e DISPLAY=$DISPLAY \
       -w /opt/nvidia/deepstream/deepstream/sources/apps/sample_apps/deepstream-3d-lidar-sensor-fusion \
-      nvcr.io/nvidia/deepstream:{xx.xx.xx}-triton-multiarch
+      ghcr.io/nvidia/deepstream:{xx.xx.xx}-triton-multiarch
   # {xx.xx.xx} is deepstream sdk version number
   ```
 

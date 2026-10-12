@@ -1,5 +1,5 @@
 ---
-title: "DeepStream SDK 9.1 for NVIDIA dGPU/X86 and Jetson"
+title: "DeepStream SDK 9.2 for NVIDIA dGPU/X86 and Jetson"
 ---
 
 ## DeepStream Release Notes
@@ -8,9 +8,9 @@ title: "DeepStream SDK 9.1 for NVIDIA dGPU/X86 and Jetson"
 
 1.1 [What’s New](#whats-new)
 
-1.1.1 [DS 9.1](/text/DS_Release_notes#ds-9-1)
+1.1.1 [DS 9.2](/text/DS_Release_notes#ds-9-2)
 
-1.1.2 [DS 9.0 (Previous Release)](/text/DS_Release_notes#ds-9-0-previous-release)
+1.1.2 [DS 9.1 (Previous Release)](/text/DS_Release_notes#ds-9-1-previous-release)
 
 1.2 [Differences since Deepstream 6.1 and Above](/text/DS_Release_notes#differences-since-deepstream-6-1-and-above)
 
@@ -22,18 +22,55 @@ title: "DeepStream SDK 9.1 for NVIDIA dGPU/X86 and Jetson"
 
 ## About this Release
 
-These release notes are for the NVIDIA\ <sup>®</sup> DeepStream SDK for
-NVIDIA\ <sup>®</sup> Turing \ <sup>®</sup>, NVIDIA\ <sup>®</sup> Ampere\ <sup>®</sup>,
-NVIDIA\ <sup>®</sup> Hopper\ <sup>®</sup>, NVIDIA\ <sup>®</sup> Ada
-Lovelace\ <sup>®</sup>, NVIDIA\ <sup>®</sup> Blackwell\ <sup>®</sup>,
-NVIDIA\ <sup>®</sup> RTX Pro 4500\ <sup>®</sup>, NVIDIA\ <sup>®</sup> Jetson Orin \ <sup>™</sup> and
-NVIDIA\ <sup>®</sup> Jetson Thor \ <sup>™</sup>.
+These release notes are for the NVIDIA<sup>®</sup> DeepStream SDK for
+NVIDIA<sup>®</sup> Turing<sup>®</sup>, NVIDIA<sup>®</sup> Ampere<sup>®</sup>,
+NVIDIA<sup>®</sup> Hopper<sup>®</sup>, NVIDIA<sup>®</sup> Ada
+Lovelace<sup>®</sup>, NVIDIA<sup>®</sup> Blackwell<sup>®</sup>,
+NVIDIA<sup>®</sup> GB300, NVIDIA<sup>®</sup> RTX Pro 4500<sup>®</sup>,
+NVIDIA<sup>®</sup> Jetson Orin<sup>™</sup>, and
+NVIDIA<sup>®</sup> Jetson Thor<sup>™</sup>.
 
 ## What’s New
 
 The following new features are supported in this DeepStream SDK release:
 
-## DS 9.1
+## DS 9.2
+
+-  Support for NVIDIA GB300
+
+-  Compatibility with NVIDIA JetPack 7.2
+
+-  DeepStream source, samples, tools, skills, documentation, and SDK release
+   packages are consolidated in the
+   [NVIDIA/DeepStream GitHub mono-repo](https://github.com/NVIDIA/DeepStream).
+   Container images continue to be distributed through [ghcr.io/nvidia/](https://ghcr.io/nvidia/).
+
+-  Open-source plugins and libraries available in github monorepo:
+
+   - **GStreamer elements:** `nvblender`, `nvbufsurfacewrite`,
+     `nvdsvisionencoder`, `nvdstextembedder`, `nvunixfdsink`,
+     `nvunixfdsrc`, `nvv4l2decoder`, `nvv4l2h264enc`, `nvv4l2h265enc`,
+     `nvv4l2av1enc`, `nvv4l2vp8enc`, and `nvv4l2vp9enc` (availability varies
+     by platform and hardware)
+   - **Libraries:** `libnvds_3d_alignment_datafilter.so`,
+     `libnvds_3d_common.so`, `libnvds_3d_dataloader_realsense.so`,
+     `libnvds_3d_depth2point_datafilter.so`, `libnvds_3d_depth_datasource.so`,
+     `libnvds_3d_gl_datarender.so`, `libnvds_3d_gles_ensemble_render.so`,
+     `libnvds_3d_glprocess.so`, `libnvds_3d_multisensor_mixer.so`,
+     `libnvds_3d_sensor_fusion_cluster.so`, `libnvds_3d_video_databridge.so`,
+     `libnvds_batch_jpegenc.so`, `libnvds_csvparser.so`,
+     `libnvds_cudaimage.so`, `libnvds_custom_sequence_preprocess.so`,
+     `libnvds_dewarper.so`, `libnvds_dsanalytics.so`,
+     `libnvds_infercustomparser.so`, `libnvds_inferlogger.so`,
+     `libnvds_inferutils.so`, `libnvds_lidar_custom_postprocess_impl.so`,
+     `libnvds_lidar_custom_preprocess_impl.so`, `libnvds_lidarfilewrite.so`,
+     `libnvds_stats.so`, `libnvds_tritoninferfilter.so`,
+     `libnvdsgst_3d_gst.so`, `libnvdsgst_helper.so`,
+     `libnvdsgst_inferbase.so`, `libnvdsgst_sparse4d.so`,
+     `libnvdsgst_tensor.so`, `libnvv4l2.so`, and `libnvv4lconvert.so`
+
+
+## DS 9.1 (Previous Release)
 
 -  Support for Jetson Orin (Nano, NX, AGX) platforms
 
@@ -45,7 +82,7 @@ The following new features are supported in this DeepStream SDK release:
 -  Starting with DS 9.1, the DeepStream SDK packages (deb and tar) are distributed as GitHub
    Release assets at
    [github.com/NVIDIA/DeepStream/releases/tag/v9.1.0](https://github.com/NVIDIA/DeepStream/releases/tag/v9.1.0).
-   NGC is no longer used for SDK package distribution. See [FAQ for DeepStream GitHub Mono-repo](/text/DS_Monorepo_FAQ) for details
+   See [FAQ for DeepStream GitHub Mono-repo](/text/DS_Monorepo_FAQ) for details
 
 -  Starting with DS 9.1, the DeepStream Open Source Dockerfiles (previously at
    [github.com/NVIDIA-AI-IOT/deepstream_dockers](https://github.com/NVIDIA-AI-IOT/deepstream_dockers))
@@ -59,8 +96,8 @@ The following new features are supported in this DeepStream SDK release:
    [github.com/NVIDIA/DeepStream/deepstream_libraries](https://github.com/NVIDIA/DeepStream).
    See [FAQ for DeepStream GitHub Mono-repo](/text/DS_Monorepo_FAQ) for details
 
--  Starting with DS 9.1, the `deepstream` NGC container repo is the official repository for
-   all containers (Jetson and dGPU). The `deepstream-l4t` NGC repo will not be updated in
+-  Starting with DS 9.1, the unified `deepstream` container repository became the official repository for
+   all containers (Jetson and dGPU). The legacy `deepstream-l4t` repository will not be updated in
    future DeepStream releases; existing releases remain accessible to users
 
 -  Support for RTX Pro 4500 GPUs
@@ -75,38 +112,6 @@ The following new features are supported in this DeepStream SDK release:
     - nvdsmetaextract
 
 -  New `deepstream-ipc-test` sample app (Jetson)
-
-## DS 9.0 (Previous Release)
-
--  Support for Blackwell and Jetson Thor
-
--  Jetson package based on JP 7.1 (r38.2 BSP)
-
--  New applications using pyservicemaker: Action recognition app, Smart record app, DeepStream test5 app using Flow API, Kafka test app using pipeline APIs
-
--  Added MaskTracker, MediaExtractor, Multi-View 3D Tracking (MV3DT), pose estimation to Single and Multi-View 3D Tracking
-
--  Sparse4D plugin for multi-camera BEV-based 3D object detection and temporal tracking
-
--  Support for Dynamic stream handling in demuxer
-
--  nvvideoconvert to support UYVY (8-bit YCbCr-4:2:2) on x86/dGPU
-
--  OpenSourced components - nvll_osd library, smart record library "gst-nvdssr", nvimageenc, nvimagedec, nvdsudpsrc, nvdsudpsink, nvdsanalytics gst-plugins
-
--  REST API support for nvdsanalytics and nvtracker plugin
-
--  Added support for OpenTelemetry and Prometheus metric exporters
-
--  Added nv3dsink support on x86
-
--  Support for Inference Builder open-source tool to create inference microservice across multiple AI frameworks
-
--  VLM support (Cosmos Reason 2) via the [vLLM based VLM inference DeepStream plugin](https://github.com/NVIDIA/DeepStream/tree/main/src/apps/reference_apps/deepstream-vllm-plugin)
-
--  Added support for high quality pixel formats in nvvideotestsrc
-
--  Support for TAO 6.0 models
 
 ## Differences since Deepstream 6.1 and Above
 
@@ -273,7 +278,7 @@ and QA but not resolved in this release.
 
 - GFX/Graph Composer support is deprecated since DS 8.0.
 
--  NVIDIA\ <sup>®</sup> DeepStream SDK 9.1 supports TAO model-based
+-  NVIDIA<sup>®</sup> DeepStream SDK 9.2 supports TAO model-based
    applications (https://developer.nvidia.com/tao-toolkit). For more
    details, see https://github.com/NVIDIA/DeepStream/tree/main/src/apps/tao_apps.
 

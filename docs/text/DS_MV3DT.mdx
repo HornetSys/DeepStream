@@ -119,7 +119,7 @@ sudo xhost + # Grant container access to display
      -v /tmp/.X11-unix/:/tmp/.X11-unix \
      -e DISPLAY=$DISPLAY \
      -w /workspace/experiments \
-     <your deepstream docker image, e.g., nvcr.io/nvidia/deepstream:9.2-triton-xx> \
+     <your deepstream docker image, e.g., ghcr.io/nvidia/deepstream:9.2-triton-xx> \
      deepstream-test5-app -c config_deepstream.txt
    ```
 

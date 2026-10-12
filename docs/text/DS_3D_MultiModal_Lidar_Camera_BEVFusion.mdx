@@ -65,13 +65,13 @@ Run the following script to build the target image on top of the DeepStream Trit
 #      -v /usr/bin/docker:/usr/bin/docker \
 #      -v /usr/libexec/docker:/usr/libexec/docker \
 #      -v /var/run/docker.sock:/var/run/docker.sock \
-#      -v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY=$DISPLAY nvcr.io/nvidia/deepstream:{xx.xx.xx}-triton-multiarch
-$ bevfusion/docker_build_bevfusion_image.sh nvcr.io/nvidia/deepstream:{xx.xx.xx}-triton-multiarch
+#      -v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY=$DISPLAY ghcr.io/nvidia/deepstream:{xx.xx.xx}-triton-multiarch
+$ bevfusion/docker_build_bevfusion_image.sh ghcr.io/nvidia/deepstream:{xx.xx.xx}-triton-multiarch
 ```
 
 <Note>
 Replace {xx.xx.xx} with a version number greater than or equal to 7.0. The latest base image can be found at:
-https://catalog.ngc.nvidia.com/orgs/nvidia/containers/deepstream
+https://ghcr.io/nvidia/
 
 For Blackwell serials platform, the NVCC build flags in the `bevfusion/bevfusion.Dockerfile` should be modified for the new GPU types. E.G. For GeForce RTX 5090, set `-gencode arch=compute_120,code=compute_120` with the `ARG CUDA_NVCC_FLAGS` part.
 
@@ -188,7 +188,7 @@ If tritonserver is running on a remote machine/container distinct from the ds3d 
   Or
 
   ```bash
-  $ bevfusion/docker_run_ds3d_sensor_fusion_bevfusion_pipeline.sh ds3d_lidar_plus_multi_cam_bev_fusion.yaml nvcr.io/nvidia/deepstream:{xx.xx.xx}-triton-multiarch
+  $ bevfusion/docker_run_ds3d_sensor_fusion_bevfusion_pipeline.sh ds3d_lidar_plus_multi_cam_bev_fusion.yaml ghcr.io/nvidia/deepstream:{xx.xx.xx}-triton-multiarch
   
   Users can replace yaml config file to `ds3d_lidar_plus_multi_cam_bev_fusion_with_label.yaml` for tests as well.
   ```
@@ -200,8 +200,8 @@ If tritonserver is running on a remote machine/container distinct from the ds3d 
 - Then, run the script on the prebuilt deepstream-triton image:
 
 ```bash
-$ bevfusion/docker_run_ds3d_sensor_fusion_bevfusion_pipeline.sh ds3d_lidar_plus_multi_cam_bev_fusion.yaml nvcr.io/nvidia/deepstream:{xx.xx.xx}-triton-multiarch
-$ bevfusion/docker_run_ds3d_sensor_fusion_bevfusion_pipeline.sh ds3d_lidar_plus_multi_cam_bev_fusion_with_label.yaml nvcr.io/nvidia/deepstream:{xx.xx.xx}-triton-multiarch
+$ bevfusion/docker_run_ds3d_sensor_fusion_bevfusion_pipeline.sh ds3d_lidar_plus_multi_cam_bev_fusion.yaml ghcr.io/nvidia/deepstream:{xx.xx.xx}-triton-multiarch
+$ bevfusion/docker_run_ds3d_sensor_fusion_bevfusion_pipeline.sh ds3d_lidar_plus_multi_cam_bev_fusion_with_label.yaml ghcr.io/nvidia/deepstream:{xx.xx.xx}-triton-multiarch
 ```
 
 `CTRL + C` to terminate.

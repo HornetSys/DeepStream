@@ -91,7 +91,7 @@ Example command to force TCP:
 ### What is the official DeepStream Docker image and where do I get it?
 
 You can download the official DeepStream Docker image from DeepStream docker image.
-For dGPU and jetson, see: https://catalog.ngc.nvidia.com/orgs/nvidia/containers/deepstream.
+For dGPU and Jetson, see [ghcr.io/nvidia/](https://ghcr.io/nvidia/).
 
 <Note>
 nvdrmvideosink plugin is not supported in docker. It is an unsupported use case, nvdrmvideosink only work well when there is no compositor
@@ -901,7 +901,7 @@ For more details, refer https://docs.nvidia.com/deeplearning/triton-inference-se
 
 This is a harmless warning indicating that the DeepStream's nvinferserver plugin cannot be used since "Triton Inference Server" is not installed.
 If DeepStream-Triton is required, try to pull DeepStream's Triton docker image on dGPU following instructions
-at https://ngc.nvidia.com/catalog/containers/nvidia:deepstream and run the test apps inside container. Triton Inference Server is automatically installed on Jetson along with DeepStream package. No extra instructions are needed.
+from [ghcr.io/nvidia/](https://ghcr.io/nvidia/) and run the test apps inside the container. Triton Inference Server is automatically installed on Jetson along with DeepStream package. No extra instructions are needed.
 
 ### Why am I getting warning "Failed to query video capabilities: Invalid argument"?
 

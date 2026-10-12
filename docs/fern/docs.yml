@@ -24,7 +24,7 @@ experimental:
     - ./components
 
 versions:
-  - display-name: "9.1"
+  - display-name: "9.2"
     path: versions/9.1.yml
     slug: "9.1"
   - display-name: "Archives"
