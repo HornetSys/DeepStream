@@ -146,7 +146,7 @@ Use the table below as a guide to memory utilization in this case.
 
 <Note>
 Width and height in Gst-nvstreammux are set to the input stream resolution specified in the configuration file.
-The pipeline is: `decoder |rarr| nvstreammux |rarr| nvinfer |rarr| fakesink`.
+The pipeline is: `decoder → nvstreammux → nvinfer → fakesink`.
 </Note>
 
 **Memory utilization for 1080p streams**
@@ -241,7 +241,7 @@ Run below command before running the sample application:
 
 Here are few examples of how to construct the pipeline. To run these example pipelines as-is, run the applications from the samples directory:
 
-* V4l2 decoder |rarr| nvinfer |rarr| nvtracker |rarr| nvinfer (secondary) |rarr| nvmultistreamtiler |rarr| nvdsosd |rarr| nveglglessink
+* V4l2 decoder → nvinfer → nvtracker → nvinfer (secondary) → nvmultistreamtiler → nvdsosd → nveglglessink
 
    * For multistream (4x1080p) operation on dGPU:
 

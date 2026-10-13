@@ -1093,7 +1093,7 @@ config_body:
 | window_width | Specify window width | uint32 | window_width: 1920 |
 | window_height | Specify window height | uint32 | window_height: 1080 |
 | color_clear | Specify whether to clear up the whole window when new frame arrive | bool | color_clear: true |
-| render_graph | Specify a list of multiple renders in different views | List[Dict] | .. code-block:: text<br />render_graph:<br />- texture3d_render:<br />layout: [0, 0, 640, 360]<br />color_clear: false<br />texture_frame_key: DS3D::ColorFrame<br />- lidar3d_render:<br />layout:  [640, 0, 1280, 360]<br />color_clear: false<br />lidar_data_key: DS3D::LidarXYZI |
+| render_graph | Specify a list of multiple renders in different views | List[Dict] | render_graph:<br />- texture3d_render:<br />layout: [0, 0, 640, 360]<br />color_clear: false<br />texture_frame_key: DS3D::ColorFrame<br />- lidar3d_render:<br />layout:  [640, 0, 1280, 360]<br />color_clear: false<br />lidar_data_key: DS3D::LidarXYZI |
 
 - Render graph `render_graph`
 
