@@ -20,7 +20,7 @@ DS 9.2 is available for production on x86 and Jetson. On Jetson it is based on J
 
 ## NVIDIA DeepStream Overview
 
-DeepStream is a streaming analytic toolkit to build AI-powered applications. It takes the streaming data as input - from USB/CSI camera, video from file or streams over RTSP, and uses AI and computer vision to generate insights from pixels for better understanding of the environment. DeepStream SDK can be the foundation layer for a number of video analytic solutions like understanding traffic and pedestrians in smart city, health and safety monitoring in hospitals, self-checkout and analytics in retail, detecting component defects at a manufacturing facility and others. Read more about DeepStream [here](https://ngc.nvidia.com/catalog/collections/nvidia:deepstreamcomputervision).
+DeepStream is a streaming analytic toolkit to build AI-powered applications. It takes the streaming data as input - from USB/CSI camera, video from file or streams over RTSP, and uses AI and computer vision to generate insights from pixels for better understanding of the environment. DeepStream SDK can be the foundation layer for a number of video analytic solutions like understanding traffic and pedestrians in smart city, health and safety monitoring in hospitals, self-checkout and analytics in retail, detecting component defects at a manufacturing facility and others. Read more about DeepStream [here](https://github.com/NVIDIA/DeepStream).
 
   ![DeepStream Overview](/assets/images/content/DeepStream_Overview.png)
 
@@ -28,7 +28,7 @@ The core SDK consists of several hardware accelerator plugins that use accelerat
 
 DeepStream builds on top of several NVIDIA libraries from the CUDA-X stack such as CUDA, TensorRT, NVIDIA <sup>®</sup> Triton <sup>™</sup> Inference server and multimedia libraries. TensorRT accelerates the AI inference on NVIDIA GPU. DeepStream abstracts these libraries in DeepStream plugins, making it easy for developers to build video analytic pipelines without having to learn all the individual libraries.
 
-DeepStream is optimized for NVIDIA GPUs; the application can be deployed on an embedded edge device running Jetson platform or can be deployed on larger edge or datacenter GPUs like T4. DeepStream applications can be deployed in containers using NVIDIA container Runtime. The containers are available on NGC, NVIDIA GPU cloud registry. To learn more about deployment with dockers, see the Docker container chapter. DeepStream applications can be orchestrated on the edge using Kubernetes on GPU. [Sample Helm chart](https://ngc.nvidia.com/catalog/helm-charts/nvidia:video-analytics-demo) to deploy DeepStream application is available on NGC.
+DeepStream is optimized for NVIDIA GPUs; the application can be deployed on an embedded edge device running Jetson platform or can be deployed on larger edge or datacenter GPUs like T4. DeepStream applications can be deployed in containers using NVIDIA container Runtime. The container images are distributed through [ghcr.io/nvidia/deepstream](https://ghcr.io/nvidia/deepstream). To learn more about deployment with dockers, see the Docker container chapter. DeepStream applications can be orchestrated on the edge using Kubernetes on GPU. [Sample Helm chart](https://ngc.nvidia.com/catalog/helm-charts/nvidia:video-analytics-demo) to deploy DeepStream application is available on NGC.
 
 ### DeepStream Graph Architecture
 

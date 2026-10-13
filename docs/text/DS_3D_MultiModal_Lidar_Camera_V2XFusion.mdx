@@ -34,7 +34,7 @@ Skip this step if users have installed Triton dependencies manually on Jetson ho
   $ docker run $DOCKER_GPU_ARG -it --rm --ipc=host --net=host -v /tmp/.X11-unix:/tmp/.X11-unix \
       -e DISPLAY=$DISPLAY \
       -w /opt/nvidia/deepstream/deepstream/sources/apps/sample_apps/deepstream-3d-lidar-sensor-fusion \
-      nvcr.io/nvidia/deepstream:{xx.xx.xx}-triton-multiarch
+      ghcr.io/nvidia/deepstream:{xx.xx.xx}-triton-multiarch
   # {xx.xx.xx} is deepstream sdk version number
   ```
 

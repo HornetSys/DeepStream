@@ -145,7 +145,7 @@ $ sudo apt-get install ./deepstream-9.2_9.2.0-1_arm64.deb
 
 - **Method 4**: Use Docker containers
 
-  DeepStream docker containers are available on NGC. See the [Docker Containers](/text/DS_docker_containers) section to learn about developing and deploying DeepStream using docker containers.
+  DeepStream Docker container images are distributed through [ghcr.io/nvidia/deepstream](https://ghcr.io/nvidia/deepstream). See the [Docker Containers](/text/DS_docker_containers) section to learn about developing and deploying DeepStream using docker containers.
 
 <Note>
 For scripted or headless downloads of the release assets using `curl` or `wget`, see [FAQ for DeepStream GitHub Mono-repo](/text/DS_Monorepo_FAQ).
@@ -364,7 +364,7 @@ $ sudo ldconfig
 
 - **Method 3**: Use Docker containers
 
-  DeepStream docker containers are available on NGC. See the [Docker Containers](/text/DS_docker_containers) section to learn about developing and deploying DeepStream using docker containers.
+  DeepStream Docker container images are distributed through [ghcr.io/nvidia/deepstream](https://ghcr.io/nvidia/deepstream). See the [Docker Containers](/text/DS_docker_containers) section to learn about developing and deploying DeepStream using docker containers.
 
 <Note>
 For scripted or headless downloads of the release assets using `curl` or `wget`, see [FAQ for DeepStream GitHub Mono-repo](/text/DS_Monorepo_FAQ).
@@ -410,13 +410,13 @@ NVIDIA driver 580.159.03 is required for SBSA. The driver is bundled with the Do
 1. Pull the DeepStream Triton Inference Server docker
 
 ```
-docker pull nvcr.io/nvidia/deepstream:9.2-triton-sbsa-dgx-spark
+docker pull ghcr.io/nvidia/deepstream:9.2-triton-sbsa-dgx-spark
 ```
 
 2. Start the docker
 
 ```
-sudo docker run -it --rm --runtime=nvidia --network=host -e NVIDIA_DRIVER_CAPABILITIES=compute,utility,video,graphics --gpus all -e DISPLAY=:0 -v /tmp/.X11-unix:/tmp/.X11-unix -v /etc/X11:/etc/X11 nvcr.io/nvidia/deepstream:9.2-triton-sbsa-dgx-spark
+sudo docker run -it --rm --runtime=nvidia --network=host -e NVIDIA_DRIVER_CAPABILITIES=compute,utility,video,graphics --gpus all -e DISPLAY=:0 -v /tmp/.X11-unix:/tmp/.X11-unix -v /etc/X11:/etc/X11 ghcr.io/nvidia/deepstream:9.2-triton-sbsa-dgx-spark
 ```
 
 <Note>
@@ -445,7 +445,7 @@ Refer [NVIDIA DGX Spark Release Notes](https://docs.nvidia.com/dgx/dgx-spark/rel
 1. Pull the DeepStream Triton Inference Server docker
 
 ```
-docker pull nvcr.io/nvidia/deepstream:9.2-triton-sbsa-dgx-spark
+docker pull ghcr.io/nvidia/deepstream:9.2-triton-sbsa-dgx-spark
 ```
 
 2. Start the docker
@@ -457,7 +457,7 @@ sudo docker run -it --rm --runtime=nvidia --network=host \
     -e DISPLAY=:0 \
     -v /tmp/.X11-unix:/tmp/.X11-unix \
     -v /etc/X11:/etc/X11 \
-    nvcr.io/nvidia/deepstream:9.2-triton-sbsa-dgx-spark
+    ghcr.io/nvidia/deepstream:9.2-triton-sbsa-dgx-spark
 ```
 
 <Note>

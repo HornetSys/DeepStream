@@ -8,7 +8,7 @@ navigation:
   - section: "DeepStream Release notes"
     skip-slug: true
     contents:
-      - page: "DeepStream SDK 9.1 for NVIDIA dGPU/X86 and Jetson"
+      - page: "DeepStream SDK 9.2 for NVIDIA dGPU/X86 and Jetson"
         path: ../../text/DS_Release_notes.mdx
         slug: text/DS_Release_notes
   - section: "DeepStream Getting Started"

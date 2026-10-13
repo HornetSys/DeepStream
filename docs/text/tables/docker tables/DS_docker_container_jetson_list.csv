@@ -1,5 +1,5 @@
 Container,Container pull commands
 "DeepStream samples docker
-(contains the runtime libraries, GStreamer plugins, reference applications and sample streams, models and configs)",``docker pull nvcr.io/nvidia/deepstream:9.2-samples-multiarch``
+(contains the runtime libraries, GStreamer plugins, reference applications and sample streams, models and configs)",``docker pull ghcr.io/nvidia/deepstream:9.2-samples-multiarch``
 "DeepStream Triton docker
-(contains contents of the samples docker plus devel libraries and Triton Inference Server backends)",``docker pull nvcr.io/nvidia/deepstream:9.2-triton-multiarch``
+(contains contents of the samples docker plus devel libraries and Triton Inference Server backends)",``docker pull ghcr.io/nvidia/deepstream:9.2-triton-multiarch``

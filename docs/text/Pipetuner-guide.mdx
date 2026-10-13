@@ -119,8 +119,8 @@ nvcr.io/nvidia/pipetuner:1.0
 [1/2] Pulled pipe-tuner image
 9.2-triton-multiarch: Pulling from nvidia/deepstream
 Digest: sha256:d94590278fb116176b54189c9740d3a3577f6ab71b875b68588dfc38947f657b
-Status: Downloaded image for nvcr.io/nvidia/deepstream:9.2-triton-multiarch
-nvcr.io/nvidia/deepstream:9.2-triton-multiarch
+Status: Downloaded image for ghcr.io/nvidia/deepstream:9.2-triton-multiarch
+ghcr.io/nvidia/deepstream:9.2-triton-multiarch
 [2/2] Pulled deepstream image
 Downloading NGC models...
 --2024-04-19 16:12:11--  https://api.ngc.nvidia.com/v2/models/nvidia/tao/peoplenet/versions/deployable_quantized_v2.6.1/zip
@@ -160,7 +160,7 @@ DeepStream users should see docker images like below.
 $ docker images
 REPOSITORY                                              TAG
 nvcr.io/nvidia/pipetuner                                1.0
-nvcr.io/nvidia/deepstream                               9.2-triton-multiarch
+ghcr.io/nvidia/deepstream                               9.2-triton-multiarch
 ```
 
 Also, model files should be under the ‘models’ folder. They will be mapped into DeepStream containers during tuning.
@@ -291,7 +291,7 @@ To launch a pipeline with ResNet34-based PeopleNet model and NvDCF tracker with 
 For DeepStream users:
 
 ```text
-$ bash launch.sh  nvcr.io/nvidia/deepstream:9.2-triton-multiarch  ../configs/config_PipeTuner/SDG_sample_PeopleNet-ResNet34_NvDCF-ResNet50_MOT.yml
+$ bash launch.sh  ghcr.io/nvidia/deepstream:9.2-triton-multiarch  ../configs/config_PipeTuner/SDG_sample_PeopleNet-ResNet34_NvDCF-ResNet50_MOT.yml
 ```
 
 For Metropolis Microservices users:

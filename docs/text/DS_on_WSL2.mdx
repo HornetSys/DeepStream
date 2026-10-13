@@ -2,8 +2,6 @@
 title: "DeepStream On WSL"
 ---
 
-{/` include: <isonum.txt> `/}
-
 Windows Subsystem for Linux (WSL) is a feature of Windows that allows you to run a Linux environment on your Windows machine, without the need for a separate virtual machine or dual booting.
 WSL 2 is the latest version of it. This page describes the steps to run a Deepstream docker container inside WSL2.
 
@@ -118,7 +116,7 @@ $ sudo systemctl restart docker
 **Pull the required deepstream docker container:**
 
 ```
-$ sudo docker pull nvcr.io/nvidia/deepstream:9.2-triton-multiarch
+$ sudo docker pull ghcr.io/nvidia/deepstream:9.2-triton-multiarch
 ```
 
 **Start the docker container:**
@@ -126,7 +124,7 @@ $ sudo docker pull nvcr.io/nvidia/deepstream:9.2-triton-multiarch
 ```
 $ sudo apt install x11-xserver-utils
 $ xhost +
-$ sudo docker run -it --privileged --rm --name=docker --net=host --gpus all -e DISPLAY=$DISPLAY -e CUDA_CACHE_DISABLE=0  -e NVIDIA_DRIVER_CAPABILITIES=all --device /dev/snd -v /tmp/.X11-unix/:/tmp/.X11-unix -v /usr/lib/wsl/lib/libnvcuvid.so.1:/usr/lib/x86_64-linux-gnu/libnvcuvid.so.1:ro -v /usr/lib/wsl/lib/libnvidia-encode.so.1:/usr/lib/x86_64-linux-gnu/libnvidia-encode.so.1:ro nvcr.io/nvidia/deepstream:9.2-triton-multiarch
+$ sudo docker run -it --privileged --rm --name=docker --net=host --gpus all -e DISPLAY=$DISPLAY -e CUDA_CACHE_DISABLE=0  -e NVIDIA_DRIVER_CAPABILITIES=all --device /dev/snd -v /tmp/.X11-unix/:/tmp/.X11-unix -v /usr/lib/wsl/lib/libnvcuvid.so.1:/usr/lib/x86_64-linux-gnu/libnvcuvid.so.1:ro -v /usr/lib/wsl/lib/libnvidia-encode.so.1:/usr/lib/x86_64-linux-gnu/libnvidia-encode.so.1:ro ghcr.io/nvidia/deepstream:9.2-triton-multiarch
 ```
 
 NOTE: The '-v' bind-mount destinations ('/usr/lib/x86_64-linux-gnu/') are for an x86_64 WSL2 host.
