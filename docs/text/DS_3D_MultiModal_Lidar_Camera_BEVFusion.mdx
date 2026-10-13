@@ -4,7 +4,7 @@ title: "DeepStream-3D Multi-Modal BEVFusion Setup"
 
 The pipeline efficiently processes data from 6 cameras and 1 LiDAR, leveraging a pre-trained [PyTorch BEVFusion](https://github.com/mit-han-lab/bevfusion) model. This model is optimized for NVIDIA GPUs using TensorRT and CUDA, as showcased by the [CUDA-BEVFusion](https://github.com/NVIDIA-AI-IOT/Lidar_AI_Solution/tree/master/CUDA-BEVFusion) project. Enhancing integration, a multi-modal inference module (`triton-lmm`) based on [PyTriton](https://github.com/triton-inference-server/pytriton) simplifies the incorporation of the Python BEVFusion model. The pipeline seamlessly employs `ds3d::datafilter` for triton inference through gRPC. Ultimately, users can visualize the results by examining the `ds3d::datamap` with 6 camera views. The pipeline also projects LiDAR data and 3D bounding boxes into each view. Furthermore, the same LiDAR data is thoughtfully visualized in both a top view and a side view for enhanced comprehension.
 
-  ![DeepStream 3D Lidar BEVFusion pipeline overview](/assets/images/content/DS3D_lidar_sensor_fusion_bevfusion_pipeline.png)
+![DeepStream 3D Lidar BEVFusion pipeline overview](/assets/images/content/DS3D_lidar_sensor_fusion_bevfusion_pipeline.png)
 
  * **Run tritonserver to startup pytriton-hosted BEVFusion model.** This model requires an x86 platform with a GPU compute capability of 8.0 or higher.
 

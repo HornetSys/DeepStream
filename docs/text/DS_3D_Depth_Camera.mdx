@@ -51,7 +51,7 @@ Make sure RealSense SDK version is not earlier than 2.48.
 
 This is the first pipeline from the depth capture to 2D based `depthmap` to direct rendering with linear colors configured by the user.
 
-  ![DeepStream Depth Camera for 2D rendering stack overview](/assets/images/content/DS_3D_depth_camera_2d_render.png)
+![DeepStream Depth Camera for 2D rendering stack overview](/assets/images/content/DS_3D_depth_camera_2d_render.png)
 
 * `ds3d::dataloader` loads custom lib `libnvds_3d_dataloader_realsense.so` and creates a RealSense `dataloader` through the `createRealsenseDataloader` function. This specific loader is configured for output streams of `[color, depth]`. `Gst-appsrc` connects the `dataloader` into the deepstream pipeline.
 
@@ -79,7 +79,7 @@ custom_create_function: createDepthStreamDataRender
 
 The 2nd pipeline is from depth capture, 3D point cloud processing and alignment, to the 3D point cloud rendering with colors.
 
-  ![DeepStream Depth Camera for 3D point cloud processing overview](/assets/images/content/DS_3D_depth_camera_3d_points_process.png)
+![DeepStream Depth Camera for 3D point cloud processing overview](/assets/images/content/DS_3D_depth_camera_3d_points_process.png)
 
 * `ds3d::dataloader` is the same as the 1st pipeline for depth and color capture. It also outputs the intrinsic parameters of the color/depth sensors, and extrinsic parameters from depth to color sensor module.
 

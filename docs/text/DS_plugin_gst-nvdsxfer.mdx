@@ -109,7 +109,7 @@ queue ! fpsdisplaysink video-sink=fakesink sync=0 -e -v
 
 B) Running "Decode + StreamMux" and "PGIE + Tracker + SGIE (Multiple)" on separate dGPUs
 
- ![Gst-Nvdsxfer](/assets/images/content/NvDsxfer_SingleStream_Multi-dGPUs_B.PNG)
+![Gst-Nvdsxfer](/assets/images/content/NvDsxfer_SingleStream_Multi-dGPUs_B.PNG)
 
     gst-launch-1.0 multifilesrc location=samples/streams/sample_1080p.h265 loop=true ! h265parse ! queue ! \
     nvv4l2decoder gpu-id=0 cudadec-memtype=0 ! queue ! m.sink_0 nvstreammux name=m batch-size=1 gpu-id=0 \
