@@ -129,7 +129,7 @@ Details on Streammux config-file groups and keys are summarized the following ta
 
 ### Aim
 
-1. nvstreammux provide many knobs to tune the way batching algorithm works. This is essential to support a wide range of applications/use-cases the muxer supports. More documentation is available at `Mux Config Properties`_ .
+1. nvstreammux provide many knobs to tune the way batching algorithm works. This is essential to support a wide range of applications/use-cases the muxer supports. More documentation is available at [Mux Config Properties](#mux-config-properties) .
 2. Tuning nvstreammux for specific use cases that we work with customers are good learning exercises.
 3. Details discussed here include observations, the configs, pipeline changes, etc that worked well for specific use-cases.
 4. Users/Contributors - Please feel free to create a [New forum Topic with the contribution here](https://forums.developer.nvidia.com/c/accelerated-computing/intelligent-video-analytics/deepstream-sdk/15).
@@ -141,12 +141,12 @@ To ensure smooth streaming experience, configure/tune the below parameters prope
 | Tuning Use-Case or Mux Config Property used | Notes |
 | --- | --- |
 | nvstreammux/sync-inputs | sync-inputs=1 ensure nvstreammux to queue early buffers. This could be useful in the audio muxer which could be faster than video muxer when reading from files as audio frames are lighter than video frames. |
-| nvstreammux/config-file-path | min-overall-fps and max-overall-fps need to be properly set. a) The min-overall-fps shall be set to the highest framerate of all sources. b) max-overall-fps shall be >= min-overall-fps Check `Mux Config Properties`_ for more information. |
+| nvstreammux/config-file-path | min-overall-fps and max-overall-fps need to be properly set. a) The min-overall-fps shall be set to the highest framerate of all sources. b) max-overall-fps shall be >= min-overall-fps Check [Mux Config Properties](#mux-config-properties) for more information. |
 | nvstreammux/max-latency | Please set/tune the latency parameter to a value > than 1/fps of the slowest stream. Applicable only when sync-inputs=1 |
 | Inputs with different frame rates | Highest frame-rate to be considered for overall-min-fps value. e.g. for 2 inputs with 15fps and 30fps each, overall-min-fps=30 |
 | Input with varying frame rate | Individual stream's frame-rate may vary based on network condition. Highest possible to be considered for overall-min-fps value.e.g. For single stream with varying frame-rate of 15fps to 30fps, overall-min-fps=30 |
 | Inputs with different bitrates | Nvstreammux will not need specific handling for individual stream bitrates. |
-| Inputs with different resolutions | Please read the section `Heterogeneous batching`_ |
+| Inputs with different resolutions | Please read the section [Heterogeneous batching](#heterogeneous-batching) |
 | Dynamic addition/removal of input stream | This is supported by adaptive-batching. With adaptive-batching=1, the Gst application needs to create/destroy sinkpads dynamically for addition/removal respectively. |
 | flvmux/qtmux/latency | The latency parameter (Gst-Property on these plugins when used) shall be set/tuned to a value > nvstreammux/max-latency. The recommended value is 2 X nvstreammux/max-latency User could set "latency=18446744073709551614" (max) to avoid tuning for this parameter. |
 
@@ -164,7 +164,7 @@ In a single pipeline, we could have file sources with different video framerate,
 1. In this scenario, video buffers might get mux’d slower than audio buffers. When this happens [GstAggregator](https://gstreamer.freedesktop.org/documentation/base/gstaggregator.html) based flvmux or qtmux could block the pipeline when the difference between video and audio buffer-timestamps are higher than the set "latency" parameter.
 2. When dealing with file sources/ live sources of different framerates, we need nvstreammux tuned for min-overall-fps. Without this, the muxing always happens at the slowest stream's framerate adding latency to the video buffers.
 3. When dealing with file sources of different frame rates and RTMP sources of different framerates, we recommend users to turn on sync-inputs=1 on nvstreammux and tune proper max-latency to ensure video and audio buffers from a single source are regulated and are flowing together in the pipeline after streammux. This is essential for the proper working of GstAggregator based muxers like flvmux, qtmux. etc.
-4. To ensure smooth streaming experience, configure/tune the parameters discussed in Section `Important Tuning parameters`_ properly.
+4. To ensure smooth streaming experience, configure/tune the parameters discussed in Section [Important Tuning parameters](#important-tuning-parameters) properly.
 </Note>
 
 #### Video and Audio muxing - RTMP/RTSP sources
@@ -173,7 +173,7 @@ When using live sources:
 
 1. make sure that `nvstreammux/sync-inputs` is set to `1`
 2. When using RTMP sources, in-built upstream latency query does not work. So you'll need to provide/tune a non-zero nvstreammux/max-latency setting.
-3. Tune for nvstreammux/max-latency and other parameters as discussed in Section `Important Tuning parameters`_.
+3. Tune for nvstreammux/max-latency and other parameters as discussed in Section [Important Tuning parameters](#important-tuning-parameters).
 
 ### Troubleshooting
 
@@ -182,7 +182,7 @@ When using live sources:
 To troubleshoot this issue, try increasing the GstAggregator based flvumx/qtmux "latency" setting.
 Try `latency=18446744073709551614` - the max value to see if it works and then you could tune for an optimal latency according to the type of media source in use.
 
-Also, set environment variable `export GST_DEBUG=3` for WARNING logs. Also see, `nvstreammux WARNING “Lot of buffers are being dropped”`_.
+Also, set environment variable `export GST_DEBUG=3` for WARNING logs. Also see, [nvstreammux WARNING “Lot of buffers are being dropped”](#nvstreammux-warning-lot-of-buffers-are-being-dropped).
 
 #### nvstreammux WARNING “Lot of buffers are being dropped”
 
@@ -467,7 +467,7 @@ This is in the context of use-cases where we don't know the exact number of inpu
 
 Yes, nvstreammux support dynamic batch-size when adaptive-batching=1,[property] group in the mux config-file. When adaptive-batching is enabled, batch-size is equal to the number of source pads on the muxer. By default this is enabled.
 
-Refer to `Mux Config Properties`_  for more information.
+Refer to [Mux Config Properties](#mux-config-properties)  for more information.
 
 ### Optimizing nvstreammux config for low-latency vs Compute
 

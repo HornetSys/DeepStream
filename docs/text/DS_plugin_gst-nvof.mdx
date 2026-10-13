@@ -61,13 +61,12 @@ The following table summarizes the features of the plugin.
 
 **Gst-nvof plugin features**
 
-| Property | Meaning | Type and Range | Example Notes |
-| --- | --- | --- | --- |
-| gpu-id | Device ID of the GPU to be used for decoding (dGPU only). | Integer,<br />0 to 4,294,967,295 | gpu-id=0 |
-| dump-of-meta | Dumps optical flow output into a .bin file. |  | dump-of-meta=1 |
-| preset-level | Selects a preset level, default preset level is 0 i.e. NV_OF_PERF_LEVEL_FAST<br />Possible values are:<br />0 (NV_OF_PERF_LEVEL_FAST): high performance, low quality.<br />1 (NV_OF_PERF_LEVEL_MEDIUM): intermediate performance and quality.<br />2 (NV_OF_PERF_LEVEL_SLOW): low performance, best quality (valid only for dGPU platforms). | Enum, 0 to 2 | preset-level=0 |
-| grid-size | Selects the grid size. The hardware generates flow vectors blockwise, one vector for each block of 4×4 pixels. Currently only the 4x4 grid size is supported. | Enum, 0 | grid-size=0 |
-| pool-size | Sets the number of internal motion vector output buffers to be allocated. | Integer,<br />1 to 4,294,967,295 | pool-size=7 |
+| Feature | Description | Release |
+| --- | --- | --- |
+| Configure GPU selection | Sets the gpu ID to be used for optical flow operation (valid only for dGPU platforms) | DS 4.0 |
+| Configure dumping of optical flow metadata | Enables dumping of optical flow output (motion vector data) | DS 4.0 |
+| Configure preset level | Sets the desired preset level | DS 4.0 |
+| Configure grid size | Sets the flow vector block size | DS 4.0 |
 
 ## Gst Properties
 

@@ -72,7 +72,7 @@ f) Below mentioned reference `gst-launch-1.0 pipelines` use legacy `streammux` b
    New `nvstreammux` can also be used by enabling USE_NEW_NVSTREAMMUX=yes environment variable with appropriate properties set for new `streammux` plugin
 
 <Note>
-`gst-launch-1.0 pipelines` mentioned in the `Use cases`_ section, are not optimal pipelines though can demonstrate `nvdsxfer` plugin usage for various use cases to achieve better performance and GPU utilization.
+`gst-launch-1.0 pipelines` mentioned in the [Use cases](#use-cases) section, are not optimal pipelines though can demonstrate `nvdsxfer` plugin usage for various use cases to achieve better performance and GPU utilization.
 </Note>
 
 <Note>
@@ -111,14 +111,16 @@ B) Running "Decode + StreamMux" and "PGIE + Tracker + SGIE (Multiple)" on separa
 
 ![Gst-Nvdsxfer](/assets/images/content/NvDsxfer_SingleStream_Multi-dGPUs_B.PNG)
 
-    gst-launch-1.0 multifilesrc location=samples/streams/sample_1080p.h265 loop=true ! h265parse ! queue ! \
-    nvv4l2decoder gpu-id=0 cudadec-memtype=0 ! queue ! m.sink_0 nvstreammux name=m batch-size=1 gpu-id=0 \
-    width=1920 height=1080 nvbuf-memory-type=2 ! queue ! nvdsxfer gpu-id=1 p2p_gpu_id=0 ! queue ! \
-    nvinfer gpu-id=1 batch-size=1 config-file-path= samples/configs/deepstream-app/config_infer_primary.txt ! queue ! \
-    nvtracker gpu-id=1 enable-batch-process=1 ll-lib-file=lib/libnvds_nvmultiobjecttracker.so \
-    ll-config-file=samples/configs/deepstream-app/config_tracker_NvDCF_perf.yml ! queue ! nvinfer gpu-id=1 batch-size=16 unique-id=2 \
-    config-file-path=samples/configs/deepstream-app/config_infer_secondary_vehiclemake.txt ! queue ! nvinfer gpu-id=1 batch-size=16 unique-id=3 \
-    config-file-path=samples/configs/deepstream-app/config_infer_secondary_vehicletypes.txt ! queue ! fpsdisplaysink video-sink=fakesink sync=0 -e -v
+```
+gst-launch-1.0 multifilesrc location=samples/streams/sample_1080p.h265 loop=true ! h265parse ! queue ! \
+nvv4l2decoder gpu-id=0 cudadec-memtype=0 ! queue ! m.sink_0 nvstreammux name=m batch-size=1 gpu-id=0 \
+width=1920 height=1080 nvbuf-memory-type=2 ! queue ! nvdsxfer gpu-id=1 p2p_gpu_id=0 ! queue ! \
+nvinfer gpu-id=1 batch-size=1 config-file-path= samples/configs/deepstream-app/config_infer_primary.txt ! queue ! \
+nvtracker gpu-id=1 enable-batch-process=1 ll-lib-file=lib/libnvds_nvmultiobjecttracker.so \
+ll-config-file=samples/configs/deepstream-app/config_tracker_NvDCF_perf.yml ! queue ! nvinfer gpu-id=1 batch-size=16 unique-id=2 \
+config-file-path=samples/configs/deepstream-app/config_infer_secondary_vehiclemake.txt ! queue ! nvinfer gpu-id=1 batch-size=16 unique-id=3 \
+config-file-path=samples/configs/deepstream-app/config_infer_secondary_vehicletypes.txt ! queue ! fpsdisplaysink video-sink=fakesink sync=0 -e -v
+```
 
 ### Multiple Streams + Multi-dGPU Setup
 

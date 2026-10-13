@@ -6,9 +6,9 @@ The Gst-nvtracker plugin allows the DS pipeline to use a low-level tracker libra
 
 Based on the queries, the Gst-nvtracker plugin constructs the input data to the low-level tracker library, which consists of video frames and detected objects across multiple streams that are fed to the low-level library in a single data structure (i.e, a frame batch) through a single API call. This API design allows all the input data from multiple streams in the low-level tracker library processed in a batched processing mode (similar to the batch mode in [cuFFT™](https://developer.nvidia.com/cufft), [cuBLAS™](https://developer.nvidia.com/cublas), etc.) for potentially more efficient execution especially when accelerated on GPU. There for, it is required that the low-level tracker supports `batch processing` when using `NvMOT_Process` API.
 
-The Gst-nvtracker plugin supports retrieval of the user-defined `miscellaneous data` from the low-level tracker library through `NvMOT_RetrieveMiscData` API, which includes useful object tracking information other than the default data for the current frame targets; for example, past-frame object data, targets in shadow tracking mode, full trajectory of terminated targets and re-identification features. More details on the types of miscellaneous data and what they means can be found in `Miscellaneous Data Output`_ section. The users are allowed to define other types of miscellaneous data in `NvMOTTrackerMiscData`.
+The Gst-nvtracker plugin supports retrieval of the user-defined `miscellaneous data` from the low-level tracker library through `NvMOT_RetrieveMiscData` API, which includes useful object tracking information other than the default data for the current frame targets; for example, past-frame object data, targets in shadow tracking mode, full trajectory of terminated targets and re-identification features. More details on the types of miscellaneous data and what they means can be found in [Miscellaneous Data Output](#miscellaneous-data-output) section. The users are allowed to define other types of miscellaneous data in `NvMOTTrackerMiscData`.
 
-More details on all these tracker APIs is discussed in `NvDsTracker API for Low-Level Tracker Library`_ section.
+More details on all these tracker APIs is discussed in [NvDsTracker API for Low-Level Tracker Library](#nvdstracker-api-for-low-level-tracker-library) section.
 
 The plugin accepts NV12- or RGBA-formatted frame data from the upstream component and scales (and/or converts) the input buffer to a buffer in the tracker plugin based on the format required by the low-level library, with the frame resolution specified by `tracker-width` and `tracker-height` in the configuration file’s `[tracker]` section. The path to the low-level tracker library is to be specified via `ll-lib-file` configuration option in the same section. The low-level library to be used may also require its own configuration file, which can be specified via `ll-config-file` option. If `ll-config-file` is not specified, the low-level tracker library may proceed with its default parameter values.
 
@@ -20,7 +20,7 @@ The reference low-level tracker implementations provided by the `NvMultiObjectTr
 * **NvDCF**: The NvDCF tracker is an online multi-object tracker that employs a discriminative correlation filter for visual object tracking, which allows independent object tracking even when detection results are not available. It uses the combination of the correlation filter responses and bounding box proximity for data association.
 * **MaskTracker**: MaskTracker simultaneously performs multi-object tracking and segmentation using advanced vision foundation models such as Segment Anything Model 2 (SAM2). It maintains high-quality segmentation and robust tracking, while automatically adding and removing targets as needed. MaskTracker can generate bounding boxes around segmentation masks, match them with detections, and fuse this information to improve bounding box accuracy. Additionally, it supports accelerated inference of the entire SAM2 network with TensorRT™.
 
-More details on each algorithm and its implementation details can be found in `NvMultiObjectTracker : A Reference Low-Level Tracker Library`_ section.
+More details on each algorithm and its implementation details can be found in [NvMultiObjectTracker : A Reference Low-Level Tracker Library](#nvmultiobjecttracker-a-reference-low-level-tracker-library) section.
 
 <Note>
 The source code of the Gst-nvtracker plugin is provided as a part of DeepStream SDK package under `sources/gst-plugins/gst-nvtracker/` when installed on a system This is to allow users to make direct changes in the plugin whenever needed for their custom applications and also to show the users as to how the low-level libraries are managed and how the metadata is handled in the plugin.
@@ -54,7 +54,7 @@ The color formats supported for the input video frame by the NvTracker plugin ar
 
     * Updated with additional data from tracker low-level library
 
-There's no separate data structure for the output. Instead, the tracker plugin just adds/updates the data in the existing `NvDsBatchMeta` (and its `NvDsObjectMeta`) with the output data from the tracker low-level library, including tracked object coordinates, tracker confidence, and object IDs. There are some other miscellaneous data that can be attached as user-meta, which is covered in `Miscellaneous Data Output`_ section.
+There's no separate data structure for the output. Instead, the tracker plugin just adds/updates the data in the existing `NvDsBatchMeta` (and its `NvDsObjectMeta`) with the output data from the tracker low-level library, including tracked object coordinates, tracker confidence, and object IDs. There are some other miscellaneous data that can be attached as user-meta, which is covered in [Miscellaneous Data Output](#miscellaneous-data-output) section.
 
 <Note>
 If the tracker algorithm does not generate confidence value, then tracker confidence value will be set to the default value (i.e., `1.0`) for tracked objects. For IOU, NvSORT and NvDeepSORT trackers, `tracker_confidence` is set to `1.0` as these algorithms do not generate confidence values for tracked objects. NvDCF tracker, on the other hand, generates confidence for the tracked objects due to its visual tracking capability, and its value is set in `tracker_confidence` field in `NvDsObjectMeta` structure.
@@ -70,7 +70,7 @@ The Gst-nvtracker plugin works in the batch processing mode by default. In this 
 
 The newly-introduced `Sub-batching` feature allows the plugin to split the input frame batch into multiple sub-batches (for example, a four-stream pipeline can use two sub-batches in the tracker plugin, each of which takes care of two streams). Each sub-batch is assigned to a separate instance of low-level tracker library, where the input to the corresponding sub-batch is processed separately. Each instance of low-level tracker libraries runs on a dedicated thread running independently, allowing parallel processing of sub-batches and minimizing the GPU idling due to CPU compute blocks, which eventually results in higher resource utilization.
 
-Because sub-batching assigns separate low-level tracker library instances to different sub-batches, it allows the user to configure each individual sub-batch differently with different low-level tracker library configuration files. This can be utilized in multiple ways like setting varied compute backends across sub-batches, using varied tracking algorithms across sub-batches or modifying any other configuration that is supported in low-level tracker configuration file. Each VPI™ backend low-level tracker library supports at most 128 streams, so when running more than 128 streams, users need to configure the sub-batching to run multiple instances of the low-level tracker library. More detailed example use-cases are discussed in `Setup and Usage of Sub-batching`_ section.
+Because sub-batching assigns separate low-level tracker library instances to different sub-batches, it allows the user to configure each individual sub-batch differently with different low-level tracker library configuration files. This can be utilized in multiple ways like setting varied compute backends across sub-batches, using varied tracking algorithms across sub-batches or modifying any other configuration that is supported in low-level tracker configuration file. Each VPI™ backend low-level tracker library supports at most 128 streams, so when running more than 128 streams, users need to configure the sub-batching to run multiple instances of the low-level tracker library. More detailed example use-cases are discussed in [Setup and Usage of Sub-batching](#setup-and-usage-of-sub-batching) section.
 
 ## Features
 
@@ -92,8 +92,8 @@ The following table summarizes the features of the plugin.
 | Enabling tracking-id display | Supports enabling or disabling display of tracking-id | DS 5.0 |
 | Tracking ID reset based on event | Based on the pipeline event (i.e., GST_NVEVENT_STREAM_EOS and GST_NVEVENT_STREAM_RESET),  the tracking IDs on a particular stream can be reset to start from 0 or new IDs. | DS 6.0 |
 | Tracker Miscellaneous data output | Supports outputting user defined miscellaneous data (including object Re-ID features, the past-frame data, a list of terminated tracks, etc. ) if the low-level library supports the capability | DS 6.3 |
-| Support for NVIDIA's `VPI™ <https://docs.nvidia.com/vpi/index.html>`_ based Crop-scaler and DCF-Tracker algorithms in NvDCF tracker | Configuration options provided in NvDCF tracker which allow the user to switch to NVIDIA's `VPI™ <https://docs.nvidia.com/vpi/index.html>`_ implementation of Crop-scaler and DCF-Tracker. The user can also configure the compute backend to be used amongst the backends supported by `VPI™ <https://docs.nvidia.com/vpi/index.html>`_ | DS 6.4 |
-| PVA-backend for NvDCF via `VPI™ <https://docs.nvidia.com/vpi/index.html>`_'s unified API | Allow PVA-based execution of a significant part of NvDCF on Jetson to achieve lower GPU utilization | DS 6.4 |
+| Support for NVIDIA's [VPI™](https://docs.nvidia.com/vpi/index.html) based Crop-scaler and DCF-Tracker algorithms in NvDCF tracker | Configuration options provided in NvDCF tracker which allow the user to switch to NVIDIA's [VPI™](https://docs.nvidia.com/vpi/index.html) implementation of Crop-scaler and DCF-Tracker. The user can also configure the compute backend to be used amongst the backends supported by [VPI™](https://docs.nvidia.com/vpi/index.html) | DS 6.4 |
+| PVA-backend for NvDCF via [VPI™](https://docs.nvidia.com/vpi/index.html)'s unified API | Allow PVA-based execution of a significant part of NvDCF on Jetson to achieve lower GPU utilization | DS 6.4 |
 | Sub-batching | Supports splitting of a batch of frames in sub-batches which are internally processed in parallel resulting in higher resource utilization. This feature also enables specification of a different config file for each sub-batch. | DS 6.4 |
 | Single-View 3D Tracking | Allow 3D world coordinate system based object tracking when camera/model info (3x4 projection matrix and 3D human model info) is provided for better handling of partial occlusion | DS 6.4 |
 | MaskTracker (Developer Preview) | A new algorithm for multi-object tracking and segmentation using SAM2 as visual tracking engine | DS 8.0 |
@@ -108,7 +108,7 @@ The following table describes the Gst properties of the Gst-nvtracker plugin.
 | --- | --- | --- | --- |
 | tracker-width | Frame width at which the tracker is to operate, in pixels. | Integer, 0 to 4,294,967,295 | tracker-width=640 |
 | tracker-height | Frame height at which the tracker is to operate, in pixels. | Integer, 0 to 4,294,967,295 | tracker-height=384 |
-| ll-lib-file | Pathname of the low-level tracker library to be loaded by Gst-nvtracker. | String | ll-lib-file=­/opt/nvidia/­deepstream/­deepstream/­lib/libnvds_nvmultiobjecttracker.so |
+| ll-lib-file | Pathname of the low-level tracker library to be loaded by Gst-nvtracker. | String | ll-lib-file=/opt/nvidia/deepstream/deepstream/lib/libnvds_nvmultiobjecttracker.so |
 | ll-config-file | Configuration file for the low-level library if needed.<br />A list of configuration files can be specified when the property `sub-batches` is configured. | Path to configuration file OR<br />A list of paths to configuration files delimited by semicolon | ll-config-file=config_tracker_NvDCF_perf.yml<br />ll-config-file=config_tracker_NvDCF_perf1.yml;<br />config_tracker_NvDCF_perf2.yml |
 | gpu-id | ID of the GPU on which device/unified memory is to be allocated, and with which buffer copy/scaling is to be done. (dGPU only.) | Integer, 0 to 4,294,967,295 | gpu-id=0 |
 | tracking-surface-type | Set surface stream type for tracking. (default value is 0) | Integer, ≥0 | tracking-surface-type=0 |
@@ -136,11 +136,7 @@ A low-level tracker library can be implemented using the API defined in `sources
    );
    ```
 
-   The plugin uses this function to query the low-level library’s capabilities and requirements before it starts any processing sessions (i.e., contexts) with the library. Queried properties include the input frame's color format (e.g., RGBA or NV12) and memory type (e.g., |NVIDIA®| |CUDA®| device or CPU-mapped NVMM).
-
-    .. |NVIDIA®| replace:: NVIDIA\ <sup>®</sup>
-
-    .. |CUDA®| replace:: CUDA\ <sup>®</sup>
+   The plugin uses this function to query the low-level library’s capabilities and requirements before it starts any processing sessions (i.e., contexts) with the library. Queried properties include the input frame's color format (e.g., RGBA or NV12) and memory type (e.g., NVIDIA <sup>®</sup> CUDA <sup>®</sup> device or CPU-mapped NVMM).
 
    The plugin performs this query once during initialization stage, and its results are applied to all contexts established with the low-level library. If a low-level library configuration file is specified, it is provided in the query for the library to consult.
 
@@ -327,7 +323,6 @@ For the proximity between detector objects and targets, IOU is a typical metric 
 
 The total association score for a pair of detector object and target is the weighted sum of all the metrics:
 
- .. math:
 
 ```
 totalScore=w_1*IOU+w_2*sizeSimilarity+w_3*reidSimilarity+w_4*visualSimilarity
@@ -391,7 +386,7 @@ All the Kalman Filter types employ a constant velocity model for generic use. Th
 
 When a visual tracker module is enabled (like in the NvDCF tracker), there could be two different measurements from the state estimator’s point of view: (1) the bbox (or location) from the detector at PGIE and (2) the bbox (or location) from the tracker's localization. This is because the NvDCF tracker module is capable of localizing targets using its own learned filter. The measurement noise variance for these two different types of measurements can be configured by `measurementNoiseVar4Detector` and `measurementNoiseVar4Tracker`. These parameters are expected to be tuned or optimized based on the detector's and the tracker's characteristics for better measurement fusion.
 
-The usage of the state estimator in the NvDeepSORT tracker slightly differs from that for the aforementioned generic use case in that it is basically a *Regular KF*, yet with a couple of differences as per the original paper and the implementation (Check the references in `NvDeepSORT Tracker`_ section):
+The usage of the state estimator in the NvDeepSORT tracker slightly differs from that for the aforementioned generic use case in that it is basically a *Regular KF*, yet with a couple of differences as per the original paper and the implementation (Check the references in [NvDeepSORT Tracker](#nvdeepsort-tracker) section):
 
 *  Use of the aspect ratio `a` and the height `h` (instead of `w` and `h`) to estimate the bbox size
 *  The process and measurement noises that are proportional to the bounding box height (instead of constant values)
@@ -430,15 +425,14 @@ The TensorRT™ inference engine configuration is controlled through several key
 
 Re-identification (Re-ID) uses TensorRT™-accelerated deep neural networks to extract unique feature vectors from detected objects that are robust to spatial-temporal variance and occlusion. It has two use-cases in *NvMultiObjectTracker*: (1) In NvDeepSORT, the Re-ID similarity is used for data association of objects over consecutive frames.; (2) In target re-association (which will be described in more detail in the following section), the Re-ID features of targets are extracted and kept, so that they can be used for re-association with the same target if they are seemingly lost. `reidType` selects the mode for each aforementioned use-case.
 
-In the Re-ID module, the detector objects are cropped and resized into the configured input size of the Re-ID network. The parameter `keepAspc` controls whether the object's aspect ratio is preserved after cropping. Then NVIDIA TensorRT™ creates an engine from the network, which processes the input in batches and outputs a fixed-dimensional vector for each detector object as the Re-ID feature. The cosine similarity function requires each feature's L2 norm normalized to 1. Check `Re-ID Feature Output`_ on how to retrieve these features in the tracker plugin and downstream modules. For each target, a gallery of its Re-ID features in most recent frames are kept internally. The size of the feature gallery can be set by `reidHistorySize`.
+In the Re-ID module, the detector objects are cropped and resized into the configured input size of the Re-ID network. The parameter `keepAspc` controls whether the object's aspect ratio is preserved after cropping. Then NVIDIA TensorRT™ creates an engine from the network, which processes the input in batches and outputs a fixed-dimensional vector for each detector object as the Re-ID feature. The cosine similarity function requires each feature's L2 norm normalized to 1. Check [Re-ID Feature Output](#re-id-feature-output) on how to retrieve these features in the tracker plugin and downstream modules. For each target, a gallery of its Re-ID features in most recent frames are kept internally. The size of the feature gallery can be set by `reidHistorySize`.
 
 <Note>
-`config_tracker_NvDeepSORT.yml` and `config_tracker_NvDCF_accuracy.yml` configs use ReIdentificationNet by default, which is a ResNet-50 Re-ID network in NVIDIA TAO toolkit on [NGC](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/reidentificationnet). Users need to follow instructions in `Setup Sample Re-ID Models`_ to setup, or check `Customize Re-ID Model`_ for more information on adding a custom Re-ID model for object tracking with different architectures and datasets.
+`config_tracker_NvDeepSORT.yml` and `config_tracker_NvDCF_accuracy.yml` configs use ReIdentificationNet by default, which is a ResNet-50 Re-ID network in NVIDIA TAO toolkit on [NGC](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/reidentificationnet). Users need to follow instructions in [Setup Sample Re-ID Models](#setup-sample-re-id-models) to setup, or check [Customize Re-ID Model](#customize-re-id-model) for more information on adding a custom Re-ID model for object tracking with different architectures and datasets.
 </Note>
 
 The Re-ID similarity between a detector object and a target is the cosine similarity between the detector object's Re-ID feature and its nearest neighbor in the target's feature gallery, whose value is in range `[0.0, 1.0]`. Specifically, each Re-ID feature in the target's gallery takes the dot product with the detector object's Re-ID feature. The maximum of all the dot products is the similarity score, i.e.
 
- .. math:
 
 ```
 score_{ij}=\max_{k}(feature\_det_{i}\cdot feature\_track_{jk})
@@ -452,7 +446,7 @@ where:
 
 The Re-ID has a spatial-temporal constraint. If an object moves out of frame or gets occluded beyond `maxShadowTrackingAge`, it will be assigned a new ID even if it returns into the frame.
 
-The extracted Re-ID features (i.e., embeddings) can be exported to the metadata, which is explained in a separate section in `Re-ID Feature Output`_.
+The extracted Re-ID features (i.e., embeddings) can be exported to the metadata, which is explained in a separate section in [Re-ID Feature Output](#re-id-feature-output).
 
 ### Target Re-Association
 
@@ -468,7 +462,6 @@ The target re-association takes advantage of the *Late Activation* and *Shadow T
 
 **Tracklet Matching**: During the `tracklet` matching process in the previous step, the valid candidate `tracklets` are queried from the database based on the feasible time window configured by `maxTrackletMatchingTimeSearchRange`. For the new target and each candidate, both the motion and Re-ID similarity are taken into account for tracklet matching. The motion similarity is the average IOU along the `tracklet` with various criteria including the minimum average IOU score (i.e., `minTrackletMatchingScore`), maximum angular difference in motion (i.e., `maxAngle4TrackletMatching`), minimum speed similarity (i.e., `minSpeedSimilarity4TrackletMatching`), and minimum bbox size similarity (i.e., `minBboxSizeSimilarity4TrackletMatching`) computed by a Dynamic Time Warping (DTW)-like algorithm. The Re-ID similarity is the cosine distance between the new target's Re-ID feature and its nearest neighbor in the candidate's feature gallery. The total similarity score is the weighted sum of both metrics:
 
- .. math:
 
 ```
 totalScore=w_1*IOU+w_2*reidSimilarity
@@ -547,7 +540,7 @@ To tackle these challenging problems, DeepStream SDK introduced a new feature ca
      radius: 30.0 # "radius" represents the actual radius of the 3D cylinder, or half of a cuboid's bottom edge
    ```
 
-There are two options (`projectionMatrix_3x4` and `projectionMatrix_3x4_w2p`) in which users can provide corresponding 3x4 camera projection matrices to support different usecase. Please refer to `The 3x4 Camera Projection Matrix`_ section for more details.
+There are two options (`projectionMatrix_3x4` and `projectionMatrix_3x4_w2p`) in which users can provide corresponding 3x4 camera projection matrices to support different usecase. Please refer to [The 3x4 Camera Projection Matrix](#the-3x4-camera-projection-matrix) section for more details.
 
 Note that there are a few assumptions that this algorithm requires:
 
@@ -587,7 +580,7 @@ Introduced in DS 9.0, SV3DT extends beyond human tracking to support tracking of
 
 SV3DT algorithm can be used with an optional 2D pose estimator, which estimates human key-points on the 2D image plane. If the pose estimator is enabled, the algorithm uses upper body key-points as 2D anchor to achieve a higher 3D accuracy. Otherwise, the algorithm uses 2D detection bounding boxes, especially the top edge as 2D anchor, which we will touch upon shortly.
 
-**2D Key-Points as Anchors:** If the 2D pose estimator is enabled, SV3DT can estimate each person's different 3D height and refine it over frames. It will use the head and feet (or head and waist) key-points as 2D anchors. It assumes the 3D line between these two key-points is perpendicular to the ground plane. By minimizing the projection error, it jointly solves the 3D distance between them and the world coordinate on the ground plane. The `minPoseConfidence` parameter controls which key points are reliable enough for height estimation. SV3DT mainly uses three sets of key points: head, waist, and feet. If both head and feet key points have confidence exceeding `minPoseConfidence`, they are used for height estimation. Otherwise, if both head and waist key points have confidence exceeding `minPoseConfidence`, they are used instead. If neither combination meets the confidence threshold, key points are not used for height estimation. Once a reliable key point pair is selected, the 3D height is estimated assuming body proportions are the same for all people. Then the 3D human model is updated for each target with different 3D height. The radius is also adjusted proportionally to the 3D height. More information about the 2D pose estimator can be found in `Pose Estimation`_ section.
+**2D Key-Points as Anchors:** If the 2D pose estimator is enabled, SV3DT can estimate each person's different 3D height and refine it over frames. It will use the head and feet (or head and waist) key-points as 2D anchors. It assumes the 3D line between these two key-points is perpendicular to the ground plane. By minimizing the projection error, it jointly solves the 3D distance between them and the world coordinate on the ground plane. The `minPoseConfidence` parameter controls which key points are reliable enough for height estimation. SV3DT mainly uses three sets of key points: head, waist, and feet. If both head and feet key points have confidence exceeding `minPoseConfidence`, they are used for height estimation. Otherwise, if both head and waist key points have confidence exceeding `minPoseConfidence`, they are used instead. If neither combination meets the confidence threshold, key points are not used for height estimation. Once a reliable key point pair is selected, the 3D height is estimated assuming body proportions are the same for all people. Then the 3D human model is updated for each target with different 3D height. The radius is also adjusted proportionally to the 3D height. More information about the 2D pose estimator can be found in [Pose Estimation](#pose-estimation) section.
 
 **Detection Boxes as Anchors:** When 2D pose estimator is disabled, for each person, SV3DT algorithm tries to fit the 3D human model to the detection bbox in such a way that the bounding box of the projected 3D human model from the world coordinate system to the camera image plane matches with the detection bbox.
 
@@ -657,7 +650,7 @@ When present, this metadata enables 3D cuboid visualization in DeepStream OSD (f
 
 **NvDs3DTracking schema:** The `NvDs3DTracking` structure in `nvdsmeta_schema.h` holds SV3DT fields used in event messages: `ptWorldFeet`, `ptImgFeet`, `convexHull`, and `bbox3d`. The `bbox3d` member is a `NvDsBbox3dObject` whose `boxes_3d[12]` array stores the `NvDsObj3DBbox` fields in order (centroid, dimensions, rotation, velocity). Object visibility is stored separately at the top level of `NvDsEventMsgMeta` as `visibility`, not inside `NvDs3DTracking`. Set `has3DTracking` when foot-location or 3D-bbox user meta is present so message converters populate the SV3DT schema block.
 
-A figure below shows how the 3D human models can be fitted to the input detection bboxes. Note the current DeepStream OSD only supports 3D cuboid visualization as in right figure. The left figure uses the convex hull of the projected 3D cylinder model on 2D camera image plane. Users can refer to `Miscellaneous Data Output`_ section on how to retrieve the convex hull and create their own script to plot the convex hull.
+A figure below shows how the 3D human models can be fitted to the input detection bboxes. Note the current DeepStream OSD only supports 3D cuboid visualization as in right figure. The left figure uses the convex hull of the projected 3D cylinder model on 2D camera image plane. Users can refer to [Miscellaneous Data Output](#miscellaneous-data-output) section on how to retrieve the convex hull and create their own script to plot the convex hull.
 
 ![Showing 3D human model fitting to un-occluded cases](/assets/images/content/DS_NvMultiObjectTracker-SV3DT-01.png)
 
@@ -798,7 +791,7 @@ The following table summarizes the configuration parameters for the common modul
 |  | onnxFile | Absolute path of the ONNX model file | String | onnxFile: | False |
 |  | modelEngineFile | Absolute path to TensorRT engine file | String | modelEngineFile: | False |
 |  | calibrationTableFile | Absolute path to calibration table, required by INT8 only | String | calibrationTableFile: | False |
-|  | useVPICropScaler | Use NVIDIA's `VPI™ <https://docs.nvidia.com/vpi/index.html>`_ Crop Scaler algorithm instead of built in implementation | Boolean | useVPICropScaler: 0 | False |
+|  | useVPICropScaler | Use NVIDIA's [VPI™](https://docs.nvidia.com/vpi/index.html) Crop Scaler algorithm instead of built in implementation | Boolean | useVPICropScaler: 0 | False |
 
 ## Dynamic Runtime Configuration
 
@@ -884,7 +877,7 @@ As it fully relies on the bbox attributes for data association, the NvSORT's tra
 
 ## NvDeepSORT Tracker
 
-NvDeepSORT tracker utilizes deep learning based object appearance information for accurate object matching in different frames and locations, resulting in enhanced robustness over occlusions and reduced ID switches. It applies a pre-trained re-identification (Re-ID) neural network to extract a feature vector for each object, compares the similarity between different objects using the extracted feature vector with a cosine distance metric, and combines it with a state estimator to perform the data association over frames. Before running NvDeepSORT, Re-ID model needs to be set up following `Setup Sample Re-ID Models`_  and `Customize Re-ID Model`_.
+NvDeepSORT tracker utilizes deep learning based object appearance information for accurate object matching in different frames and locations, resulting in enhanced robustness over occlusions and reduced ID switches. It applies a pre-trained re-identification (Re-ID) neural network to extract a feature vector for each object, compares the similarity between different objects using the extracted feature vector with a cosine distance metric, and combines it with a state estimator to perform the data association over frames. Before running NvDeepSORT, Re-ID model needs to be set up following [Setup Sample Re-ID Models](#setup-sample-re-id-models)  and [Customize Re-ID Model](#customize-re-id-model).
 
 ### Data Association
 
@@ -895,7 +888,6 @@ For the data association in the NvDeepSORT tracker, there are two metrics are us
 
 For the proximity score, the `Mahalanobis` distance between the `i-th` detector object and the `j-th` target is calculated using the target's predicted location and its associated uncertainty:
 
- .. math:
 
 ```
 dist_{ij}=(D_i-Y_j)^TS_j^{-1}(D_i-Y_j)
@@ -947,7 +939,6 @@ Unlike NvSORT and NvDeepSORT where the Kalman filter takes the detection bboxes 
 
 For each tracked target, NvDCF tracker defines a search region around its `predicted` location in the next frame large enough for the same target to be detected in the search region. The location of a target on a new video frame is predicted by using the state estimator module. The `searchRegionPaddingScale` property determines the size of the search region as a multiple of the diagonal of the target’s bounding box. The size of the search region would be determined as:
 
-  .. math:
 
 ```
 SearchRegion_{width}=w+searchRegionPaddingScale*\sqrt{w*h}
@@ -1135,7 +1126,7 @@ Update the DeepStream config file to use `config_tracker_MaskTracker.yml`. When 
 ### Configuration Parameters
 
 A sample configuration for MaskTracker is included in the DeepStream SDK package. This setup uses two files: `config_tracker_MaskTracker.yml`, which should be specified as the `ll-config-file` in DeepStream applications, and an additional file, `config_tracker_module_Segmenter.yml`, which provides the segmentation module settings required by MaskTracker.
-The following table summarizes the configuration parameters defined in `config_tracker_module_Segmenter.yml`. The four key networks utilizing the unified `Model Inference`_ module, are configured as `ImageEncoder`, `MaskDecoder`, `MemoryAttention`, and `MemoryEncoder`, and each network is configured with the corresponding ONNX file and engine file. Input pre-processing parameters are used to convert input frame for `ImageEncoder`.
+The following table summarizes the configuration parameters defined in `config_tracker_module_Segmenter.yml`. The four key networks utilizing the unified [Model Inference](#model-inference) module, are configured as `ImageEncoder`, `MaskDecoder`, `MemoryAttention`, and `MemoryEncoder`, and each network is configured with the corresponding ONNX file and engine file. Input pre-processing parameters are used to convert input frame for `ImageEncoder`.
 
 **Gst-nvtracker MaskTracker low-level tracker configuration properties**
 
@@ -1169,7 +1160,7 @@ Miscellaneous data provides a mechanism to return additional data to the user ou
 
 * Terminated Track List
 * Shadow Tracking Target Data
-* Past-frame Target Data (see `KITTI Track Dump`_)
+* Past-frame Target Data (see [KITTI Track Dump](#kitti-track-dump))
 
 Each type of data has a unique output variable within the miscellaneous data; however, they do share a common data structure, using the unified `NvDsTargetMiscDataBatch` data structure. A buffer pool is used for its memory management, whose size can be set with `user-meta-pool-size`. When the latency for downstream plugins to release the buffers is too long, the buffer pool may be empty so tracker will skip reporting the miscellaneous data for next batch. A warning `gstnvtracker: Unable to acquire a user meta buffer` will be shown, and users can increase the pool size from default 32 to larger values like 64. Specifics for each type of miscellaneous data is defined below in the following sections.
 
@@ -1391,7 +1382,7 @@ ll-config-file=config_tracker_NvDCF_accuracy.yml;config_tracker_NvSORT.yml;confi
 sub-batches=0,1;2;3
 ```
 
-In this example, `sub-batches` can also be configured using option 2 i.e. `sub-batches=2:1:1`. Refer `Gst Properties`_ for details.
+In this example, `sub-batches` can also be configured using option 2 i.e. `sub-batches=2:1:1`. Refer [Gst Properties](#gst-properties) for details.
 
 ### Use-case 2
 
@@ -1422,7 +1413,7 @@ Steps are :
   sub-batches=0,1;2,3
   ```
 
-In this example, `sub-batches` can also be configured using option 2 i.e. `sub-batches=2:2`. Refer `Gst Properties`_ for details.
+In this example, `sub-batches` can also be configured using option 2 i.e. `sub-batches=2:2`. Refer [Gst Properties](#gst-properties) for details.
 
 Similarly, if an application using the same NvDCF configuration file has more than 128 streams (130 streams for example), tracker section can be set to `ll-config-file=config_tracker_NvDCF_accuracy.yml;config_tracker_NvDCF_accuracy.yml`, `sub-batches=65:65`.
 For further details on implementation of sub-batches feature, please refer to a writeup at the end of `nvtracker_proc.cpp` in `nvtracker` plugin's source code.
@@ -1442,7 +1433,7 @@ NVIDIA® pre-trained `PeopleNet` detects person, bag, and face classes. The pre-
 Here `deepstream-app` pipeline is used as an example, which can be naturally extended to other applications. Steps are:
 
 * Download the detector model files [here](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/peoplenet/files?version=deployable_quantized_onnx_v2.6.2), and place the files under `/opt/nvidia/deepstream/deepstream/samples/models/peoplenet`
-* Copy detector config file in below sections `config_infer_primary_PeopleNet.txt` for the specific low level tracker (for example `PeopleNet + NvDCF`_) into work directory: `cp config_infer_primary_PeopleNet.txt /opt/nvidia/deepstream/deepstream/samples/configs/deepstream-app`
+* Copy detector config file in below sections `config_infer_primary_PeopleNet.txt` for the specific low level tracker (for example [PeopleNet + NvDCF](#peoplenet-nvdcf)) into work directory: `cp config_infer_primary_PeopleNet.txt /opt/nvidia/deepstream/deepstream/samples/configs/deepstream-app`
 * Assuming `deepstream-app` config file is `/opt/nvidia/deepstream/deepstream/samples/configs/deepstream-app/deepstream_app_config.txt`, set PGIE and tracker config files in it:
 
 <details>
@@ -1648,7 +1639,7 @@ The following samples demonstrate using `TrafficCamNet` and various trackers wit
 Here `deepstream-app` pipeline is used as an example, which can be naturally extended to other applications. Steps to setup a pipeline are:
 
 * For `TrafficCamNet`, download the detector model files [here](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/trafficcamnet/files?version=pruned_onnx_v1.0.3), and place the files under `/opt/nvidia/deepstream/deepstream/samples/models/trafficcamnet`
-* Copy detector and tracker config files in below sections for the specific tracker type (for example `TrafficCamNet + NvDCF`_) into work directory: `cp config_infer_primary_TrafficCamNet.txt /opt/nvidia/deepstream/deepstream/samples/configs/deepstream-app`
+* Copy detector and tracker config files in below sections for the specific tracker type (for example [TrafficCamNet + NvDCF](#trafficcamnet-nvdcf)) into work directory: `cp config_infer_primary_TrafficCamNet.txt /opt/nvidia/deepstream/deepstream/samples/configs/deepstream-app`
 * Assuming `deepstream-app` config file is `/opt/nvidia/deepstream/deepstream/samples/configs/deepstream-app/deepstream_app_config.txt`, set detector and tracker config files in it like the following:
 
 <details>
@@ -1768,7 +1759,7 @@ This pipeline enables vehicle Re-ID capability during tracking. Such a `deepstre
 
 * **Detector**: TrafficCamNet v1.0.3 (w/ ResNet-18 as backbone)
 * **Post-processing** algorithm for object detection: Hybrid clustering (i.e., DBSCAN + NMS)
-* **Tracker**: NvDeepSORT with configuration as below. No vehicle Re-ID models are included in DeepStream so far, so the user needs to follow `Customize Re-ID Model`_ to setup a vehicle Re-ID model and change `ReID` section in tracker config.
+* **Tracker**: NvDeepSORT with configuration as below. No vehicle Re-ID models are included in DeepStream so far, so the user needs to follow [Customize Re-ID Model](#customize-re-id-model) to setup a vehicle Re-ID model and change `ReID` section in tracker config.
 
 The detector and tracker config files:
 
@@ -1870,7 +1861,7 @@ This pipeline performs more accurate vehicle tracking. For the output visualizat
 
 * **Detector**: TrafficCamNet v1.0.3 (w/ ResNet-18 as backbone)
 * **Post-processing** algorithm for object detection: Hybrid clustering (i.e., DBSCAN + NMS)
-* **Tracker**: NvDCF with configuration as below. No vehicle Re-ID models are included in DeepStream so far, so the user needs to follow `Customize Re-ID Model`_ to setup a vehicle Re-ID model and change `ReID` section in tracker config.
+* **Tracker**: NvDCF with configuration as below. No vehicle Re-ID models are included in DeepStream so far, so the user needs to follow [Customize Re-ID Model](#customize-re-id-model) to setup a vehicle Re-ID model and change `ReID` section in tracker config.
 
 The detector and tracker config files:
 
