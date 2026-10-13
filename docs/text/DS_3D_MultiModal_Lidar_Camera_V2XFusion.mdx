@@ -4,7 +4,7 @@ title: "DeepStream-3D Multi-Modal V2XFusion Setup"
 
 The pipeline efficiently processes data from 4 cameras and 4 corresponding LiDARs, inferencing the 3D bboxes with a new model which combines the [BEVFusion](https://github.com/mit-han-lab/bevfusion/tree/main) model and the [BEVHeight](https://github.com/ADLab-AutoDrive/BEVHeight/tree/main) model together to get more accurate detection result. This model is pre-trained by the [DAIR-V2X dataset](https://github.com/AIR-THU/DAIR-V2X) . The pipeline seamlessly employs `ds3d::datafilter` for triton inference. Ultimately, users can inferencing 4 cameras' videos/images and the corresponding LiDARs' data to detect 3D bboxes of different objects in road. The results can be visualized together with videos/images and projected LiDAR point clouds in different ways by different rendering configurations.
 
-  ![DeepStream 3D Lidar V2XFusion pipeline overview](/assets/images/content/DS3D_lidar_sensor_fusion_v2xfusion_pipeline.png)
+![DeepStream 3D Lidar V2XFusion pipeline overview](/assets/images/content/DS3D_lidar_sensor_fusion_v2xfusion_pipeline.png)
 
 ## Prerequisites
 

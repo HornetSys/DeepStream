@@ -17,7 +17,7 @@ TensorRT 8.5 has a bug for FP16 mode when converting this specific TAO model to 
 
 This is a snapshot for `deepstream-lidar-inference-app` running with lidar data inference objects detection and GLES 3D rendering with 3D bounding box display on screen.
 
-  ![DeepStream Lidar inference for 3D point cloud processing and rendering snapshot](/assets/images/content/DS_3D_lidar_inference_app_snapshot.png)
+![DeepStream Lidar inference for 3D point cloud processing and rendering snapshot](/assets/images/content/DS_3D_lidar_inference_app_snapshot.png)
 
 ## Prerequisites
 
@@ -43,7 +43,7 @@ The application can be configured as different pipelines according to the applic
 
  This pipeline is from lidar point cloud, 3D point cloud inferencing, to the 3D objects data dump.
 
-  ![DeepStream Lidar inference for 3D point cloud processing overview](/assets/images/content/DS_3D_lidar_inference_pointcloud_process.png)
+![DeepStream Lidar inference for 3D point cloud processing overview](/assets/images/content/DS_3D_lidar_inference_pointcloud_process.png)
 
  * `ds3d::dataloader`  loads custom lib `libnvds_lidarfileread.so` and creates a `dataloader` through the `createLidarFileLoader` function. This specific loader is configured by lidar dataset file list `data_config_file`. `Gst-appsrc` connects the `dataloader` into the deepstream pipeline.
 ```
@@ -81,7 +81,7 @@ custom_create_function: createLidarFileDataRender
 
  This pipeline is from lidar point cloud data file, 3D point cloud inferencing, to the 3D point cloud rendering with colors.
 
-  ![DeepStream Lidar inference for 3D point cloud processing and rendering overview](/assets/images/content/DS_3D_lidar_inference_pointcloud_render.png)
+![DeepStream Lidar inference for 3D point cloud processing and rendering overview](/assets/images/content/DS_3D_lidar_inference_pointcloud_render.png)
 
  * `ds3d::dataloader`  loads custom lib `libnvds_lidarfileread.so` and creates a `dataloader` through the `createLidarFileLoader` function. This specific loader is configured by lidar dataset file list `data_config_file`. `Gst-appsrc` connects the `dataloader` into the deepstream pipeline.
 

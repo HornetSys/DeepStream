@@ -11,7 +11,7 @@ DeepStream uses an extensible standard structure for metadata. The basic metadat
 DeepStream attaches metadata to a Gst Buffer by attaching an `NvDsBatchMeta` structure and setting `GstNvDsMetaType.meta_type` to `NVDS_BATCH_GST_META` in the Gst-nvstreammux plugin. When your application processes the Gst Buffer, it can iterate over the attached metadata to find NVDS_BATCH_GST_META.
 The function `gst_buffer_get_nvds_batch_meta()` extracts `NvDsBatchMeta` from the Gst Buffer. (See the declaration in `sources/include/gstnvdsmeta.h.`) See the `deepstream-test1` sample application for an example of this function’s usage. For more details, see the DeepStream SDK API reference documentation in [DeepStream API Guides](/text/DS_API_Guide).
 
-  ![DeepStream MetaData](/assets/images/content/DS_plugin_metadata.png)
+![DeepStream MetaData](/assets/images/content/DS_plugin_metadata.png)
 
 ## User/Custom Metadata Addition inside NvDsBatchMeta
 
