@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 instances:
-  - url: nvidia-deepstream.docs.buildwithfern.com/metropolis/deepstream
-    custom-domain: docs.nvidia.com/metropolis/deepstream
+  - url: https://nvidia-deepstream.docs.buildwithfern.com/deepstream
+    custom-domain: docs.nvidia.com/deepstream
     multi-source: true
 
 
