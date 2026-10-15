@@ -23,4 +23,4 @@ Validate:
 npx fern check
 ```
 
-The site is configured for `docs.nvidia.com/metropolis/deepstream` with the NVIDIA global theme. CI workflows are intentionally not included in this change.
+The site is configured for `docs.nvidia.com/deepstream` with the NVIDIA global theme. CI workflows are intentionally not included in this change.
