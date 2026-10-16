@@ -110,10 +110,13 @@ fi
 PROPRIETARY_TAR_NAME="deepstream-binaries-${PLATFORM}_${GITHUB_ASSET_VERSION}.tar.gz"
 GITHUB_RELEASE_URL="https://github.com/NVIDIA/DeepStream/releases/download/v${GITHUB_RELEASE_TAG}/${PROPRIETARY_TAR_NAME}"
 
-# Debian package name globs (version/arch are baked in at build time).
-PROPRIETARY_DEB_GLOB="deepstream-binaries-${PLATFORM}_*.deb"
+# Debian package name globs for local files in ARTIFACTS_DIR. They are pinned to
+# GITHUB_ASSET_VERSION: an unpinned glob matches every release left behind in
+# artifacts/ by earlier builds and the first (alphabetically oldest) match wins,
+# which installed the previous release's binaries instead of this one's.
+PROPRIETARY_DEB_GLOB="deepstream-binaries-${PLATFORM}_${GITHUB_ASSET_VERSION}_*.deb"
 SAMPLE_TAR_NAME="deepstream-sample-data_${GITHUB_ASSET_VERSION}.tar.gz"
-SAMPLE_DEB_GLOB="deepstream-sample-data_*.deb"
+SAMPLE_DEB_GLOB="deepstream-sample-data_${GITHUB_ASSET_VERSION}.deb"
 
 # Exact deb/tar names and GitHub Release download URLs for each artifact.
 case "$PLATFORM" in
