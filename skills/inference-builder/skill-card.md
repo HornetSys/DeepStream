@@ -26,10 +26,10 @@ Mitigation: Review and scan skill before deployment. <br>
 
 ## Reference(s): <br>
 - [DeepStream SDK](https://developer.nvidia.com/deepstream-sdk) <br>
-- [Inference Builder Schemas Reference](tools/inference_builder/schemas/README.md) <br>
-- [Pipeline Configuration Schema](tools/inference_builder/schemas/config.schema.json) <br>
-- [Platform Guide](tools/inference_builder/doc/platform-guide.md) <br>
-- [Builder Samples Index](tools/inference_builder/builder/samples/README.md) <br>
+- [Inference Builder Schemas Reference](../../tools/inference_builder/schemas/README.md) <br>
+- [Pipeline Configuration Schema](../../tools/inference_builder/schemas/config.schema.json) <br>
+- [Platform Guide](../../tools/inference_builder/doc/platform-guide.md) <br>
+- [Builder Samples Index](../../tools/inference_builder/builder/samples/README.md) <br>
 
 
 ## Skill Output: <br>
