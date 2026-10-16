@@ -115,7 +115,7 @@ On x86 dGPU platforms, run these components inside DeepStream's Triton Inference
 1. Pull the container (`[version]` is the DeepStream version, e.g. `9.1`):
 
 ```bash
-docker pull nvcr.io/nvidia/deepstream:[version]-triton
+docker pull ghcr.io/nvidia/deepstream:[version]-triton-multiarch
 ```
 
 2. Allow applications to connect to the host X display and start the container with the correct GPU id:
@@ -123,7 +123,7 @@ docker pull nvcr.io/nvidia/deepstream:[version]-triton
 ```bash
 xhost +
 docker run --gpus '"device=0"' -it --rm -v /tmp/.X11-unix:/tmp/.X11-unix \
-  -e DISPLAY=$DISPLAY --net=host nvcr.io/nvidia/deepstream:[version]-triton
+  -e DISPLAY=$DISPLAY --net=host ghcr.io/nvidia/deepstream:[version]-triton-multiarch
 ```
 
 ### Jetson (bare-metal)
