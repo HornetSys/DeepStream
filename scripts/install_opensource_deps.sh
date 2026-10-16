@@ -280,8 +280,16 @@ elif stage_is_done deps-half; then
 else
   echo "--- Half v2.1.0 ---"
   mkdir -p /opt/half
-  wget -q -P /tmp https://sourceforge.net/projects/half/files/half/2.1.0/half-2.1.0.zip
-  unzip -o /tmp/half-2.1.0.zip -d /opt/half/
+  # Drop any stale download first: wget -P never overwrites an existing file (it
+  # saves half-2.1.0.zip.1 next to it), so unzip would keep reading an old or
+  # bad copy (e.g. an HTML error page from an earlier failed attempt).
+  rm -f /tmp/half-2.1.0.zip
+  wget -q -O /tmp/half-2.1.0.zip https://sourceforge.net/projects/half/files/half/2.1.0/half-2.1.0.zip
+  if ! unzip -o /tmp/half-2.1.0.zip -d /opt/half/; then
+    echo "error: could not unpack half-2.1.0.zip (the download may have returned an error page); stage deps-half not marked DONE" >&2
+    rm -f /tmp/half-2.1.0.zip
+    exit 1
+  fi
   rm -f /tmp/half-2.1.0.zip
   mark_stage_done deps-half
   echo "    Stage deps-half: DONE"
@@ -306,7 +314,8 @@ else
     # x86_64: download the prebuilt Triton SDK and lay headers/libs into
     # /opt/tritonclient (lib64 -> lib so consumers see a single lib dir).
     TRITON_SDK_ZIP=tritonserver-sdk-2.67.0+nv26.03-cu132-cp312-manylinux_2_28-x86_64.zip
-    wget -q -P /tmp https://github.com/triton-inference-server/server/releases/download/v2.67.0/${TRITON_SDK_ZIP}
+    rm -f "/tmp/${TRITON_SDK_ZIP}"   # wget -P does not overwrite a stale copy
+    wget -q -O "/tmp/${TRITON_SDK_ZIP}" https://github.com/triton-inference-server/server/releases/download/v2.67.0/${TRITON_SDK_ZIP}
     rm -rf /tmp/tritonclient-sdk
     unzip -q -o "/tmp/${TRITON_SDK_ZIP}" -d /tmp/tritonclient-sdk
     mv /tmp/tritonclient-sdk/tritonserver_sdk/install/lib64   /opt/tritonclient/lib
@@ -317,7 +326,8 @@ else
     # as x86). lib64 -> lib so consumers see a single lib dir. The public asset
     # name uses an underscore (tritonserver_sdk) plus a release build id.
     TRITON_SDK_ZIP=tritonserver_sdk-2.68.0+nv26.04-49346681-cu132-cp312-manylinux_2_28-aarch64.zip
-    wget -q -P /tmp https://github.com/triton-inference-server/server/releases/download/v2.68.0/${TRITON_SDK_ZIP}
+    rm -f "/tmp/${TRITON_SDK_ZIP}"   # wget -P does not overwrite a stale copy
+    wget -q -O "/tmp/${TRITON_SDK_ZIP}" https://github.com/triton-inference-server/server/releases/download/v2.68.0/${TRITON_SDK_ZIP}
     rm -rf /tmp/tritonclient-sdk
     unzip -q -o "/tmp/${TRITON_SDK_ZIP}" -d /tmp/tritonclient-sdk
     mv /tmp/tritonclient-sdk/tritonserver_sdk/install/lib64   /opt/tritonclient/lib
