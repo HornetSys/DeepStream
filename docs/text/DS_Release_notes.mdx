@@ -38,36 +38,34 @@ The following new features are supported in this DeepStream SDK release:
 
 -  Support for NVIDIA GB300
 
--  Compatibility with NVIDIA JetPack 7.2
+-  Compatibility with NVIDIA JetPack 7.2.1
 
 -  DeepStream source, samples, tools, skills, documentation, and SDK release
    packages are consolidated in the
    [NVIDIA/DeepStream GitHub mono-repo](https://github.com/NVIDIA/DeepStream).
-   Container images continue to be distributed through [ghcr.io/nvidia/deepstream](https://ghcr.io/nvidia/deepstream).
+   Container images continue to be distributed through the
+   [DeepStream package on GitHub Container Registry (GHCR)](https://github.com/orgs/NVIDIA/packages/container/package/deepstream)
+   under the `ghcr.io/nvidia/deepstream` image namespace.
 
--  Open-source plugins and libraries available in github monorepo:
+-  DeepStream 9.2 adds the following open-source components to the GitHub
+   monorepo. Existing public sample applications remain available under
+   [`src/apps/sample_apps`](https://github.com/NVIDIA/DeepStream/tree/develop/src/apps/sample_apps).
 
-   - **GStreamer elements:** `nvblender`, `nvbufsurfacewrite`,
-     `nvdsvisionencoder`, `nvdstextembedder`, `nvunixfdsink`,
-     `nvunixfdsrc`, `nvv4l2decoder`, `nvv4l2h264enc`, `nvv4l2h265enc`,
-     `nvv4l2av1enc`, `nvv4l2vp8enc`, and `nvv4l2vp9enc` (availability varies
-     by platform and hardware)
-   - **Libraries:** `libnvds_3d_alignment_datafilter.so`,
-     `libnvds_3d_common.so`, `libnvds_3d_dataloader_realsense.so`,
-     `libnvds_3d_depth2point_datafilter.so`, `libnvds_3d_depth_datasource.so`,
-     `libnvds_3d_gl_datarender.so`, `libnvds_3d_gles_ensemble_render.so`,
-     `libnvds_3d_glprocess.so`, `libnvds_3d_multisensor_mixer.so`,
-     `libnvds_3d_sensor_fusion_cluster.so`, `libnvds_3d_video_databridge.so`,
-     `libnvds_batch_jpegenc.so`, `libnvds_csvparser.so`,
-     `libnvds_cudaimage.so`, `libnvds_custom_sequence_preprocess.so`,
-     `libnvds_dewarper.so`, `libnvds_dsanalytics.so`,
-     `libnvds_infercustomparser.so`, `libnvds_inferlogger.so`,
-     `libnvds_inferutils.so`, `libnvds_lidar_custom_postprocess_impl.so`,
-     `libnvds_lidar_custom_preprocess_impl.so`, `libnvds_lidarfilewrite.so`,
-     `libnvds_stats.so`, `libnvds_tritoninferfilter.so`,
-     `libnvdsgst_3d_gst.so`, `libnvdsgst_helper.so`,
-     `libnvdsgst_inferbase.so`, `libnvdsgst_sparse4d.so`,
-     `libnvdsgst_tensor.so`, `libnvv4l2.so`, and `libnvv4lconvert.so`
+| Component type | Components | Monorepo location |
+| --- | --- | --- |
+| Sample application added in DeepStream 9.2 | `deepstream-kitti-overlay` | [`src/apps/sample_apps/deepstream-kitti-overlay`](https://github.com/NVIDIA/DeepStream/tree/develop/src/apps/sample_apps/deepstream-kitti-overlay) |
+| GStreamer elements | `nvblender`<br />`nvbufsurfacewrite`<br />`nvdsvisionencoder`<br />`nvdstextembedder`<br />`nvunixfdsink`<br />`nvunixfdsrc`<br />`nvv4l2decoder`<br />`nvv4l2h264enc`<br />`nvv4l2h265enc`<br />`nvv4l2av1enc`<br />`nvv4l2vp8enc`<br />`nvv4l2vp9enc` | [`src/gst-plugins`](https://github.com/NVIDIA/DeepStream/tree/develop/src/gst-plugins)<br />(Availability varies by platform and hardware.) |
+| Libraries | `libnvds_3d_alignment_datafilter.so`<br />`libnvds_3d_common.so`<br />`libnvds_3d_dataloader_realsense.so`<br />`libnvds_3d_depth2point_datafilter.so`<br />`libnvds_3d_depth_datasource.so`<br />`libnvds_3d_gl_datarender.so`<br />`libnvds_3d_gles_ensemble_render.so`<br />`libnvds_3d_glprocess.so`<br />`libnvds_3d_multisensor_mixer.so`<br />`libnvds_3d_sensor_fusion_cluster.so`<br />`libnvds_3d_video_databridge.so`<br />`libnvds_batch_jpegenc.so`<br />`libnvds_csvparser.so`<br />`libnvds_cudaimage.so`<br />`libnvds_custom_sequence_preprocess.so`<br />`libnvds_dewarper.so`<br />`libnvds_dsanalytics.so`<br />`libnvds_infercustomparser.so`<br />`libnvds_inferlogger.so`<br />`libnvds_inferutils.so`<br />`libnvds_lidar_custom_postprocess_impl.so`<br />`libnvds_lidar_custom_preprocess_impl.so`<br />`libnvds_lidarfilewrite.so`<br />`libnvds_stats.so`<br />`libnvds_tritoninferfilter.so`<br />`libnvdsgst_3d_gst.so`<br />`libnvdsgst_helper.so`<br />`libnvdsgst_inferbase.so`<br />`libnvdsgst_sparse4d.so`<br />`libnvdsgst_tensor.so`<br />`libnvv4l2.so`<br />`libnvv4lconvert.so` | [`src`](https://github.com/NVIDIA/DeepStream/tree/develop/src) |
+
+### Deprecated and Removed Components
+
+The following legacy components were deprecated with DeepStream 9.1 and are not
+included in the DeepStream 9.2 GitHub monorepo.
+
+| Component type | Components |
+| --- | --- |
+| Sample applications | `deepstream-audio`<br />`deepstream-avsync`<br />`deepstream-mrcnn-test`<br />`deepstream-segmentation-test`<br />`deepstream_asr_app`<br />`deepstream_asr_tts_app` |
+| GStreamer plugins | `gst-nvdsA2Vtemplate`<br />`gst-nvdsaudiotemplate`<br />`gst-nvdsspeech`<br />`gst-nvdstexttospeech` |
 
 
 ## DS 9.1 (Previous Release)
@@ -289,6 +287,10 @@ and QA but not resolved in this release.
    -  [deepstream_tao_apps](https://github.com/NVIDIA-AI-IOT/deepstream_tao_apps)
    -  [deepstream_tools](https://github.com/NVIDIA-AI-IOT/deepstream_tools)
    -  [deepstream_dockers](https://github.com/NVIDIA-AI-IOT/deepstream_dockers)
+   -  [deepstream_libraries](https://github.com/NVIDIA-AI-IOT/deepstream_libraries)
+   -  [inference_builder (IB)](https://github.com/NVIDIA-AI-IOT/inference_builder)
+   -  [auto-magic-calib (AMC)](https://github.com/NVIDIA-AI-IOT/auto-magic-calib)
+   -  [DeepStream_Coding_Agent](https://github.com/NVIDIA-AI-IOT/DeepStream_Coding_Agent)
 
 -  On vGPU, only CUDA device memory NVBUF_MEM_CUDA_DEVICE supported.
 
@@ -362,11 +364,6 @@ and QA but not resolved in this release.
 -  On Jetson Orin, `deepstream-image-decode-test` with `nvinfer` or `nvinferserver` crashes (SIGSEGV)
    in Docker due to hardware NVJPEG decoder (`nvjpegdec`) failing to initialize.
    Workaround: Set `export GST_PLUGIN_FEATURE_RANK="nvjpegdec:0"` before running the app to fall back to software JPEG decode.
-
--  On Jetson Orin Docker, `deepstream-3d-lidar-sensor-fusion` V2XFusion test fails with all three
-   configs (default, single_batch, single_batch_iot). Root cause: `kmod` is not installed in the
-   container, causing `nvjpegdec` to operate in dGPU mode.
-   Workaround: Run `apt install kmod` inside the container.
 
 -  On x86 and Jetson (Docker and deb), running `deepstream-3d-lidar-sensor-fusion` with the
    `ds3d_lidar_video_sensor_v2x_fusion_single_batch_iot.yml` config crashes on startup with

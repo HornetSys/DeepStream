@@ -268,23 +268,23 @@ In addition to the output data from an element, users may have a keen interest i
 
 The following is a list of currently supported metadata objects:
 
-| Metadata class | Description |  |  |
-| --- | --- | --- | --- |
-| MetaData | "base class of all the metadata" |  |  |
-| BatchMetaData | "metadata created through nvstreammux | acting as the root of all the other metadata and supporting iterating FrameMetaData and DisplayMetadata through the batch" |  |
-| FrameMetaData | "metadata associated with a specific video frame | iterable within the BatchMetaData" |  |
-| RoiMetadata | "metadata that describes a region of interest." |  |  |
-| UserMetaData | "user defined metadata" |  |  |
-| ObjectMetadata | "metadata that describes a detected object | iterable with the FrameMetaData." |  |
-| ClassifierMetadata | "metadata that contains the classification information of an object | iterable within the ObjectMetadata or RoiMetaData." |  |
-| DisplayMetadata | "metadata that describes the display properties | being used by the nvdsosd to draw various shapes and text on a video frame | iterable with the FrameMetaData." |
-| EventMessageUserMetadata | "a specific type ofuser metadata for generating an event message | once appended to the FrameMetaData | it will be consumed by downstream message converter." |
-| PreprocessBatchUserMetadata | "a specific type of user metadata for describing the preprocess result of a batch of frames." |  |  |
-| TensorOutputUserMetadata | "a specific type of user metadata for describing the output tensor from a model | iterable within the FrameMetaData or RoiMetaData." |  |
-| SegmentationUserMetadata | "a specific type of user metadata for describing the segmentation result of a frame | iterable within the FrameMetaData or RoiMetaData." |  |
-| ObjectVisibilityUserMetadata | "a specific type of user metadata that contains a float value indicating the visibility of an object." |  |  |
-| ObjectImageFootLocationUserMetadata | "a specific type of user metadata that contains a pair of float values indicating the foot location of an object." |  |  |
-| TrackerPastFrameUserMetadata | "a specific type of user metadata carrying the past frame information of a tracker." |  |  |
+| Metadata class | Description |
+| --- | --- |
+| MetaData | base class of all the metadata |
+| BatchMetaData | metadata created through nvstreammux, acting as the root of all the other metadata and supporting iterating FrameMetaData and DisplayMetadata through the batch |
+| FrameMetaData | metadata associated with a specific video frame, iterable within the BatchMetaData |
+| RoiMetadata | metadata that describes a region of interest. |
+| UserMetaData | user defined metadata |
+| ObjectMetadata | metadata that describes a detected object, iterable with the FrameMetaData. |
+| ClassifierMetadata | metadata that contains the classification information of an object, iterable within the ObjectMetadata or RoiMetaData. |
+| DisplayMetadata | metadata that describes the display properties, being used by the nvdsosd to draw various shapes and text on a video frame, iterable with the FrameMetaData. |
+| EventMessageUserMetadata | a specific type ofuser metadata for generating an event message, once appended to the FrameMetaData, it will be consumed by downstream message converter. |
+| PreprocessBatchUserMetadata | a specific type of user metadata for describing the preprocess result of a batch of frames. |
+| TensorOutputUserMetadata | a specific type of user metadata for describing the output tensor from a model, iterable within the FrameMetaData or RoiMetaData. |
+| SegmentationUserMetadata | a specific type of user metadata for describing the segmentation result of a frame, iterable within the FrameMetaData or RoiMetaData. |
+| ObjectVisibilityUserMetadata | a specific type of user metadata that contains a float value indicating the visibility of an object. |
+| ObjectImageFootLocationUserMetadata | a specific type of user metadata that contains a pair of float values indicating the foot location of an object. |
+| TrackerPastFrameUserMetadata | a specific type of user metadata carrying the past frame information of a tracker. |
 
 More details about Deepstream Metadata can be found [here](/text/DS_plugin_metadata).
 
@@ -364,10 +364,10 @@ Application developers can employ a buffer probe to retrieve the output buffer g
 
 | Interface name | Method | description |
 | --- | --- | --- |
-| IBufferObserver | handleBuffer | "access each processed buffer in read only mode" |
-| IBufferOperator | handleBuffer | "access each processed buffer in read write mode" |
-| IBatchMetadataObserver | handleMetadata | "access the batch metadata in read only mode" |
-| IBatchMetadataOperator | handleMetadata | "access the batch metadata in read write mode" |
+| IBufferObserver | handleBuffer | access each processed buffer in read only mode |
+| IBufferOperator | handleBuffer | access each processed buffer in read write mode |
+| IBatchMetadataObserver | handleMetadata | access the batch metadata in read only mode |
+| IBatchMetadataOperator | handleMetadata | access the batch metadata in read write mode |
 
 #### SignalHandler
 
