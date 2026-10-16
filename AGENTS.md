@@ -6,18 +6,25 @@ repository. For product/user documentation, read `README.md`; this file is about
 
 ## Project overview
 
-NVIDIA DeepStream SDK 9.1 repository — a GStreamer-based framework for multi-stream,
+NVIDIA DeepStream SDK 9.2 repository — a GStreamer-based framework for multi-stream,
 multi-model video-analytics pipelines on NVIDIA GPUs (x86 dGPU, Jetson, SBSA/DGX
-Spark). This repo holds the full DeepStream 9.1 source plus prebuilt proprietary
+Spark). This repo holds the full DeepStream 9.2 source plus prebuilt proprietary
 runtime assets (downloaded from GitHub Releases), build tooling, agent skills, and example prompts.
 
 ## Repository layout
 
 - `src/` — all buildable source: `gst-plugins/`, `gst-utils/`, `utils/`,
   `apps/{sample_apps,reference_apps,tao_apps}/`, `service-maker/`. See `src/README.md`.
-  `src/service-maker/` is the source for the `pyservicemaker` Python flow API — it is
-  built and installed as part of `bash build/build.sh` and is also included in the
-  all-in-one SDK deb/tarball. Do **not** use `deepstream_libraries-*.whl` as a substitute.
+  `src/service-maker/` holds the Service Maker public headers, CMake find-module, and
+  under `sources/`: the runtime core (`core/` → `libnvds_service_maker.so`), the
+  `ds-launch` YAML-graph runner (`engine/`), the `pyservicemaker` Python bindings
+  (`python/`), loadable modules, and C++/Python sample apps. The `service-maker`
+  build stage compiles core and engine first, then the apps and modules that link
+  against them, and finally builds the `pyservicemaker` wheel — which overwrites the
+  prebuilt wheel installed by the `artifacts` stage, so the bindings always match the
+  `libnvds_service_maker.so` they were built against. `scripts/install.sh` then
+  `pip install`s it. Do **not** use `deepstream_libraries-*.whl` as a substitute for
+  `pyservicemaker`.
 - `build/` — `build.sh` (top-level build driver) and `BUILD.md` (authoritative build guide).
   During the build, `build/build.sh` downloads GitHub Release assets into a temporary
   `artifacts/` directory; this is created automatically and removed after a successful install.
@@ -28,16 +35,19 @@ runtime assets (downloaded from GitHub Releases), build tooling, agent skills, a
   packages (`deepstream-binaries-*`, `deepstream-sample-data-*`) as part of the source
   build flow — do not run it directly for a manual bare-metal install.
 - `skills/`, `example_prompts/` — agent assets (see "Skills & prompts" below).
-- `tools/` (`inference_builder/`, `auto-magic-calib/` — both in-repo), `deepstream_libraries/`, `deepstream_dockers/`.
+- `tools/inference_builder/` — Python/Jinja tool for generating executable vision AI
+  pipelines; see the scoped guidance below.
+- Other top-level areas include `tools/` (`auto-magic-calib/`), `deepstream_libraries/`, and
+  `deepstream_dockers/`.
 
 ## GitHub Release Assets
 
-Packages are available at https://github.com/NVIDIA/DeepStream/releases/tag/v9.1.0.
+Packages are available at https://github.com/NVIDIA/DeepStream/releases/tag/v9.2.0.
 `build/build.sh` downloads them automatically; for manual installs, pick from below.
 
 - **Bare-metal DeepStream install** — use the all-in-one package for your platform:
-  `deepstream-9.1_9.1.0-1_amd64.deb` (x86, ~970 MB) or `deepstream-9.1_9.1.0-1_arm64.deb` (Jetson, ~615 MB).
-  Tarball equivalents: `deepstream_sdk_v9.1.0_x86_64.tbz2` / `deepstream_sdk_v9.1.0_jetson.tbz2`.
+  `deepstream-9.2_9.2.0-1_amd64.deb` (x86, ~973 MB) or `deepstream-9.2_9.2.0-1_arm64.deb` (Jetson, ~675 MB).
+  Tarball equivalents: `deepstream_sdk_v9.2.0_x86_64.tbz2` / `deepstream_sdk_v9.2.0_jetson.tbz2`.
   These are the only packages needed for a full bare-metal install.
 - **`deepstream-sample-data_*`** — contains sample models, configs, and video streams.
   Already bundled inside the full SDK packages above; no need to install separately.
@@ -62,8 +72,8 @@ bash build/build.sh
   `sample_apps`, `yolo`, `tao_apps`, `reference_apps`, `service-maker`) → `install.sh`.
 - Common flags: `--only=STAGE[,STAGE]`, `--resume`, `--skip-deps`, `--skip-artifacts`,
   `--install-method=deb|tar`, `--verbose`, `-j N`.
-- Defaults: `CUDA_VER=13.2`, `NVDS_VERSION=9.1.1` (install tree uses the truncated `9.1`). Outputs install to
-  `/opt/nvidia/deepstream/deepstream-9.1/`.
+- Defaults: `CUDA_VER=13.2`, `NVDS_VERSION=9.2.0` (install tree uses the truncated `9.2`). Outputs install to
+  `/opt/nvidia/deepstream/deepstream-9.2/`.
 - Each run writes a transcript to `build/build.log`; stage state lives in
   `build/.stage-state*` (enables `--resume`).
 - Full details, per-platform prerequisites, and CLI reference: **`build/BUILD.md`**.
@@ -82,8 +92,8 @@ After the first install, clear the GStreamer plugin cache: `rm -rf ~/.cache/gstr
 | Clear GStreamer plugin cache | `rm -rf ~/.cache/gstreamer-1.0/` |
 | Run DeepStream reference app | `deepstream-app -c <config-file>` |
 | Print environment (for diagnostics) | `bash scripts/print_env.sh` |
-| Install full SDK (bare-metal, x86) | deb: `sudo apt-get install -y ./deepstream-9.1_9.1.0-1_amd64.deb` \| tar: `tar -xjvf deepstream_sdk_v9.1.0_x86_64.tbz2 -C / && sudo ldconfig` |
-| Install full SDK (bare-metal, Jetson) | deb: `sudo apt-get install -y ./deepstream-9.1_9.1.0-1_arm64.deb` \| tar: `tar -xjvf deepstream_sdk_v9.1.0_jetson.tbz2 -C / && sudo ldconfig` |
+| Install full SDK (bare-metal, x86) | deb: `sudo apt-get install -y ./deepstream-9.2_9.2.0-1_amd64.deb` \| tar: `tar -xjvf deepstream_sdk_v9.2.0_x86_64.tbz2 -C / && sudo ldconfig` |
+| Install full SDK (bare-metal, Jetson) | deb: `sudo apt-get install -y ./deepstream-9.2_9.2.0-1_arm64.deb` \| tar: `tar -xjvf deepstream_sdk_v9.2.0_jetson.tbz2 -C / && sudo ldconfig` |
 
 ## Conventions — DOs and DON'Ts
 
@@ -107,7 +117,7 @@ After the first install, clear the GStreamer plugin cache: `rm -rf ~/.cache/gstr
 - Don't attempt bare-metal install on SBSA / DGX Spark — build inside the NVIDIA
   SBSA Docker container; the `artifacts` stage is skipped there automatically.
 - Don't install `deepstream-binaries-*` or `deepstream-sample-data-*` for a bare-metal
-  DeepStream install — use `deepstream-9.1_*.deb` (the all-in-one package). Component
+  DeepStream install — use `deepstream-9.2_*.deb` (the all-in-one package). Component
   packages are subsets bundled in the full SDK; `build/build.sh` installs them
   automatically. Install them separately only when updating a specific component.
 - Don't install `deepstream_libraries-*.whl` for a bare-metal DS install or when the full
@@ -115,6 +125,69 @@ After the first install, clear the GStreamer plugin cache: `rm -rf ~/.cache/gstr
   NvImageCodec, and PyNvVideoCodec reference app bindings only.
 - This project is **not accepting external contributions**; do not add
   contribution/PR scaffolding.
+
+## Inference Builder (`tools/inference_builder/`)
+
+This section applies only within `tools/inference_builder/`; paths below are relative
+to that directory. Inference Builder combines backend templates, shared libraries,
+and user processors into executable inference pipelines.
+
+- `builder/` — CLI and samples; `lib/` — generated-pipeline libraries;
+  `templates/` — backend, API-server, and responder Jinja templates.
+- `schemas/` — configuration schemas; `mcp/` — agent-facing MCP server;
+  `doc/` — user documentation.
+
+Set up its component-local environment with:
+
+```bash
+cd tools/inference_builder
+python3 -m venv .venv
+source .venv/bin/activate
+pip3 install -r requirements.txt
+```
+
+When extending it:
+
+- **Backend:** add `templates/backend/<name>.jinja.py` with
+  `<name>Backend(ModelBackend)`, implementing `__init__(config)` and a yielding
+  `__call__`. Explicit batches arrive in `*args`; implicit named tensors in
+  `**kwargs`. Add samples/tests and update schemas/docs.
+- **API server:** add
+  `templates/api_server/<name>/route/inference.jinja2` and `responder.jinja.py`;
+  the route parses requests and calls the pipeline, while the responder converts
+  requests and results.
+- **Responder:** add one async `{{ name }}` method in
+  `templates/responder/<name>.jinja.py`, return `(status_code, response)`, and
+  register the matching key under `server.responders` in pipeline YAML.
+- **MCP tool:** update `list_tools` and `call_tool` in `mcp/mcp_server.py`, add an
+  async implementation method, and test it in `mcp/test_mcp_server.py`.
+
+Keep behavior, configuration, APIs, schemas, docs, samples, and tests synchronized.
+Update `schemas/README.md` and the root `skills/inference-builder/SKILL.md` when applicable;
+also update `mcp/README-MCP.md` and `mcp/usage.md` for MCP changes. Update this root
+`AGENTS.md` only when agent workflow guidance changes.
+
+Use 4-space Python indentation, type-annotated signatures, f-strings, `snake_case`
+functions/YAML keys, `PascalCase` classes, and `UPPER_SNAKE_CASE` constants. Group
+imports as standard-library, third-party, then local. Use `lib.utils.get_logger`,
+OmegaConf, the custom `Error`/`EnhancedError`/`ErrorFactory` hierarchy, and specific
+exception handlers. Follow the repository SPDX rule; use the appropriate comment
+syntax in Python, Jinja, and YAML. Tests use pytest and `test_*.py` names.
+
+Run integration tests from the activated component venv:
+
+```bash
+cd tools/inference_builder
+source .venv/bin/activate
+cd builder/tests
+./run_tests.sh -c <config.json> [options]
+# or: python test_docker_builds.py --config-file <config.json> [options]
+```
+
+Test-config paths resolve relative to the config file and are validated by
+`builder/tests/test_docker_builds.py`. Tests build/run containers with host networking
+and cover serverless completion or HTTP health, requests, results, and optional
+validation.
 
 ## Skills & prompts (for agent discovery)
 
