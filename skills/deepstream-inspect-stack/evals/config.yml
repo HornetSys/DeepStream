@@ -1,0 +1,9 @@
+schema_version: 1
+
+harbor:
+  # Keep Harbor fan-out low enough for the shared Astra sandbox quota in CI.
+  task_source: evals_json
+  n_attempts: 1
+  n_concurrent: 1
+  max_agents: 1
+  timeout_multiplier: 2.0

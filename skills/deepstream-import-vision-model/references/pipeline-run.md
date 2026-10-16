@@ -152,7 +152,9 @@ NVIDIA NGC TAO models (trafficcamnet, peoplenet, TrafficCamNet Transformer Lite,
 - **Library path**: `/opt/nvidia/deepstream/deepstream/lib/libnvds_infercustomparser.so` — NOT `libnvds_infercustomparser_tao.so` (even if the NGC YAML config suggests it).
 - Custom parse function names: `NvDsInferParseCustomDDETRTAO`, `NvDsInferParseCustomRTDETRTAO`, etc.
 - **No custom parser compilation needed** — point `custom-lib-path` at the system library and `parse-bbox-func-name` at the TAO function.
-- KITTI dump from `deepstream-app` may emit zero-valued bbox coordinates for DETR/RT-DETR parsers even when detections are correct. Verify visually with JPEG frame extraction instead.
+- If a DETR/RT-DETR KITTI dump emits zero-valued coordinates, treat the
+  structured-output gate as failed and record parser/config incompatibility.
+  JPEG evidence is diagnostic and cannot replace the KITTI gate.
 
 ### `network-type` vs `model-type` — use `network-type=0`
 
@@ -305,7 +307,8 @@ case "$SAMPLE_OUT" in
 esac
 ```
 
-If **no detections appear**, the most common cause is wrong `net-scale-factor` — update the config and re-run.
+If **no detections appear**, preserve the initial evidence and use the bounded
+KITTI repair rule below; do not make an open-ended config change.
 
 ### 6g: KITTI Dump — Verify Detections Programmatically
 
@@ -334,13 +337,26 @@ cat models/$MODEL_NAME/samples/kitti_output/*.txt 2>/dev/null \
   | awk '{print $1}' | sort | uniq -c | sort -rn | head -10
 ```
 
-**Validation gate**: If `KITTI_FILES == 0` or all files are empty, detections are broken. Do NOT proceed to Step 7.
+**Validation gate — ordered single-repair procedure:**
+
+1. If `KITTI_FILES == 0`, all files are empty, or the detection rate is below
+   90%, stop before Step 7 benchmarks and preserve logs/visual evidence.
+2. Permit zero or one repair total. Choose only the highest-priority cause
+   established by the initial logs/tensors: parser zero-initialization,
+   preprocessing correction, then `nvinfer` config correction. Without an
+   evidenced cause, retain `FAIL` and do not rerun.
+3. Apply that one repair; write `kitti_repair.json` with `attempt: 1`,
+   `repair_type`, `causal_evidence`, `diff_path`, `initial_log`, and `rerun_log`;
+   then rerun once.
+4. If the rerun fails, preserve both logs, mark `FAIL`, and stop. No second
+   repair is allowed. Never alter model code, labels, thresholds, or media to
+   force a pass.
 
 ```bash
 # MANDATORY hard stop — do not comment out or remove this check
 if [ "$KITTI_FILES" -eq 0 ]; then
   echo "ERROR: KITTI validation FAILED — zero detection files written."
-  echo "Fix net-scale-factor, parser output format, or config before retrying."
+  echo "Use the documented single evidence-backed KITTI repair, or stop."
   echo "Do NOT proceed to Step 7 benchmarks with broken detections."
   exit 1
 fi
@@ -350,7 +366,7 @@ echo "Detection rate: $FRAMES_WITH_DETECTIONS / $KITTI_FILES frames = ${DETECTIO
 if python3 -c "exit(0 if $FRAMES_WITH_DETECTIONS/$KITTI_FILES >= 0.9 else 1)"; then
   echo "KITTI validation PASSED (>= 90% frames with detections)"
 else
-  echo "ERROR: Detection rate ${DETECTION_RATE}% < 90% threshold. Fix parser before proceeding."
+  echo "ERROR: Detection rate ${DETECTION_RATE}% < 90%; apply no more than the one documented repair."
   exit 1
 fi
 ```
@@ -417,7 +433,7 @@ Only **2 DS pipeline runs** characterise DS overhead vs trtexec.
 
 Both runs go through `deepstream-app` with `[application] enable-perf-measurement=1` (wrapped by `.claude/skills/deepstream-import-vision-model/scripts/deepstream/ds-perf-run.sh`). FPS is parsed from the canonical `**PERF:` lines DeepStream emits at the configured measurement interval. This replaces the older `gst-launch-1.0 ... ! fpsdisplaysink` path so the runtime no longer depends on `gstreamer1.0-plugins-bad`.
 
-> **PERF line format**: `**PERF: <fps_run> (<fps_avg>)` — one float per active source. The helper script averages the per-stream instantaneous FPS across the last few measurement windows; the parser below mirrors that contract.
+> **PERF line format**: `**PERF: <fps_run> (<fps_avg>)` — one float per active source. The helper writes a per-source JSON result: aggregate FPS sums every source, and real-time validation requires each source to sustain 30 FPS across the final five measurement windows. Read that result below; do not extrapolate source 0.
 
 **DS Run 1 — Calibration at PEAK_GPU_STREAMS streams:**
 
@@ -437,8 +453,7 @@ bash .claude/skills/deepstream-import-vision-model/scripts/deepstream/ds-perf-ru
   "$LOG_RUN1" \
   "$VIDEO"
 
-FPS_RUN1=$(grep -oP '\*\*PERF:\s*\K[0-9.]+' "$LOG_RUN1" | tail -10 | python3 -c "
-import sys; vals=[float(l) for l in sys.stdin if l.strip()]; print(round(sum(vals)/len(vals),2) if vals else 0)")
+FPS_RUN1=$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(d["aggregate_average_fps"]/d["streams"])' "$LOG_RUN1.json") || exit 4
 python3 -c "exit(0 if float('$FPS_RUN1') > 0 else 1)" || \
   { echo "ERROR: FPS parsing failed for Run 1 — check $LOG_RUN1"; exit 1; }
 
@@ -462,13 +477,12 @@ bash .claude/skills/deepstream-import-vision-model/scripts/deepstream/ds-perf-ru
   "$LOG_RUN2" \
   "$VIDEO"
 
-FPS_RUN2=$(grep -oP '\*\*PERF:\s*\K[0-9.]+' "$LOG_RUN2" | tail -10 | python3 -c "
-import sys; vals=[float(l) for l in sys.stdin if l.strip()]; print(round(sum(vals)/len(vals),2) if vals else 0)")
+FPS_RUN2=$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(d["aggregate_average_fps"]/d["streams"])' "$LOG_RUN2.json") || exit 4
 python3 -c "exit(0 if float('$FPS_RUN2') > 0 else 1)" || \
   { echo "ERROR: FPS parsing failed for Run 2 — check $LOG_RUN2"; exit 1; }
 
 TOTAL_FPS_RUN2=$(python3 -c "print(round(float('$FPS_RUN2') * $N, 2))")
-RT_CONFIRMED=$(python3 -c "print('YES' if float('$FPS_RUN2') >= 30 else 'NO')")
+RT_CONFIRMED=$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print("YES" if d["status"] == "PASS" else "NO")' "$LOG_RUN2.json") || exit 4
 echo "DS Run 2: $N streams | FPS/stream=$FPS_RUN2 | total=$TOTAL_FPS_RUN2 img/s | Real-time: $RT_CONFIRMED"
 STEP7_RUN2_END=$(date +%s.%N)
 STEP7_RUN2_DURATION=$(python3 -c "print(round($STEP7_RUN2_END - $STEP7_RUN2_START, 2))")   # bc is not in the container; python3 always is
@@ -502,10 +516,9 @@ while [ "$RT_CONFIRMED" = "NO" ] && [ "$RETRIES" -lt 5 ]; do
     "$N" \
     "$LOG_RUN2" \
     "$VIDEO"
-  FPS_RUN2=$(grep -oP '\*\*PERF:\s*\K[0-9.]+' "$LOG_RUN2" | tail -10 | python3 -c "
-import sys; vals=[float(l) for l in sys.stdin if l.strip()]; print(round(sum(vals)/len(vals),2) if vals else 0)")
+  FPS_RUN2=$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(d["aggregate_average_fps"]/d["streams"])' "$LOG_RUN2.json") || exit 4
   TOTAL_FPS_RUN2=$(python3 -c "print(round(float('$FPS_RUN2') * $N, 2))")
-  RT_CONFIRMED=$(python3 -c "print('YES' if float('$FPS_RUN2') >= 30 else 'NO')")
+  RT_CONFIRMED=$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print("YES" if d["status"] == "PASS" else "NO")' "$LOG_RUN2.json") || exit 4
   RETRIES=$((RETRIES + 1))
   echo "Retry $RETRIES: $N streams | FPS/stream=$FPS_RUN2 | Real-time: $RT_CONFIRMED"
   [ "$N" -le 1 ] && break

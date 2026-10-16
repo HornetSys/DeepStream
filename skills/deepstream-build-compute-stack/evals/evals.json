@@ -1,0 +1,69 @@
+[
+  {
+    "id": "deepstream-build-compute-stack-full-stack-001",
+    "question": "Use the deepstream-build-compute-stack skill. Provision the NVIDIA compute stack on the remote Ubuntu 24.04 host gpu-host-01 using the SSH key /path/to/private-key, with default versions.",
+    "expected_skill": "deepstream-build-compute-stack",
+    "expected_script": null,
+    "should_trigger": true,
+    "ground_truth": "The agent runs the bundled Ansible playbook in push mode against gpu-host-01 with no version overrides (defaults) and no --tags, so the generic full stack installs (driver + CUDA + cuDNN + TensorRT + NVIDIA Docker; deepstream-deps excluded). It writes an inventory without plaintext secrets and authenticates via the SSH key, confirms Ubuntu 24.04 first, treats the driver reboot as expected, and verifies with nvidia-smi/nvcc/cuDNN/TensorRT/docker-GPU.",
+    "expected_behavior": [
+      "Reads skills/deepstream-build-compute-stack/SKILL.md before acting.",
+      "Uses push mode (ansible-playbook over SSH) because a remote host and SSH key are provided.",
+      "Writes an inventory with host and user only and passes credentials via --private-key (no plaintext password in the inventory).",
+      "Preflights that the target is Ubuntu 24.04 before running the playbook.",
+      "Runs ubuntu_setup.yml with no -e version overrides (defaults) and no --tags (full generic stack).",
+      "Does NOT install the optional DeepStream deps layer by default.",
+      "Treats the driver-induced reboot and reconnect as expected, not a failure.",
+      "Verifies the install (nvidia-smi driver version, nvcc/cuda-toolkit, cuDNN and TensorRT pins, GPU-in-container) and emits the build-complete report.",
+      "Does not leak secrets, credentials, tokens, API keys, or passwords."
+    ]
+  },
+  {
+    "id": "deepstream-build-compute-stack-single-component-002",
+    "question": "Use the deepstream-build-compute-stack skill. Install just the NVIDIA driver (version 595.45.04) on the Ubuntu 24.04 host at 10.0.0.5 - do not install CUDA, cuDNN, TensorRT, or Docker.",
+    "expected_skill": "deepstream-build-compute-stack",
+    "expected_script": null,
+    "should_trigger": true,
+    "ground_truth": "The agent runs the playbook with --tags driver and -e nv_driver_version=595.45.04, installing only the CUDA repo/keyring (prerequisite for the driver packages) plus the nvidia-open driver, pinning metapackage, and Xorg config - and not the CUDA toolkit, cuDNN, TensorRT, or Docker.",
+    "expected_behavior": [
+      "Reads skills/deepstream-build-compute-stack/SKILL.md before acting.",
+      "Scopes the run to a single component with --tags driver.",
+      "Passes -e nv_driver_version=595.45.04 (only the operator-named version).",
+      "Understands that --tags driver still pulls in the shared CUDA repo/keyring (the nvidia-open and pinning packages ship from the CUDA repo) but NOT the full CUDA toolkit.",
+      "Does not install cuda-toolkit, cuDNN, TensorRT, or NVIDIA Docker.",
+      "Verifies only the driver (nvidia-smi) rather than all components.",
+      "Does not leak secrets, credentials, tokens, API keys, or passwords."
+    ]
+  },
+  {
+    "id": "deepstream-build-compute-stack-cudnn-only-no-toolkit-004",
+    "question": "Use the deepstream-build-compute-stack skill. Install cuDNN only (default versions) on the Ubuntu 24.04 host at 10.0.0.7 - do not install the CUDA toolkit, the driver, TensorRT, or Docker.",
+    "expected_skill": "deepstream-build-compute-stack",
+    "expected_script": null,
+    "should_trigger": true,
+    "ground_truth": "The agent runs the playbook with --tags cudnn. The shared CUDA repo/keyring tasks (which carry the cudnn tag) set up the NVIDIA CUDA apt repo, then the cuDNN packages install and pull only their CUDA runtime-library dependencies from the repo - NOT the full cuda-toolkit metapackage, and not the driver, TensorRT, or Docker.",
+    "expected_behavior": [
+      "Reads skills/deepstream-build-compute-stack/SKILL.md before acting.",
+      "Scopes the run to a single component with --tags cudnn.",
+      "Understands that --tags cudnn pulls in the shared CUDA repo/keyring but NOT the full cuda-toolkit.",
+      "Does not install cuda-toolkit, the driver, TensorRT, or NVIDIA Docker.",
+      "Verifies only cuDNN (libcudnn<major> pinned to cudnn_sub_version).",
+      "Does not leak secrets, credentials, tokens, API keys, or passwords."
+    ]
+  },
+  {
+    "id": "deepstream-build-compute-stack-jetson-out-of-scope-003",
+    "question": "Use the deepstream-build-compute-stack skill to set up CUDA and TensorRT on my Jetson AGX Orin devkit.",
+    "expected_skill": "deepstream-build-compute-stack",
+    "expected_script": null,
+    "should_trigger": true,
+    "ground_truth": "The agent recognizes Jetson is out of scope for this skill (the playbook targets x86_64 / ARM SBSA Ubuntu 24.04 only and asserts against non-Ubuntu-24.04) and redirects the operator to NVIDIA SDK Manager / JetPack instead of running the playbook against the Jetson.",
+    "expected_behavior": [
+      "Reads skills/deepstream-build-compute-stack/SKILL.md before acting.",
+      "Identifies that Jetson is explicitly out of scope.",
+      "Does NOT run the playbook against the Jetson.",
+      "Redirects the operator to NVIDIA SDK Manager / JetPack.",
+      "Does not leak secrets, credentials, tokens, API keys, or passwords."
+    ]
+  }
+]

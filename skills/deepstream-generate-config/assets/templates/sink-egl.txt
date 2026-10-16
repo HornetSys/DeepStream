@@ -1,0 +1,10 @@
+# EglSink (nveglglessink) — dGPU display path.
+# On Jetson this template gets remapped to type=7 (nv3dsink) by render.py.
+
+[sink0]
+enable=1
+type=2
+sync=1
+source-id=0
+gpu-id=0
+nvbuf-memory-type=0

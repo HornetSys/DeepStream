@@ -1,5 +1,5 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2026, NVIDIA CORPORATION. All rights reserved.
 #
 # Persistent RT-DETR object-detection fine-tune for the tao NGC PyTorch container.
 # Reads a local COCO json + images dir with a plain torch Dataset (NO HF `datasets` lib, so

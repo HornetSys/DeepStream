@@ -23,7 +23,7 @@ Covers:
                                 dry-run previews self-contained skill copies
   - scripts/model/cleanup.sh:   MODEL_NAME regex enforcement, empty arg rejection,
                                 dry-run does not touch the filesystem
-  - scripts/model/hf-list-files.sh / hf-download-config.sh:
+  - scripts/model/hf-list-files.sh / hf-download-config.sh / hf-download-file.sh:
                                 rejects injection characters in HF_ORG / MODEL_NAME
   - scripts/model/ngc-list-files.sh / ngc-download.sh:
                                 rejects injection characters in NGC args
@@ -48,7 +48,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-SKILL_DIR = Path(__file__).resolve().parent.parent
+SKILL_DIR = Path(__file__).resolve().parents[1]
 SCRIPTS = SKILL_DIR / "scripts"
 INSTALL_SH = SKILL_DIR / "install.sh"
 
@@ -179,6 +179,7 @@ class TestHFScripts(unittest.TestCase):
 
     LIST = SCRIPTS / "model" / "hf-list-files.sh"
     CONFIG = SCRIPTS / "model" / "hf-download-config.sh"
+    DOWNLOAD = SCRIPTS / "model" / "hf-download-file.sh"
 
     def test_list_rejects_bad_org(self):
         rc, _, err = run_script(["bash", str(self.LIST), "bad;org", "model"])
@@ -194,6 +195,7 @@ class TestHFScripts(unittest.TestCase):
         rc, _, err = run_script(["bash", str(self.LIST)])
         self.assertNotEqual(rc, 0)
         self.assertIn("Usage", err)
+        self.assertIn('<subpath|""> <commit-sha>', err)
 
     def test_config_rejects_path_traversal_in_dest(self):
         rc, _, err = run_script(
@@ -220,6 +222,36 @@ class TestHFScripts(unittest.TestCase):
         )
         self.assertNotEqual(rc, 0)
         self.assertIn("must be relative", err)
+
+    def test_download_rejects_remote_path_traversal(self):
+        rc, _, err = run_script(
+            [
+                "bash",
+                str(self.DOWNLOAD),
+                "org",
+                "model",
+                "../weights/model.onnx",
+                "models/model.onnx",
+                "a" * 40,
+            ]
+        )
+        self.assertNotEqual(rc, 0)
+        self.assertIn("safe relative", err)
+
+    def test_download_rejects_unpinned_revision(self):
+        rc, _, err = run_script(
+            [
+                "bash",
+                str(self.DOWNLOAD),
+                "org",
+                "model",
+                "model.onnx",
+                "models/model.onnx",
+                "main",
+            ]
+        )
+        self.assertNotEqual(rc, 0)
+        self.assertIn("immutable", err)
 
 
 class TestNGCScripts(unittest.TestCase):

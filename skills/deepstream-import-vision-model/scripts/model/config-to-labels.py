@@ -9,14 +9,15 @@ Single implementation shared by both acquisition routes. The HuggingFace path (S
 and the NGC path (Step 2d) reach config.json at different points but need identical
 behaviour, and keeping two copies in the runbook meant the NGC route silently drifted —
 it extracted labels without ever rejecting non-detection architectures, so a
-classification model could reach engine build. See references/model-acquire.md.
+classification model could enter the detection build path. This helper is
+detection-specific; other supported categories use their task contracts.
 
 Usage:
     python3 config-to-labels.py --config <config.json> --labels <labels.txt>
     python3 config-to-labels.py --config <config.json> --labels <labels.txt> --skip-arch-check
 
-Exits non-zero on a non-detection architecture or a missing label map. Callers must treat
-a non-zero exit as fatal: never fall back to COCO, ImageNet, or any other default list.
+Exits non-zero on a non-detection architecture or a missing label map. Detection
+callers must treat a non-zero exit as fatal.
 """
 from __future__ import annotations
 
@@ -38,15 +39,16 @@ def assert_detection(cfg: dict) -> None:
     """Abort unless config.json declares an object-detection architecture."""
     arch_list = cfg.get("architectures") or []
     if not arch_list:
-        print("[labels] config.json has no 'architectures' field; skipping architecture gate",
-              file=sys.stderr)
-        return
+        sys.exit(
+            "ERROR: config.json has no 'architectures' field; cannot verify an "
+            "object-detection model. Use --skip-arch-check only for an explicitly "
+            "reviewed diagnostic run."
+        )
     arch = arch_list[0]
     if arch.endswith(NON_DETECTION_SUFFIXES) or not arch.endswith(DETECTION_SUFFIXES):
         sys.exit(
-            f"ERROR: deepstream-import-vision-model currently supports object detection models "
-            f"only. Detected architecture: {arch}. Classification, segmentation, and other vision "
-            f"tasks are not yet supported."
+            f"ERROR: config-to-labels.py is for the object-detection execution path only. "
+            f"Detected architecture: {arch}. Route this model through route_task.py."
         )
     print(f"[labels] architecture OK: {arch}")
 

@@ -1,0 +1,22 @@
+# Throughput streammux block.
+# batched-push-timeout=40000 gives muxer time to fill full batches.
+
+[streammux]
+gpu-id=0
+live-source=0
+batch-size=1
+batched-push-timeout=40000
+width=1920
+height=1080
+enable-padding=0
+nvbuf-memory-type=0
+buffer-pool-size=4
+
+[tiled-display]
+enable=0
+rows=1
+columns=1
+width=1280
+height=720
+gpu-id=0
+nvbuf-memory-type=0

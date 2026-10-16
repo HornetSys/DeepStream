@@ -1,0 +1,221 @@
+{
+  "skill_name": "deepstream-generate-config",
+  "evals": [
+    {
+      "id": "quickstart-default-config",
+      "name": "quickstart-default-config",
+      "prompt": "I'm new to DeepStream. Give me a starter deepstream-app config that just runs.",
+      "expected_skill": "deepstream-generate-config",
+      "should_trigger": true,
+      "expected_output": "Skill uses quickstart mode, runs render.py --quickstart, validates the config, and prints deepstream-app -c with the generated path.",
+      "files": [],
+      "assertions": [
+        "Skill offers or runs quickstart generation",
+        "Skill mentions deepstream-app run command",
+        "Skill mentions validation step",
+        "Skill uses writable --out path for quickstart",
+        "Skill does not suggest sudo or privileged commands",
+        "Response does not contain API tokens or credentials"
+      ]
+    },
+    {
+      "id": "rtsp-low-latency-config",
+      "name": "rtsp-low-latency-config",
+      "prompt": "Generate a low-latency deepstream-app config for 4 RTSP cameras with fakesink.",
+      "expected_skill": "deepstream-generate-config",
+      "should_trigger": true,
+      "expected_output": "Skill infers profile latency, sources.kind rtsp, num_sources 4, fakesink sink, runs render + validate, and returns the config path and run command.",
+      "files": [],
+      "assertions": [
+        "Skill materializes the latency profile in a spec or concrete streammux settings",
+        "Skill materializes four RTSP sources or matching batch configuration",
+        "Skill invokes render.py with an explicit spec and output path",
+        "Response does not expose a literal RTSP password; redacted/environment placeholders are allowed"
+      ]
+    },
+    {
+      "id": "invalid-profile-rejected",
+      "name": "invalid-profile-rejected",
+      "prompt": "Create a deepstream-app config with profile: turbo-max and 8 RTSP cameras.",
+      "expected_skill": "deepstream-generate-config",
+      "should_trigger": true,
+      "expected_output": "Skill rejects or maps away the invalid profile value, explains valid profiles (latency, perf, display, custom), and does not render a config with profile turbo-max.",
+      "files": [],
+      "assertions": [
+        "Skill rejects or corrects the invalid profile",
+        "Skill lists or references supported profiles",
+        "Skill does not claim it generated/rendered a config while retaining turbo-max",
+        "Response does not contain API tokens or credentials"
+      ]
+    },
+    {
+      "id": "missing-source-details-clarification",
+      "name": "missing-source-details-clarification",
+      "prompt": "Generate a deepstream-app latency config.",
+      "expected_skill": "deepstream-generate-config",
+      "should_trigger": true,
+      "expected_output": "Skill asks for missing source details (file vs RTSP, stream count, sink choice) before rendering, or states assumptions explicitly and asks for confirmation.",
+      "files": [],
+      "assertions": [
+        "Skill asks about sources or assumptions",
+        "Skill asks about sink or output intent",
+        "Skill does not silently render without any source context",
+        "Response does not contain API tokens or credentials"
+      ]
+    },
+    {
+      "id": "negative-audit-existing-config",
+      "name": "negative-audit-existing-config",
+      "prompt": "I already have ./my_pipeline.txt and it runs. Can you check whether streammux batch-size matches primary-gie batch-size?",
+      "expected_skill": null,
+      "expected_script": null,
+      "should_trigger": false,
+      "expected_output": "The generator skill does not activate. The agent routes the existing-file review to deepstream-audit-config or performs a narrow validation/inspection without rendering a replacement config.",
+      "files": [],
+      "assertions": [
+        "Response routes to audit/validation or performs narrow batch-size inspection",
+        "Skill does not start a full render workflow",
+        "Response does not contain API tokens or credentials"
+      ]
+    },
+    {
+      "id": "negative-nvbug-investigation",
+      "name": "negative-nvbug-investigation",
+      "prompt": "Investigate NVBug 6754350, find the nvstreammux crash root cause, and propose a source-code fix.",
+      "expected_skill": null,
+      "expected_script": null,
+      "should_trigger": false,
+      "expected_output": "The config generator does not activate. The agent routes to the DeepStream issue-analysis workflow and does not create a config spec or run render.py.",
+      "files": [],
+      "assertions": [
+        "Response treats this as bug/source investigation",
+        "Response does not run the config renderer",
+        "Response does not contain API tokens or credentials"
+      ]
+    },
+    {
+      "id": "negative-nsys-profile",
+      "name": "negative-nsys-profile",
+      "prompt": "Profile my existing DeepStream pipeline with nsys and tell me whether decode or inference is the bottleneck.",
+      "expected_skill": null,
+      "expected_script": null,
+      "should_trigger": false,
+      "expected_output": "The config generator does not activate. The agent routes to deepstream-profile-pipeline and does not generate or render a replacement config.",
+      "files": [],
+      "assertions": [
+        "Response recognizes profiling scope",
+        "Response does not run the config renderer",
+        "Response does not contain API tokens or credentials"
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "quickstart-default-config",
+      "name": "quickstart-default-config",
+      "question": "I'm new to DeepStream. Give me a starter deepstream-app config that just runs.",
+      "expected_skill": "deepstream-generate-config",
+      "should_trigger": true,
+      "ground_truth": "Skill uses quickstart mode, runs render.py --quickstart, validates the config, and prints deepstream-app -c with the generated path.",
+      "files": [],
+      "expected_behavior": [
+        "Skill offers or runs quickstart generation",
+        "Skill mentions deepstream-app run command",
+        "Skill mentions validation step",
+        "Skill uses writable --out path for quickstart",
+        "Skill does not suggest sudo or privileged commands",
+        "Response does not contain API tokens or credentials"
+      ]
+    },
+    {
+      "id": "rtsp-low-latency-config",
+      "name": "rtsp-low-latency-config",
+      "question": "Generate a low-latency deepstream-app config for 4 RTSP cameras with fakesink.",
+      "expected_skill": "deepstream-generate-config",
+      "should_trigger": true,
+      "ground_truth": "Skill infers profile latency, sources.kind rtsp, num_sources 4, fakesink sink, runs render + validate, and returns the config path and run command.",
+      "files": [],
+      "expected_behavior": [
+        "Skill materializes the latency profile in a spec or concrete streammux settings",
+        "Skill materializes four RTSP sources or matching batch configuration",
+        "Skill invokes render.py with an explicit spec and output path",
+        "Response does not expose a literal RTSP password; redacted/environment placeholders are allowed"
+      ]
+    },
+    {
+      "id": "invalid-profile-rejected",
+      "name": "invalid-profile-rejected",
+      "question": "Create a deepstream-app config with profile: turbo-max and 8 RTSP cameras.",
+      "expected_skill": "deepstream-generate-config",
+      "should_trigger": true,
+      "ground_truth": "Skill rejects or maps away the invalid profile value, explains valid profiles (latency, perf, display, custom), and does not render a config with profile turbo-max.",
+      "files": [],
+      "expected_behavior": [
+        "Skill rejects or corrects the invalid profile",
+        "Skill lists or references supported profiles",
+        "Skill does not claim it generated/rendered a config while retaining turbo-max",
+        "Response does not contain API tokens or credentials"
+      ]
+    },
+    {
+      "id": "missing-source-details-clarification",
+      "name": "missing-source-details-clarification",
+      "question": "Generate a deepstream-app latency config.",
+      "expected_skill": "deepstream-generate-config",
+      "should_trigger": true,
+      "ground_truth": "Skill asks for missing source details (file vs RTSP, stream count, sink choice) before rendering, or states assumptions explicitly and asks for confirmation.",
+      "files": [],
+      "expected_behavior": [
+        "Skill asks about sources or assumptions",
+        "Skill asks about sink or output intent",
+        "Skill does not silently render without any source context",
+        "Response does not contain API tokens or credentials"
+      ]
+    },
+    {
+      "id": "negative-audit-existing-config",
+      "name": "negative-audit-existing-config",
+      "question": "I already have ./my_pipeline.txt and it runs. Can you check whether streammux batch-size matches primary-gie batch-size?",
+      "expected_skill": null,
+      "expected_script": null,
+      "should_trigger": false,
+      "ground_truth": "The generator skill does not activate. The agent routes the existing-file review to deepstream-audit-config or performs a narrow validation/inspection without rendering a replacement config.",
+      "files": [],
+      "expected_behavior": [
+        "Response routes to audit/validation or performs narrow batch-size inspection",
+        "Skill does not start a full render workflow",
+        "Response does not contain API tokens or credentials"
+      ]
+    },
+    {
+      "id": "negative-nvbug-investigation",
+      "name": "negative-nvbug-investigation",
+      "question": "Investigate NVBug 6754350, find the nvstreammux crash root cause, and propose a source-code fix.",
+      "expected_skill": null,
+      "expected_script": null,
+      "should_trigger": false,
+      "ground_truth": "The config generator does not activate. The agent routes to the DeepStream issue-analysis workflow and does not create a config spec or run render.py.",
+      "files": [],
+      "expected_behavior": [
+        "Response treats this as bug/source investigation",
+        "Response does not run the config renderer",
+        "Response does not contain API tokens or credentials"
+      ]
+    },
+    {
+      "id": "negative-nsys-profile",
+      "name": "negative-nsys-profile",
+      "question": "Profile my existing DeepStream pipeline with nsys and tell me whether decode or inference is the bottleneck.",
+      "expected_skill": null,
+      "expected_script": null,
+      "should_trigger": false,
+      "ground_truth": "The config generator does not activate. The agent routes to deepstream-profile-pipeline and does not generate or render a replacement config.",
+      "files": [],
+      "expected_behavior": [
+        "Response recognizes profiling scope",
+        "Response does not run the config renderer",
+        "Response does not contain API tokens or credentials"
+      ]
+    }
+  ]
+}

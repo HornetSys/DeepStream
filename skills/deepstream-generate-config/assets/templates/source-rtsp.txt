@@ -1,0 +1,16 @@
+# RTSP source template.
+# select-rtp-protocol: 0=UDP+TCP, 4=TCP-only. TCP is more reliable in lab.
+
+[source0]
+enable=1
+type=4
+uri=rtsp://<host>:<port>/<path>
+num-sources=1
+gpu-id=0
+cudadec-memtype=0
+latency=100
+select-rtp-protocol=4
+drop-on-latency=1
+rtsp-reconnect-interval-sec=10
+init-rtsp-reconnect-interval-sec=5
+rtsp-reconnect-attempts=4

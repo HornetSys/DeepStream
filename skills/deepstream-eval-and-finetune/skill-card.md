@@ -1,5 +1,5 @@
 ## Description: <br>
-Evaluate and improve an object detector in NVIDIA DeepStream, providing deployed mAP, FPS and latency measurement, TAO Skill Bank fine-tuning or AutoML, redeployment, and before/after reporting on HuggingFace, NGC, ONNX, or local models and KPI datasets. <br>
+Evaluate and improve an object detector in NVIDIA DeepStream using deployed mAP, FPS, and latency measurement, TAO Skill Bank fine-tuning or AutoML, redeployment, and before/after reporting on HuggingFace, NGC, ONNX, or local models and KPI datasets. <br>
 
 This skill is ready for commercial/non-commercial use. <br>
 
@@ -7,9 +7,9 @@ This skill is ready for commercial/non-commercial use. <br>
 NVIDIA <br>
 
 ### License/Terms of Use: <br>
-Apache 2.0 <br>
+Apache-2.0 <br>
 ## Use Case: <br>
-Developers and ML engineers use this skill to evaluate object detection model accuracy and performance in live DeepStream pipelines, fine-tune models using TAO Skill Bank or AutoML, and produce before/after comparison reports. <br>
+Developers and engineers evaluate and fine-tune object detection models in NVIDIA DeepStream pipelines, measuring deployed mAP, FPS, and latency to compare baseline and fine-tuned model performance on custom KPI datasets. <br>
 
 ### Deployment Geography for Use: <br>
 Global <br>
@@ -25,19 +25,19 @@ Risk: Review before execution as proposals could introduce incorrect or misleadi
 Mitigation: Review and scan skill before deployment. <br>
 
 ## Reference(s): <br>
-- [Run flow](references/run-flow.md) <br>
-- [Accuracy evaluation](references/accuracy-eval.md) <br>
-- [Fine-tuning and reporting](references/finetune-and-report.md) <br>
+- [Run Flow](references/run-flow.md) <br>
+- [Accuracy Evaluation](references/accuracy-eval.md) <br>
+- [Fine-Tuning and Reporting](references/finetune-and-report.md) <br>
 - [Web UI](references/ui.md) <br>
-- [Script catalogue](references/scripts.md) <br>
-- [Windows operation](references/windows.md) <br>
+- [Script Catalogue](references/scripts.md) <br>
+- [Windows Operation](references/windows.md) <br>
+- [NVIDIA DeepStream SDK](https://developer.nvidia.com/deepstream-sdk) <br>
 - [TAO Skill Bank](https://github.com/NVIDIA-TAO/tao-skill-bank) <br>
-- [DeepStream SDK](https://developer.nvidia.com/deepstream-sdk) <br>
 
 
 ## Skill Output: <br>
-**Output Type(s):** [Files, Shell commands, Analysis] <br>
-**Output Format:** [JSON metrics, PDF reports, Markdown summaries, and overlay images] <br>
+**Output Type(s):** [Analysis, Shell commands, Files] <br>
+**Output Format:** [Markdown with inline bash code blocks, JSON metrics, and PDF reports] <br>
 **Output Parameters:** [1D] <br>
 **Other Properties Related to Output:** [None] <br>
 
@@ -52,31 +52,31 @@ Mitigation: Review and scan skill before deployment. <br>
 
 ## Evaluation Metrics Used: <br>
 Reported benchmark dimensions: <br>
-- Security: Whether the skill avoids unsafe operations, secret leakage, and unauthorized access. <br>
-- Correctness: Whether the final answer is correct against the reference answer. <br>
-- Discoverability: Whether the expected skill was found and executed when needed. <br>
-- Effectiveness: Whether the skill helped complete the user's goal and followed the expected workflow. <br>
-- Efficiency: Whether the skill avoided wasted tool or skill usage through quality routing and productive tool use. <br>
+- Security: Checks for unsafe operations, secret leakage, and unauthorized access. <br>
+- Correctness: Checks final-answer correctness against the reference answer. <br>
+- Discoverability: Checks whether the expected skill was found and executed when needed. <br>
+- Effectiveness: Checks goal completion and expected workflow adherence (equal-weight mean of goal_accuracy and behavior_check). <br>
+- Efficiency: Checks routing quality, workspace-aware skill reads, and productive tool use. <br>
 
 Underlying evaluation signals used in this run: <br>
-- `security`: Checks for unsafe operations, secret leakage, and unauthorized access. <br>
-- `skill_execution`: Whether the expected skill was found and executed. <br>
-- `skill_efficiency`: Routing quality, workspace-aware skill reads, and productive tool use. <br>
-- `accuracy`: Final-answer correctness against the reference answer. <br>
-- `goal_accuracy`: Whether the user's goal was achieved. <br>
-- `behavior_check`: Whether the expected workflow behavior was followed. <br>
+- `security`: Detects unsafe operations, secret leakage, and unauthorized access. <br>
+- `skill_execution`: Verifies whether the expected skill was found and executed. <br>
+- `skill_efficiency`: Evaluates routing quality, workspace-aware skill reads, and productive tool use. <br>
+- `accuracy`: Measures final-answer correctness against the reference answer. <br>
+- `goal_accuracy`: Assesses whether the user's goal was achieved. <br>
+- `behavior_check`: Verifies whether the expected workflow behavior was followed. <br>
 
 
 
 ## Evaluation Results: <br>
-| Measure | Claude Code (Baseline → Skill Uplift) | Codex (Baseline → Skill Uplift) |
-|---|---:|---:|
-| Overall | Not available | 53% → 76% (+23 points) |
-| Security | Not available | 71% → 83% (+12 points) |
-| Correctness | Not available | 47% → 82% (+35 points) |
-| Discoverability | Not available | 55% → 77% (+22 points) |
-| Effectiveness | Not available | 37% → 47% (+10 points) |
-| Efficiency | Not available | 54% → 91% (+37 points) |
+| Measure | Codex (Baseline → Skill Uplift) |
+|---|---:|
+| Overall | 53% → 78% (+25 points) |
+| Security | 67% → 75% (+8 points) |
+| Correctness | 48% → 92% (+43 points) |
+| Discoverability | 53% → 79% (+26 points) |
+| Effectiveness | 38% → 52% (+14 points) |
+| Efficiency | 59% → 92% (+33 points) |
 
 ## Skill Version(s): <br>
 0.6.1 (source: frontmatter) <br>

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 # Upsert a run into the UI registry (build/ui_runs/index.json) so runs are VISIBLE-BY-DEFAULT
 # in the web UI — a row appears the moment a run starts, and the deploy/report stage upserts

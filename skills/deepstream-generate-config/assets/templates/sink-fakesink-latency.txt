@@ -1,0 +1,14 @@
+# FakeSink configured for latency measurement.
+# sync=0 (drop frames rather than wait), nvdslogger=1 (per-stage latency),
+# show-latency / show-fps print to stdout.
+
+[sink0]
+enable=1
+type=1
+sync=0
+source-id=0
+gpu-id=0
+nvbuf-memory-type=0
+nvdslogger=1
+show-latency=1
+show-fps=1

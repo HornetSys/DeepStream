@@ -1,0 +1,69 @@
+################################################################################
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+################################################################################
+---
+- name: Install NVIDIA Compute Stack
+  hosts: all
+  gather_facts: true
+  become: yes
+  vars_files:
+    - defaults/main.yml
+  vars:
+    cuda_version_prod: "{{cuda_version}}"
+    cuda_version_arr: "{{ cuda_version_prod.split('-') }}"
+    cuda_major_version: "{{ cuda_version_arr[0] | int }}"
+    cuda_dot_version_prod : "{{ cuda_version_prod | replace('-','.') }}"
+    nv_driver_prod: "{{ nv_driver_version }}"
+    trt_version_prod : "{{ trt_version }}"
+    trt_sub_version_prod: "{{ trt_sub_version }}"
+    cudnn_version_prod : "{{ cudnn_version }}"
+    cudnn_sub_version_prod: "{{ cudnn_sub_version }}"
+
+  pre_tasks:
+    - name: Gather installed package facts for the Jetson guard
+      ansible.builtin.package_facts:
+        manager: auto
+      tags: ['always']
+
+    - name: Assert supported Ubuntu 24.04 host
+      ansible.builtin.assert:
+        that:
+          - ansible_facts['distribution'] == "Ubuntu"
+          - ansible_facts['distribution_version'] is version("24.04", ">=") and ansible_facts['distribution_version'] is version("24.10", "<")
+          - ansible_facts['architecture'] in ['x86_64', 'aarch64']
+          - "'nvidia-l4t-core' not in ansible_facts.packages"
+        fail_msg: "This playbook requires Ubuntu 24.04 on x86_64 or ARM SBSA (Jetson is out of scope — use NVIDIA SDK Manager / JetPack instead). Detected: {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }} {{ ansible_facts['architecture'] }}"
+      tags: ['always']
+
+  # Tags allow installing a single component or the full stack.
+  #   Full (generic) stack: ansible-playbook -i inventory.ini ubuntu_setup.yml
+  #     -> driver + cuda + cudnn + tensorrt + docker (deepstream-deps is NOT included)
+  #   One component:         add --tags <component>, e.g. --tags driver
+  #   DeepStream OS deps:    --tags deepstream-deps   (opt-in; tagged 'never' so it is
+  #                          skipped by default). For everything: --tags all,deepstream-deps
+  # Available component tags: driver, cuda, cudnn, tensorrt, docker, deepstream-deps.
+  # `init` (fact gathering) always runs. The driver, cuDNN, and TensorRT packages ship from
+  # the CUDA repo, so their tags also trigger the CUDA keyring/repo setup (but not the toolkit).
+  roles:
+    - { role: init, tags: ['always'] }
+    - cuda
+    - { role: nv_display_driver, tags: ['driver'] }
+    - { role: nvidia-docker, tags: ['docker'] }
+    - { role: cudnn, tags: ['cudnn'] }
+    - { role: tensorrt, tags: ['tensorrt'] }
+    # DeepStream-specific (GStreamer + OpenTelemetry). Opt-in only: 'never' keeps it out of
+    # the default full-stack run; request it explicitly with --tags deepstream-deps.
+    - { role: deepstream-deps, tags: ['deepstream-deps', 'never'] }

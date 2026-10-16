@@ -17,12 +17,13 @@ from __future__ import annotations
 
 import ast
 import json
+import shutil
 import subprocess
 import tempfile
 import unittest
 from pathlib import Path
 
-SKILL_DIR = Path(__file__).resolve().parent.parent
+SKILL_DIR = Path(__file__).resolve().parents[1]
 EXPORT_SH = SKILL_DIR / "scripts" / "model" / "safetensors-to-onnx.sh"
 EXPORT_PY = SKILL_DIR / "scripts" / "model" / "safetensors_to_onnx.py"
 REQUIREMENTS = SKILL_DIR / "scripts" / "requirements.txt"
@@ -85,16 +86,22 @@ class TestExportWrapperScript(unittest.TestCase):
     def test_wrapper_errors_without_venv(self):
         """Without the container-built venv it must fail with bootstrap guidance, not a traceback."""
         with tempfile.TemporaryDirectory() as td:
+            # Isolate the wrapper from a real campaign venv when this suite is
+            # run inside the DeepStream container. Its five-level relative
+            # root resolution must land in this temporary tree.
+            script = (Path(td) / "repo" / ".claude" / "skills" /
+                      "deepstream-import-vision-model" / "scripts" / "model" /
+                      EXPORT_SH.name)
+            script.parent.mkdir(parents=True)
+            shutil.copyfile(EXPORT_SH, script)
             rc = subprocess.run(
-                ["bash", str(EXPORT_SH), "some/model", f"{td}/out"],
+                ["bash", str(script), "some/model", f"{td}/out"],
                 capture_output=True, text=True,
             )
             combined = rc.stdout + rc.stderr
-            # Either the venv is genuinely absent (expected on a dev box) or it exists and the
-            # export proceeds; only the absent case is asserted here.
-            if rc.returncode != 0:
-                self.assertIn("venv not found", combined)
-                self.assertIn("setup.sh", combined)
+            self.assertNotEqual(rc.returncode, 0)
+            self.assertIn("venv not found", combined)
+            self.assertIn("setup.sh", combined)
 
     def test_wrapper_no_longer_invokes_optimum(self):
         text = EXPORT_SH.read_text()

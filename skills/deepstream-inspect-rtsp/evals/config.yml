@@ -1,0 +1,10 @@
+schema_version: 1
+
+harbor:
+  # One deterministic attempt per task keeps Harbor within the shared CI quota.
+  # Scores are single-sample results; investigate timeouts or inconsistent runs.
+  task_source: evals_json
+  n_attempts: 1
+  n_concurrent: 1
+  max_agents: 1
+  timeout_multiplier: 2.0

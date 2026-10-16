@@ -1,0 +1,25 @@
+# Detector nvinfer template (config-file referenced by [primary-gie]).
+# Modeled on samples/configs/deepstream-app/config_infer_primary.txt.
+# render_infer.py fills `auto`-marked fields from the user spec.
+
+[property]
+gpu-id=0
+net-scale-factor=0.00392156862745098
+model-color-format=0
+onnx-file=auto
+model-engine-file=auto
+labelfile-path=auto
+int8-calib-file=auto
+batch-size=auto
+network-mode=2
+num-detected-classes=auto
+interval=0
+gie-unique-id=auto
+process-mode=1
+cluster-mode=2
+maintain-aspect-ratio=0
+
+[class-attrs-all]
+topk=20
+nms-iou-threshold=0.5
+pre-cluster-threshold=0.2

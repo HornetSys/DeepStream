@@ -1,0 +1,5 @@
+version: 1
+interface:
+  display_name: "DeepStream Inspect Stack"
+  short_description: "Diagnose DeepStream version and setup mismatches"
+  default_prompt: "Use $deepstream-inspect-stack to diagnose a DeepStream install or version-compatibility problem."

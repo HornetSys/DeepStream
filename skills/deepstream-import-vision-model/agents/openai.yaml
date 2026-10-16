@@ -3,5 +3,5 @@
 
 interface:
   display_name: "DeepStream Import Vision Model"
-  short_description: "Deploy object detectors into DeepStream"
-  default_prompt: "Use $deepstream-import-vision-model to deploy and benchmark this object-detection model in DeepStream."
+  short_description: "Route and validate DeepStream vision models"
+  default_prompt: "Use $deepstream-import-vision-model to route this visual model, execute only its native or shipped reference path, and keep unproven adapters fail-closed."

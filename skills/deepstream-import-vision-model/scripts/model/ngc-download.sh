@@ -16,8 +16,8 @@
 # limitations under the License.
 
 # ngc-download.sh — Download all files from a public NGC model version.
-# Prefers the official `ngc` CLI. Falls back to authenticated HTTPS via curl
-# only when the CLI is not installed; the fallback is explicitly warned about.
+# Prefers the official `ngc` CLI. Falls back to unauthenticated HTTPS via curl
+# for public catalog files when the CLI is unavailable, with an explicit warning.
 #
 # Usage:
 #   bash ngc-download.sh <NGC_ORG> <NGC_TEAM> <MODEL_NAME> <NGC_VERSION> <DEST_DIR>

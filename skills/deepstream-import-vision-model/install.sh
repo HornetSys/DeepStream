@@ -105,20 +105,23 @@ do_copy() {
     fi
 }
 
-# Scoped cleanup helper: only removes a path that is a subdirectory of $TARGET.
-safe_rm_under_target() {
+# Preserve an existing installation under the approved target. This keeps
+# replacement reversible and avoids deleting caller-owned files.
+backup_under_target() {
     local path="$1"
     local resolved
     resolved="$(cd "$(dirname "$path")" 2>/dev/null && pwd -P)/$(basename "$path")" || return 1
     case "$resolved" in
         "$TARGET"/*) ;;
-        *) echo "  Refusing to remove $resolved (not under $TARGET)" >&2; return 1 ;;
+        *) echo "  Refusing to replace $resolved (not under $TARGET)" >&2; return 1 ;;
     esac
+    local backup="${resolved}.backup.$(date +%Y%m%d_%H%M%S).$$"
     if $DRY_RUN; then
-        echo "  [dry-run] rm -rf $resolved"
+        echo "  [dry-run] mv $resolved -> $backup"
     else
-        echo "  Removing: $resolved"
-        rm -rf "$resolved"
+        [ ! -e "$backup" ] || { echo "  Refusing to overwrite backup $backup" >&2; return 1; }
+        mv -- "$resolved" "$backup"
+        echo "  Preserved previous installation: $backup"
     fi
 }
 
@@ -135,7 +138,7 @@ install_skills_to_dir() {
             echo "  Already installed at $skill_dest; source and destination are identical"
             return
         fi
-        safe_rm_under_target "$skill_dest"
+        backup_under_target "$skill_dest"
     fi
     if $DRY_RUN; then
         echo "  [dry-run] cp -r $SKILL_DIR -> $skill_dest  (whole skill; minus __pycache__/*.pyc/built parser .so)"
@@ -174,11 +177,9 @@ fi
 echo ""
 echo "=== Done ==="
 echo ""
-echo "Next — bootstrap the environment IN the container (nothing installs on the host):"
-echo "  docker run --rm -it --gpus all --shm-size=16g -v \"\$PWD\":/work -w /work \\"
-echo "    --entrypoint bash nvcr.io/nvidia/deepstream:9.1-triton-multiarch \\"
-echo "    .claude/skills/deepstream-import-vision-model/setup.sh"
-echo "  (PowerShell: use -v \"\${PWD}:/work\"  ·  see references/windows.md)"
+echo "Next — set a verified DS_IMAGE @sha256 digest, then follow SKILL.md to create"
+echo "one named campaign container for setup, preflight, and every execution phase."
+echo "PowerShell users: see references/windows.md."
 echo ""
 echo "Claude Code — invoke the skill:"
 echo "  Use deepstream-import-vision-model to run this model: https://huggingface.co/onnx-community/yolov8n"

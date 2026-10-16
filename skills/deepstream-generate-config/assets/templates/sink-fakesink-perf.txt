@@ -1,0 +1,11 @@
+# FakeSink configured for throughput (perf) measurement.
+# sync=1 — render at media rate; reported fps is the achievable rate.
+
+[sink0]
+enable=1
+type=1
+sync=1
+source-id=0
+gpu-id=0
+nvbuf-memory-type=0
+show-fps=1
