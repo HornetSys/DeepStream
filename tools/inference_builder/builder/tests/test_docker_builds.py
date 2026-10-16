@@ -206,22 +206,6 @@ def validate_log_directory(log_dir: str) -> bool:
 
     return True
 
-def validate_gitlab_token(token: str) -> bool:
-    """Validate GitLab token format."""
-    if not token:
-        return True  # Empty token is allowed
-
-    # Basic validation for GitLab token format
-    if not isinstance(token, str) or len(token) < 10:
-        return False
-
-    # Check for suspicious patterns
-    suspicious_patterns = ['<script', 'javascript:', 'data:', 'vbscript:']
-    if any(pattern in token.lower() for pattern in suspicious_patterns):
-        return False
-
-    return True
-
 
 def validate_docker_arg(arg: str) -> bool:
     """Validate docker argument to prevent command injection while allowing legitimate flags."""
@@ -865,12 +849,12 @@ class DockerBuildTester:
     def get_service_host(self) -> str:
         """
         Determine the appropriate host to use for connecting to Docker
-        containers. In CI environments (like GitLab CI with
-        Docker-in-Docker), 127.0.0.1 won't work because each container has
+        containers. In CI environments (like GitHub Actions or GitLab CI
+        with Docker-in-Docker), 127.0.0.1 won't work because each container has
         its own localhost. Use Docker gateway IP instead.
         """
         # Check if running in CI environment
-        if os.environ.get('CI') or os.environ.get('GITLAB_CI'):
+        if os.environ.get('CI') or os.environ.get('GITHUB_ACTIONS') or os.environ.get('GITLAB_CI'):
             logger.info(
                 "🔍 CI environment detected, using Docker gateway IP "
                 "for service connectivity"
@@ -2557,13 +2541,12 @@ class DockerBuildTester:
             logger.warning(f"⚠️  Exception during cleanup: {str(e)}")
             return False
 
-    def run_test_suite(self, test_configs: List[Dict], cleanup: bool = True, gitlab_token: Optional[str] = None, force_full_flow: bool = False, gpus: str = "all") -> Dict:
+    def run_test_suite(self, test_configs: List[Dict], cleanup: bool = True, force_full_flow: bool = False, gpus: str = "all") -> Dict:
         """Run a suite of tests with different configurations.
 
         Args:
             test_configs: List of test configurations
             cleanup: Whether to cleanup Docker images after testing
-            gitlab_token: GitLab token for authentication
             force_full_flow: Force full build+test flow even for disabled tests
             gpus: GPU devices to use (default: 'all')
         """
@@ -2763,7 +2746,6 @@ def main():
     parser.add_argument("--output", help="Output file for test report")
     parser.add_argument("--log-dir", default="logs", help="Directory to save container logs")
     parser.add_argument("--no-cleanup", action="store_true", help="Don't cleanup images after testing")
-    parser.add_argument("--gitlab-token", help="GitLab token for authentication")
     parser.add_argument("--test-case", help="Run only the test case with this name (partial match supported). Supplying this forces full flow (build+test) even if disabled.")
     parser.add_argument("--gpus", default="all", help="GPU devices to use for Docker containers (default: 'all'). Examples: 'all', 'device=0', 'device=0,1', '\"device=0,1\"'")
 
@@ -2796,10 +2778,6 @@ def main():
     # Validate log directory
     if not validate_log_directory(args.log_dir):
         validation_errors.append(f"Invalid log directory path: {args.log_dir}")
-
-    # Validate GitLab token if provided
-    if args.gitlab_token and not validate_gitlab_token(args.gitlab_token):
-        validation_errors.append("Invalid GitLab token format")
 
     # Exit if any validation errors
     if validation_errors:
@@ -2977,7 +2955,7 @@ def main():
         # Force full flow if --test-case provided (including "*")
         force_full_flow = args.test_case is not None and len(args.test_case) > 0
         logger.info(f"🔍 Test suite settings: test_case={args.test_case}, force_full_flow={force_full_flow}")
-        results = tester.run_test_suite(test_configs, cleanup=not args.no_cleanup, gitlab_token=args.gitlab_token, force_full_flow=force_full_flow, gpus=args.gpus)
+        results = tester.run_test_suite(test_configs, cleanup=not args.no_cleanup, force_full_flow=force_full_flow, gpus=args.gpus)
     except Exception as e:
         logger.error(f"❌ Test suite execution failed: {str(e)}")
         sys.exit(1)
