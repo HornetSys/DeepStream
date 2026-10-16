@@ -111,9 +111,6 @@ Each app must be run from its source directory so relative config paths resolve 
 NVIDIA publishes a DeepStream Docker image bundled with Triton Inference Server.
 
 ```bash
-# One-time NGC login (get an API key from https://ngc.nvidia.com)
-docker login nvcr.io           # username: $oauthtoken,  password: <NGC API key>
-
 # Pull the image (use 9.2-triton-sbsa-dgx-spark instead on SBSA / DGX Spark)
 docker pull ghcr.io/nvidia/deepstream:9.2-triton-multiarch
 
