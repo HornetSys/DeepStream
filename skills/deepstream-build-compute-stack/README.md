@@ -22,7 +22,6 @@ skills/deepstream-build-compute-stack/
 ├── README.md                        # this file
 ├── skill-card.md                    # catalog card (generated)
 ├── BENCHMARK.md                     # evaluation metrics (generated)
-├── skill.oms.sig                    # signature bundle (generated)
 ├── evals/evals.json                 # trigger/behavior evals
 ├── references/
 │   ├── versions.md                  # version → apt-package mapping; how to confirm a version exists
