@@ -56,11 +56,9 @@ find_cmake() {
   candidates+=("cmake" "/usr/bin/cmake")
 
   for candidate in "${candidates[@]}"; do
-    if resolved=$(command -v "$candidate" 2>/dev/null); then
-      if "$resolved" --version >/dev/null 2>&1; then
-        printf '%s\n' "$resolved"
-        return 0
-      fi
+    if resolved=$(command -v "$candidate" 2>/dev/null) && "$resolved" --version >/dev/null 2>&1; then
+      printf '%s\n' "$resolved"
+      return 0
     fi
   done
 
@@ -139,10 +137,10 @@ Packaging (--package / --package-format=):
 
 Environment variables (alternative to CLI):
   CUDA_VER                CUDA toolkit version (default: 13.0 on IGX; 13.2 otherwise)
-  NVDS_VERSION            MAJOR.MINOR.PATCH (default: 9.1.1); the install
+  NVDS_VERSION            MAJOR.MINOR.PATCH (default: 9.2.0); the install
                           tree uses MAJOR.MINOR only. GitHub Release
                           proprietary-libs / sample-data assets are always
-                          fetched from the v9.1.1 release (hardcoded; not
+                          fetched from the v9.2.0 release (hardcoded; not
                           derived from NVDS_VERSION).
   INSTALL_METHOD          Artifact install method: deb (default) | tar
   CMAKE_BIN               Path to cmake binary
@@ -242,7 +240,7 @@ KEEP_ASSETS=0
 ONLY_STAGES=()
 JOBS=$(nproc 2>/dev/null || echo 4)
 CUDA_VER=${CUDA_VER:-$CUDA_VER_DEFAULT}
-NVDS_VERSION=${NVDS_VERSION:-9.1.1}
+NVDS_VERSION=${NVDS_VERSION:-9.2.0}
 INSTALL_METHOD=${INSTALL_METHOD:-deb}
 DO_PACKAGE=0
 PACKAGE_FORMAT=both
@@ -355,12 +353,12 @@ while [[ $# -gt 0 ]]; do
   shift
 done
 
-# NVDS_VERSION must be MAJOR.MINOR.PATCH (default: 9.1.1). MAJOR.MINOR alone is
+# NVDS_VERSION must be MAJOR.MINOR.PATCH (default: 9.2.0). MAJOR.MINOR alone is
 # rejected so install paths and packaging stay unambiguous; the install tree
 # and every downstream make/install.sh invocation use the truncated
 # MAJOR.MINOR form below.
 if [[ ! "$NVDS_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-  echo "error: invalid NVDS_VERSION='$NVDS_VERSION' (expected MAJOR.MINOR.PATCH, e.g. 9.1.1)" >&2
+  echo "error: invalid NVDS_VERSION='$NVDS_VERSION' (expected MAJOR.MINOR.PATCH, e.g. 9.2.0)" >&2
   exit 1
 fi
 NVDS_FULL_VERSION="$NVDS_VERSION"
@@ -463,11 +461,11 @@ stage_had_failures() {
 # GITHUB_ASSET_VERSION below): new patch-release assets are uploaded onto the
 # existing tag rather than cutting a new tag each patch, so older branches whose
 # build.sh still points at this same tag keep resolving.
-GITHUB_RELEASE_TAG="9.1.0"
+GITHUB_RELEASE_TAG="9.2.0"
 
 # Version embedded in the release asset filenames themselves (deepstream-binaries-*,
 # deepstream-sample-data_*, …). Bump by hand once newer-patch assets are uploaded.
-GITHUB_ASSET_VERSION="9.1.1"
+GITHUB_ASSET_VERSION="9.2.0"
 
 # Release assets are fetched from the DeepStream GitHub release into ARTIFACTS_DIR.
 GITHUB_RELEASE_BASE="https://github.com/NVIDIA/DeepStream/releases/download/v${GITHUB_RELEASE_TAG}"
@@ -676,6 +674,7 @@ if [[ "$SKIP_ARTIFACTS" -eq 0 ]] && begin_stage "$ARTIFACTS_STAGE"; then
     INSTALL_METHOD="$INSTALL_METHOD" \
     ARTIFACTS_DIR="$ARTIFACTS_DIR" \
     ARTIFACTS_STAGE_STATE_FILE="$ARTIFACTS_STAGE_STATE_FILE" \
+    RESUME="$RESUME" \
     bash "$SCRIPT_DIR/../scripts/install_artifacts.sh"
 
   finish_stage "$ARTIFACTS_STAGE"

@@ -29,19 +29,25 @@
 #   protobuf compiler  v3.21.12           -> /opt/proto
 #   pybind11           v2.12.0 (headers)  -> /opt/pybind11
 #   dlpack             v0.8    (headers)  -> /opt/dlpack
-#   apt packages: python3-build, python3-venv, python3-setuptools, python3-wheel
-#                 (needed by sources/python/build.sh to produce the wheel)
+#   apt packages: python3-build, python3-venv, python3-setuptools, python3-wheel,
+#                 python3-pip (needed by sources/python/build.sh and Sparse4D torch)
 #   apt packages: libpango, libcairo, libjson-glib, librabbitmq, librdkafka,
-#                 libboost-dev, openucx/libucx-dev (prefer 1.13.1), etc.
+#                 libboost-dev, libeigen3-dev, nlohmann-json3-dev, libharfbuzz-dev,
+#                 libprotobuf-dev, libglm-dev (prefer 0.9.9.8), libglfw3-dev
+#                 (prefer 3.3.10), openucx/libucx-dev (prefer 1.13.1), etc.
 #   mosquitto (from PPA)
+#   Sparse4D: ds-sparse4d/configs/install_dependencies.sh (PyTorch 2.9.0+cu130,
+#             nlohmann-json, Eigen, OpenCV)
 #
 # Usage:
-#   sudo PLATFORM=x86 bash scripts/install_opensource_deps.sh [NVDS_VERSION=9.1]
-#   sudo PLATFORM=aarch64 bash scripts/install_opensource_deps.sh [NVDS_VERSION=9.1]
-#   sudo PLATFORM=sbsa bash scripts/install_opensource_deps.sh [NVDS_VERSION=9.1]
+#   sudo PLATFORM=x86 bash scripts/install_opensource_deps.sh [NVDS_VERSION=9.2.0]
+#   sudo PLATFORM=aarch64 bash scripts/install_opensource_deps.sh [NVDS_VERSION=9.2.0]
+#   sudo PLATFORM=sbsa bash scripts/install_opensource_deps.sh [NVDS_VERSION=9.2.0]
 #     (SBSA/DGX Spark Docker: stages 1–3 and 5–7 skipped; azure-iot still built)
 #
 # Environment:
+#   NVDS_VERSION              MAJOR.MINOR.PATCH (default: 9.2.0).
+#                             Install path still uses MAJOR.MINOR for now.
 #   RESUME=1                  Skip stages already marked DONE (used by build.sh --resume).
 #                             Default 0: always rebuild/install; stage state is reset first.
 #   DEPS_STAGE_STATE_FILE     Stage resume file (default: build/.stage-state.deps)
@@ -50,11 +56,11 @@ set -e
 
 export DEBIAN_FRONTEND=noninteractive
 
-NVDS_VERSION=${NVDS_VERSION:-9.1.1}
-# NVDS_VERSION must be MAJOR.MINOR.PATCH (default: 9.1.1). MAJOR.MINOR alone is
-# rejected. Install tree still uses MAJOR.MINOR for now (e.g. deepstream-9.1/).
+NVDS_VERSION=${NVDS_VERSION:-9.2.0}
+# NVDS_VERSION must be MAJOR.MINOR.PATCH (default: 9.2.0). MAJOR.MINOR alone is
+# rejected. Install tree still uses MAJOR.MINOR for now (e.g. deepstream-9.2/).
 if [[ ! "$NVDS_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-  echo "error: invalid NVDS_VERSION='$NVDS_VERSION' (expected MAJOR.MINOR.PATCH, e.g. 9.1.1)" >&2
+  echo "error: invalid NVDS_VERSION='$NVDS_VERSION' (expected MAJOR.MINOR.PATCH, e.g. 9.2.0)" >&2
   exit 1
 fi
 NVDS_VERSION="${NVDS_VERSION%.*}"
@@ -183,7 +189,7 @@ else
       https://github.com/civetweb/civetweb.git "$CIVETWEB_DIR"
 
   # Create linker version script
-  # This is necessary to avoid conflicts with the version script in the DS 9.1 SDK
+  # This is necessary to avoid conflicts with the version script in the DS 9.2 SDK
   cat > "$CIVETWEB_DIR/civetweb.ver" << 'VEOF'
 CIVETWEB_1.16 {
     global:
@@ -367,13 +373,33 @@ else
     echo "    OpenUCX: preferred 1.13.1 not in apt; installing candidate ${UCX_CANDIDATE:-unknown}"
   fi
 
+  # GLM / GLFW: used by DS3D glprocess. Prefer GLM 0.9.9.8 (same as the old
+  # vendored tree) and GLFW 3.3.10 (Ubuntu 24.04); otherwise the candidate.
+  GLM_APT_PKG=libglm-dev
+  if apt-cache madison libglm-dev 2>/dev/null | awk '{print $3}' | grep -qE '^0\.9\.9\.8'; then
+    echo "    GLM: installing preferred apt version 0.9.9.8"
+    GLM_APT_PKG=libglm-dev=0.9.9.8*
+  else
+    GLM_CANDIDATE=$(apt-cache policy libglm-dev 2>/dev/null | awk '/Candidate:/ {print $2; exit}')
+    echo "    GLM: preferred 0.9.9.8 not in apt; installing candidate ${GLM_CANDIDATE:-unknown}"
+  fi
+  GLFW_APT_PKG=libglfw3-dev
+  if apt-cache madison libglfw3-dev 2>/dev/null | awk '{print $3}' | grep -qE '^3\.3\.10'; then
+    echo "    GLFW: installing preferred apt version 3.3.10"
+    GLFW_APT_PKG=libglfw3-dev=3.3.10*
+  else
+    GLFW_CANDIDATE=$(apt-cache policy libglfw3-dev 2>/dev/null | awk '/Candidate:/ {print $2; exit}')
+    echo "    GLFW: preferred 3.3.10 not in apt; installing candidate ${GLFW_CANDIDATE:-unknown}"
+  fi
+
   apt-get install -y \
     libpango1.0-dev libcairo2-dev libjpeg-dev \
     libglib2.0-dev libjson-glib-dev uuid-dev libyaml-cpp-dev \
     librabbitmq-dev librdkafka-dev \
     libjansson4 libjansson-dev \
-    libssl-dev libcjson-dev libhiredis-dev protobuf-compiler \
-    libboost-dev \
+    libssl-dev libcjson-dev libhiredis-dev protobuf-compiler libprotobuf-dev \
+    libboost-dev libeigen3-dev nlohmann-json3-dev libharfbuzz-dev \
+    "${GLM_APT_PKG}" "${GLFW_APT_PKG}" \
     "${UCX_APT_PKGS[@]}"
 
   mark_stage_done deps-apt-libs
@@ -411,7 +437,7 @@ else
     libgstrtspserver-1.0-dev libx11-dev \
     gstreamer1.0-libav libavahi-compat-libdnssd-dev \
     libjson-glib-dev libjsoncpp-dev libyaml-cpp-dev \
-    libgbm1 libglapi-mesa libgles2-mesa-dev libegl-dev \
+    libgbm1 libglapi-mesa libgles-dev libglvnd-dev libegl-dev \
     rapidjson-dev
   mark_stage_done deps-sample-app-prereqs
   echo "    Stage deps-sample-app-prereqs: DONE"
@@ -476,9 +502,27 @@ else
   # python3-dev supplies Python.h and libpython3.x.so, which the pybind11
   # extension in sources/python/src includes and links.
   apt-get install -y python3-build python3-venv python3-setuptools python3-wheel \
-    python3-dev
+    python3-dev python3-pip
   mark_stage_done deps-python-build
   echo "    Stage deps-python-build: DONE"
+fi
+
+# ---------------------------------------------------------------------------
+# 14. Sparse4D (ds-sparse4d) — PyTorch + remaining apt deps
+# ---------------------------------------------------------------------------
+echo ""
+if stage_is_done deps-sparse4d; then
+  echo "--- Sparse4D dependencies (skipped, already DONE) ---"
+else
+  echo "--- Sparse4D dependencies ---"
+  SPARSE4D_DEPS="$SCRIPT_DIR/../src/gst-plugins/gst-nvdsvideotemplate/ds-sparse4d/configs/install_dependencies.sh"
+  if [[ ! -f "$SPARSE4D_DEPS" ]]; then
+    echo "error: missing $SPARSE4D_DEPS" >&2
+    exit 1
+  fi
+  bash "$SPARSE4D_DEPS"
+  mark_stage_done deps-sparse4d
+  echo "    Stage deps-sparse4d: DONE"
 fi
 
 # ---------------------------------------------------------------------------

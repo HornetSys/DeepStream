@@ -15,15 +15,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-NVDS_VERSION=${NVDS_VERSION:-9.1.1}
-# NVDS_VERSION must be MAJOR.MINOR.PATCH (default: 9.1.1). Install tree still
-# uses MAJOR.MINOR for now (e.g. deepstream-9.1/); strip the patch for paths.
+NVDS_VERSION=${NVDS_VERSION:-9.2.0}
+# NVDS_VERSION must be MAJOR.MINOR.PATCH (default: 9.2.0). Install tree still
+# uses MAJOR.MINOR for now (e.g. deepstream-9.2/); strip the patch for paths.
 if [[ ! "$NVDS_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-  echo "error: invalid NVDS_VERSION='$NVDS_VERSION' (expected MAJOR.MINOR.PATCH, e.g. 9.1.1)" >&2
+  echo "error: invalid NVDS_VERSION='$NVDS_VERSION' (expected MAJOR.MINOR.PATCH, e.g. 9.2.0)" >&2
   exit 1
 fi
 # update-alternatives priority: MAJOR*10000 + MINOR*100 + PATCH
-# (zero-pads minor/patch to 2 digits so 9.1.10 != 9.11.0 and 10.0.0 > 9.10.0)
+# (zero-pads minor/patch to 2 digits so 9.2.10 != 9.21.0 and 10.0.0 > 9.10.0)
 NVDS_MAJOR=${NVDS_VERSION%%.*}
 NVDS_VERSION_REST=${NVDS_VERSION#*.}
 NVDS_MINOR=${NVDS_VERSION_REST%%.*}
@@ -33,20 +33,20 @@ NVDS_VERSION="${NVDS_VERSION%.*}"
 TARGET_DEVICE=$(uname -m)
 OS=$(cat /etc/os-release | awk -F= '$1=="ID"{print $2}' | sed 's/"//g')
 
-if [ "${TARGET_DEVICE}" = "x86_64" ]; then
-    if [ "${OS}" = "rhel" ]; then
+if [[ "${TARGET_DEVICE}" = "x86_64" ]]; then
+    if [[ "${OS}" = "rhel" ]]; then
         mkdir -p /usr/lib/x86_64-linux-gnu/libv4l/plugins/
         ln -sf /opt/nvidia/deepstream/deepstream-${NVDS_VERSION}/lib/libv4l/plugins/libcuvidv4l2_plugin.so /usr/lib/x86_64-linux-gnu/libv4l/plugins/libcuvidv4l2_plugin.so
         BASE_LIB_DIR="/usr/lib64/"
-    elif [ "${OS}" = "ubuntu" ]; then
+    elif [[ "${OS}" = "ubuntu" ]]; then
         BASE_LIB_DIR="/usr/lib/x86_64-linux-gnu/"
     else
         echo "Unsupported OS" 2>&1
         exit 1
     fi
-elif [ "${TARGET_DEVICE}" = "aarch64" ]; then
+elif [[ "${TARGET_DEVICE}" = "aarch64" ]]; then
     BASE_LIB_DIR="/usr/lib/aarch64-linux-gnu"
-    if [ -f "$BASE_LIB_DIR/nvidia/libnvbufsurface.so" ]; then
+    if [[ -f "$BASE_LIB_DIR/nvidia/libnvbufsurface.so" ]]; then
         NVIDIA_LIB_DIR="$BASE_LIB_DIR/nvidia"
     else
         NVIDIA_LIB_DIR="$BASE_LIB_DIR/tegra"
@@ -59,14 +59,14 @@ while getopts "d:" option; do
         BASE_LIB_DIR="${OPTARG}"
         ;;
     *)
-        echo "ERROR! Unsupported option!"
+        echo "ERROR! Unsupported option!" >&2
         exit 1
         ;;
     esac
 done
 
-if [ -n "$TARGET_DEVICE" ]; then
-    if [ "${TARGET_DEVICE}" = "x86_64" ]; then
+if [[ -n "$TARGET_DEVICE" ]]; then
+    if [[ "${TARGET_DEVICE}" = "x86_64" ]]; then
         update-alternatives --install $BASE_LIB_DIR/gstreamer-1.0/deepstream deepstream-plugins /opt/nvidia/deepstream/deepstream-${NVDS_VERSION}/lib/gst-plugins ${NVDS_PRIORITY}
         update-alternatives --install $BASE_LIB_DIR/libv4l/plugins/libcuvidv4l2_plugin.so deepstream-v4l2plugin /opt/nvidia/deepstream/deepstream-${NVDS_VERSION}/lib/libv4l/plugins/libcuvidv4l2_plugin.so ${NVDS_PRIORITY}
         update-alternatives --install /usr/bin/deepstream-appsrc-cuda-test deepstream-appsrc-cuda-test /opt/nvidia/deepstream/deepstream-${NVDS_VERSION}/bin/deepstream-appsrc-cuda-test ${NVDS_PRIORITY}
@@ -76,17 +76,13 @@ if [ -n "$TARGET_DEVICE" ]; then
         update-alternatives --install /usr/bin/deepstream-ucx-test-app deepstream-ucx-test-app /opt/nvidia/deepstream/deepstream-${NVDS_VERSION}/bin/deepstream-ucx-test-app ${NVDS_PRIORITY}
         echo "/opt/nvidia/deepstream/deepstream-${NVDS_VERSION}/lib" > /etc/ld.so.conf.d/deepstream.conf
         echo "/opt/nvidia/deepstream/deepstream-${NVDS_VERSION}/lib/gst-plugins" >> /etc/ld.so.conf.d/deepstream.conf
-    elif [ "${TARGET_DEVICE}" = "aarch64" ]; then
+    elif [[ "${TARGET_DEVICE}" = "aarch64" ]]; then
         update-alternatives --install $BASE_LIB_DIR/gstreamer-1.0/deepstream deepstream-plugins /opt/nvidia/deepstream/deepstream-${NVDS_VERSION}/lib/gst-plugins ${NVDS_PRIORITY}
         for lib in libnvbufsurface.so libnvbufsurftransform.so libnvdsbufferpool.so libgstnvcustomhelper.so; do
-            if [ ! -f "$NVIDIA_LIB_DIR/$lib" ]; then
-                echo "ERROR: required library $NVIDIA_LIB_DIR/$lib not found; cannot create symlink" >&2
-                exit 1
-            fi
             ln -sf "$NVIDIA_LIB_DIR/$lib" "/opt/nvidia/deepstream/deepstream-${NVDS_VERSION}/lib/$lib"
         done
         # deepstream-ipc-test is Jetson-only; not built on SBSA (both report uname -m as aarch64)
-        if [ -f /etc/nv_tegra_release ]; then
+        if [[ -f /etc/nv_tegra_release ]]; then
             update-alternatives --install /usr/bin/deepstream-ipc-test-app deepstream-ipc-test-app /opt/nvidia/deepstream/deepstream-${NVDS_VERSION}/bin/deepstream-ipc-test-app ${NVDS_PRIORITY}
         fi
         echo "/opt/nvidia/deepstream/deepstream-${NVDS_VERSION}/lib" > /etc/ld.so.conf.d/deepstream.conf

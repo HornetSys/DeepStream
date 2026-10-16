@@ -31,19 +31,21 @@
 # Usage:
 #   sudo bash scripts/install_artifacts.sh
 #   sudo INSTALL_METHOD=tar bash scripts/install_artifacts.sh
-#   sudo NVDS_VERSION=9.1.1 bash scripts/install_artifacts.sh
+#   sudo NVDS_VERSION=9.2.0 bash scripts/install_artifacts.sh
 #   sudo PLATFORM=x86 bash scripts/install_artifacts.sh
 #
 # Environment:
 #   INSTALL_METHOD            deb (default) | tar
-#   NVDS_VERSION              MAJOR.MINOR.PATCH (default: 9.1.1); the install
+#   NVDS_VERSION              MAJOR.MINOR.PATCH (default: 9.2.0); the install
 #                             tree uses MAJOR.MINOR only. GitHub Release
 #                             proprietary-libs / sample-data assets are always
-#                             fetched from the v9.1.1 release (hardcoded;
+#                             fetched from the v9.2.0 release (hardcoded;
 #                             not derived from NVDS_VERSION).
 #   PLATFORM                  x86 | aarch64 | sbsa (auto-detected if unset)
 #   ARTIFACTS_DIR             Local artifacts directory (default: <repo>/artifacts)
 #   ARTIFACTS_STAGE_STATE_FILE Stage resume file (default: build/.stage-state.artifacts)
+#   RESUME=1                  Skip stages already marked DONE (used by build.sh --resume).
+#                             Default 0: always reinstall; stage state is reset first.
 #   PROPRIETARY_LIBS_URL      Override proprietary tarball URL (tar method download fallback)
 #   ARTIFACTS_LOCAL_ONLY=1    Require local artifacts; do not download proprietary libs
 
@@ -55,16 +57,16 @@ set -e
 # GITHUB_ASSET_VERSION below): new patch-release assets are uploaded onto the
 # existing tag rather than cutting a new tag each patch, so older branches whose
 # build.sh still points at this same tag keep resolving.
-GITHUB_RELEASE_TAG="9.1.0"
+GITHUB_RELEASE_TAG="9.2.0"
 
 # Version embedded in the release asset filenames themselves (deepstream-binaries-*,
 # deepstream-sample-data_*, …). Bump by hand once newer-patch assets are uploaded.
-GITHUB_ASSET_VERSION="9.1.1"
+GITHUB_ASSET_VERSION="9.2.0"
 
 INSTALL_METHOD=${INSTALL_METHOD:-deb}
-NVDS_VERSION=${NVDS_VERSION:-9.1.1}
+NVDS_VERSION=${NVDS_VERSION:-9.2.0}
 if [[ ! "$NVDS_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-  echo "error: invalid NVDS_VERSION='$NVDS_VERSION' (expected MAJOR.MINOR.PATCH, e.g. 9.1.1)" >&2
+  echo "error: invalid NVDS_VERSION='$NVDS_VERSION' (expected MAJOR.MINOR.PATCH, e.g. 9.2.0)" >&2
   exit 1
 fi
 NVDS_FULL_VERSION="$NVDS_VERSION"
@@ -76,6 +78,7 @@ REPO_ROOT=$(cd "$SCRIPT_DIR/.." && pwd)
 ARTIFACTS_DIR="${ARTIFACTS_DIR:-$REPO_ROOT/artifacts}"
 STAGE_STATE_FILE="${ARTIFACTS_STAGE_STATE_FILE:-$REPO_ROOT/build/.stage-state.artifacts}"
 ARTIFACTS_LOCAL_ONLY=${ARTIFACTS_LOCAL_ONLY:-0}
+RESUME=${RESUME:-0}
 
 case "$INSTALL_METHOD" in
   deb|tar) ;;
@@ -127,6 +130,8 @@ GITHUB_RELEASE_SAMPLE_TAR_URL="${GITHUB_RELEASE_BASE}/${SAMPLE_TAR_NAME}"
 
 stage_is_done() {
   local stage=$1
+  # Manual / non-resume runs always execute; skip only when RESUME=1 (build.sh --resume).
+  [[ "$RESUME" -eq 1 ]] || return 1
   [[ -f "$STAGE_STATE_FILE" ]] && grep -qx "DONE ${stage}" "$STAGE_STATE_FILE"
 }
 
@@ -379,6 +384,13 @@ echo "    Platform    : $PLATFORM"
 echo "    Install root: $INSTALL_ROOT"
 echo "    Artifacts   : $ARTIFACTS_DIR"
 echo "    Stage state : $STAGE_STATE_FILE"
+echo "    Resume      : $RESUME"
+
+# Standalone / non-resume runs always reinstall; reset stage markers first.
+if [[ "$RESUME" -eq 0 ]]; then
+  mkdir -p "$(dirname "$STAGE_STATE_FILE")"
+  : >"$STAGE_STATE_FILE"
+fi
 
 install_setup_stage
 install_proprietary_stage

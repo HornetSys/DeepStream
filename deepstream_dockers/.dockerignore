@@ -1,0 +1,39 @@
+# Build context for every platform is this directory, and each Dockerfile only
+# bind-mounts its own <platform>_dockerfiles/ subdirectory. Everything excluded
+# below is either a host-side build input or documentation, so keeping it out of
+# the context speeds up all three builds.
+#
+# The <platform>_dockerfiles/ directories are deliberately NOT excluded: they
+# are the staged build contexts the Dockerfiles read from.
+
+# Sources for the setup_*_build.sh staging scripts
+x86_64_specific_files/
+jetson_specific_files/
+sbsa_specific_files/
+common/
+
+# Host-side setup and build wrappers
+setup_x86_build.sh
+setup_x86_cross_compile_jetson.sh
+setup_x86_cross_compile_sbsa.sh
+setup_jetson_build.sh
+setup_sbsa_build.sh
+buildx86.sh
+buildjet.sh
+buildsbsa.sh
+
+# Documentation and version control
+README.md
+*.md
+.git
+.gitignore
+.gitattributes
+
+# Editor and OS noise
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+._*

@@ -61,10 +61,10 @@ sh scripts/install_python_pkgs.sh
 ```
 
 ## DeepStream Libraries Installation
-1. Download the DeepStream Libraries wheel file from the `artifacts/` directory in the [DeepStream repository release assets](https://github.com/NVIDIA/DeepStream/releases#release-v9.1.0).
+1. Download the DeepStream Libraries wheel file from the `artifacts/` directory in the [DeepStream repository release assets](https://github.com/NVIDIA/DeepStream/releases#release-v9.2.0).
     - Wheel file: `artifacts/deepstream_libraries-1.4-cp312-cp312-linux_x86_64.whl`
 
-    Note: You can also download it from the [DeepStream v9.1 release assets](https://github.com/NVIDIA/DeepStream/releases/tag/v9.1.0).
+    Note: You can also download it from the [DeepStream v9.2 release assets](https://github.com/NVIDIA/DeepStream/releases/tag/v9.2.0).
 
 2. Install DeepStream Libraries package.
     ```bash

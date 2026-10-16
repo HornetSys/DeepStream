@@ -30,6 +30,7 @@ function usage() {
   echo "Example: $0 --build-bindings"
   echo "Example: $0 --build-bindings -r master"
   exit 1
+  return 1
 }
 
 while [[ "$#" > 0 ]]; do
