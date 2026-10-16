@@ -337,7 +337,7 @@ Step 2: Create Dockerfile for building new DeepStream docker image for jetson wh
 
 $ cat <<EOF > Dockerfile
 #==============================================================================
-FROM nvcr.io/nvidia/deepstream-l4t:<tag>
+FROM ghcr.io/nvidia/deepstream:<tag>
 ADD test5_config_new.txt /opt/nvidia/deepstream/deepstream/sources/apps/sample_apps/deepstream-test5/configs/
 CMD ["/bin/bash"]
 WORKDIR /opt/nvidia/deepstream/deepstream/
@@ -383,8 +383,8 @@ $ docker build -t ds_test5:1 .
   - Name:    ds_test5
 
   - Image URI:
-         For x86:     nvcr.io/nvidia/deepstream:<tag>
-         For jetson:  nvcr.io/nvidia/deepstream-l4t:<tag>
+         For x86:     ghcr.io/nvidia/deepstream:<tag>
+         For jetson:  ghcr.io/nvidia/deepstream:<tag>
 
   - container Create options:
     {

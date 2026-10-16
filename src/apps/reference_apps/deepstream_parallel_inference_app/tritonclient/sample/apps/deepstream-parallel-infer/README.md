@@ -20,7 +20,7 @@ limitations under the License.
 DeepStream Parallel Inference is one application which run inference in parallel. tee will send batched buffer to different models.  nvdsmetamux will mux batch meta from different models which run in parallel. User can configure the pipeline in application configuration yaml file. User can select source ids which need inference in preprocess configuration file. User can select source ids which need mux in nvdsmetamux configuration file.
 
 ## Prerequisites
-DeepStream SDK 9.1 GA or above
+DeepStream SDK 9.2 GA or above
 
 
 ## Getting Started:
@@ -39,7 +39,7 @@ For any issues or questions, please feel free to make a new post on the [DeepStr
 
 #### Known Issues
 
-On **DGX Spark** (NVIDIA GB10, compute capability 12.1 / sm_121), the ONNX Runtime (1.23.0) bundled in the `nvcr.io/nvidia/deepstream:9.1-triton-sbsa-dgx-spark` container was not compatible with sm_121.
+On **DGX Spark** (NVIDIA GB10, compute capability 12.1 / sm_121), the ONNX Runtime (1.23.0) bundled in the `ghcr.io/nvidia/deepstream:9.2-triton-sbsa-dgx-spark` container was not compatible with sm_121.
 You can apply the following workaround to the affected **bodypose2d** model:
 1.Run inference through the nvinfer plugin
 2.If the nvinferserver plugin must be used, configure the model to use the TensorRT backend (platform: "tensorrt_plan" in config.pbtxt) instead of the ONNX Runtime backend

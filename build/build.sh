@@ -945,6 +945,21 @@ if begin_stage sample_apps; then
       run_user_make -C "$dir" $MK || FAILED_BUILDS+=("$dir")
     fi
   done
+  # Nested custom libs that the sample_apps glob does not visit. Parent
+  # Makefiles recurse into some of these, but install of the .so is not
+  # always copied by the parent (e.g. action-recognition), so build and
+  # install each one explicitly.
+  for sublib_dir in \
+    src/apps/sample_apps/deepstream-3d-action-recognition/custom_sequence_preprocess \
+    src/apps/sample_apps/deepstream-lidar-inference-app/custom_preprocess_impl \
+    src/apps/sample_apps/deepstream-lidar-inference-app/custom_postprocess_impl; do
+    [[ -f "$sublib_dir/Makefile" ]] || continue
+    if run_submake -C "$sublib_dir" $MK; then
+      run_submake -C "$sublib_dir" $MK install || FAILED_BUILDS+=("$sublib_dir (install)")
+    else
+      FAILED_BUILDS+=("$sublib_dir")
+    fi
+  done
   if ! stage_had_failures "$_fb_before"; then
     finish_stage sample_apps
   fi
@@ -985,6 +1000,8 @@ if begin_stage tao_apps; then
   else
     echo "==> git submodules already initialized"
   fi
+  run_as_root cp  src/apps/tao_apps/apps/tao_others/deepstream-nvocdr-app/Makefile.nvocdr \
+    src/apps/tao_apps/apps/tao_others/deepstream-nvocdr-app/nvocdr/deepstream/Makefile
   run_submake -C src/apps/tao_apps $MK || FAILED_BUILDS+=("src/apps/tao_apps")
   if ! stage_had_failures "$_fb_before"; then
     finish_stage tao_apps

@@ -51,4 +51,4 @@ install: $(TARGET_LIB)
 	cp -rv $(TARGET_LIB) $(LIB_INSTALL_DIR)
 
 clean:
-	rm -rf $(TARGET_LIB)
+	rm -rf $(TARGET_LIB) $(TARGET_OBJS)

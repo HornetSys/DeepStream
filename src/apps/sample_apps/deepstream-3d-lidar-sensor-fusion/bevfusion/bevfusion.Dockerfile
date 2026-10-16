@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG BASE_IMAGE=nvcr.io/nvidia/deepstream:9.0-triton-multiarch
+ARG BASE_IMAGE=ghcr.io/nvidia/deepstream:9.2-triton-multiarch
 
 FROM ${BASE_IMAGE} as base_debug
 

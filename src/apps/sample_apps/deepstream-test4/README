@@ -301,16 +301,11 @@ Azure Iotedge runtime integration of deepstream-test4-app:
 
   - Image URI:
         For x86 dockers:
-            docker pull nvcr.io/nvidia/deepstream:<tag>-devel
-            docker pull nvcr.io/nvidia/deepstream:<tag>-samples
-            docker pull nvcr.io/nvidia/deepstream:<tag>-iot
-            docker pull nvcr.io/nvidia/deepstream:<tag>-base
-            docker pull nvcr.io/nvidia/deepstream:<tag>-triton
+            ghcr.io/nvidia/deepstream:<tag>-triton-multiarch
+            ghcr.io/nvidia/deepstream:<tag>-samples-multiarch
 
         For Jetson dockers:
-            docker pull nvcr.io/nvidia/deepstream-l4t:<tag>-samples
-            docker pull nvcr.io/nvidia/deepstream-l4t:<tag>-iot
-            docker pull nvcr.io/nvidia/deepstream-l4t:<tag>-base
+            ghcr.io/nvidia/deepstream:<tag>-samples-multiarch
 
   - container Create options:
          {

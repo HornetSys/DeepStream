@@ -48,17 +48,27 @@ Pre-requisites:
 - For X86 platform, please follow instructions from
   https://catalog.ngc.nvidia.com/orgs/nvidia/containers/deepstream
   to download deepstream-triton image.
-  $ docker pull nvcr.io/nvidia/deepstream:[version]-triton
+  $ docker pull ghcr.io/nvidia/deepstream:[version]-triton-multiarch
    [version] means deepstream version numbers e.g. 9.0.0
   $ xhost +
   Set correct $DISPLAY variables on host, then run deepstream-triton docker container.
    $ docker run --gpus '"'device=0'"' -it --rm -v /tmp/.X11-unix:/tmp/.X11-unix \
-     -e DISPLAY=$DISPLAY --net=host nvcr.io/nvidia/deepstream:[version]-triton
+     -e DISPLAY=$DISPLAY --net=host ghcr.io/nvidia/deepstream:[version]-triton-multiarch
    Note: Set correct GPU id in `device=$id`.
 
 - For Jetson platform, please install Triton dependencies.
+   NOTE: <DS_ROOT> is the path where the DeepStream repo is cloned.
+         $SDK_ROOT is the installed DeepStream SDK root (deb/tar package or
+         DeepStream Docker image): /opt/nvidia/deepstream/deepstream, a symlink
+         to /opt/nvidia/deepstream/deepstream-<version>. Set and verify it with:
+           $ export SDK_ROOT=/opt/nvidia/deepstream/deepstream
+           $ cat $SDK_ROOT/version
+   From the repo clone:
    $ cd <DS_ROOT>/scripts
-   NOTE: <DS_ROOT> is the path where the repo is cloned.
+   From the installed SDK (Jetson deb/tar/Docker only; not shipped on x86):
+   $ ls $SDK_ROOT/samples/triton_backend_setup.sh
+   $ cd $SDK_ROOT/samples
+   Then:
    $ sudo ./triton_backend_setup.sh
    $ rm -rf ~/.cache/gstreamer-1.0/
 
@@ -113,7 +123,7 @@ Run the ONNX sample with DeepStream Triton gRPC remote inference:
 5. Known Issues:
 ===============================================================================
 DGX Spark ONNX Runtime backend limitation:
-  The Triton ONNX Runtime backend bundled in the `nvcr.io/nvidia/deepstream:9.0-triton-sbsa-dgx-spark`
+  The Triton ONNX Runtime backend bundled in the `ghcr.io/nvidia/deepstream:9.2-triton-sbsa-dgx-spark`
   container uses ONNX Runtime 1.23.0, which is not compatible with DGX Spark. This affects the ONNX Runtime backend path for this sample.
 
   Workaround:

@@ -45,9 +45,9 @@ CFLAGS+= $(shell pkg-config --cflags $(PKGS))
 
 LIBS:= $(shell pkg-config --libs $(PKGS))
 
-LIBS+= -L/usr/local/cuda/lib64/ -lnvdsgst_helper -lm \
-		-L$(LIB_INSTALL_DIR) -lnvdsgst_3d_gst \
-		-L$(LIB_INSTALL_DIR) -lnvdsgst_meta -lnvds_meta \
+LIBS+= -L/usr/local/cuda/lib64/ -L$(LIB_INSTALL_DIR) -lnvdsgst_helper -lm \
+		-lnvdsgst_3d_gst \
+		-lnvdsgst_meta -lnvds_meta \
 		-lcuda -Wl,-rpath,$(LIB_INSTALL_DIR) \
 		-lgstapp-1.0 -ldl -pthread
 APP_OBJS:= $(APP_SRCS:.cpp=.o)

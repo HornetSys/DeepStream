@@ -67,7 +67,9 @@ Please enable Triton or Triton gRPC inferencing with the app YAML configurations
     sudo apt update
     sudo apt install git-lfs
     git lfs install --skip-repo
-    git clone https://github.com/NVIDIA/deepstream.git
+    git clone https://github.com/NVIDIA/DeepStream.git
+    cd DeepStream
+    git submodule update --init --recursive
 ```
 2. Prepare Models and TensorRT engine
 
@@ -75,7 +77,8 @@ There are pre-trained TAO models available in [NGC](https://ngc.nvidia.com/catal
 Please run the following script to download pre-trained models.
 
 ```
-    cd deepstream/src/apps/tao_apps
+    cd src/apps/tao_apps
+    cp deepstream-nvocdr-app/Makefile.nvocdr deepstream-nvocdr-app/nvocdr/deepstream/Makefile
     chmod 755 download_models.sh
     ./download_models.sh
 ```

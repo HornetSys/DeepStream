@@ -18,15 +18,15 @@ limitations under the License.
 #  Single-View 3D Tracking in DeepStream
 
 ## Introduction
-This sample application demonstrates the single-view 3D tracking with DeepStream SDK. Given the [camera matrix and human model](configs/camInfo.yml) of a static camera, this application estimates and keeps tracking of object states in the 3D physical world. It can recover the complete bounding box, foot location and body convex hulls precisely from partial occlusions. For algorithm and setup details, please refer to [DeepStream Single View 3D Tracking Documentation](https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_plugin_gst-nvtracker.html#single-view-3d-tracking-alpha).
+This sample application demonstrates the single-view 3D tracking with DeepStream SDK. Given the [camera matrix and human model](configs/camInfo.yml) of a static camera, this application estimates and keeps tracking of object states in the 3D physical world. It can recover the complete bounding box, foot location and body convex hulls precisely from partial occlusions. For algorithm and setup details, please refer to [DeepStream Single View 3D Tracking Documentation](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_plugin_gst-nvtracker#single-view-3d-tracking).
 
 The currnet SV3DT configuration in this sample uses an 2D pose estimator, which estimates human key-points on the 2D image plane. The SV3DT algorithm uses height and waist key-points as anchor to precisely estimate each person's 3D human height. If setting `poseEstimatorType: 0` in `configs/config_tracker_NvDCF_accuracy_3D.yml`, pose estimator will be disabled, and the algorithm uses 2D detection bounding boxes and a human model with fixed height. It estimates the 3D location by matching the head with 2D bounding box's top edge.
 
 ## Prerequisites
-This sample application can be run on both x86 and Jetson platforms inside DeepStream container. Check [here](https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_docker_containers.html#prerequisites) for DeepStream container setup.
-1. Download the latest DeepStream container image from NGC (e.g., DS 9.1 in the example below)
+This sample application can be run on both x86 and Jetson platforms inside DeepStream container. Check [here](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_docker_containers#prerequisites) for DeepStream container setup.
+1. Download the latest DeepStream container image from NGC (e.g., DS 9.2 in the example below)
     ```bash
-    export DS_IMG_NAME="nvcr.io/nvidia/deepstream:9.1-triton-multiarch"
+    export DS_IMG_NAME="ghcr.io/nvidia/deepstream:9.2-triton-multiarch"
     docker pull $DS_IMG_NAME
     ```
 
@@ -57,7 +57,7 @@ This sample application can be run on both x86 and Jetson platforms inside DeepS
             └── resnet34_peoplenet_int8.txt
     ```
 ## Running the Application
-Launch the container from current directory, and execute the 3D tracking pipeline inside the container. The current [config](configs/deepstream_app_source1_3d_tracking.txt) requires users to run with a display because it uses EGL sink to visualize the overlay results. To run through ssh without display, please change `type=2` to `1` in group `[sink0]` in that file. Users can check [DeepStream sink group](https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_ref_app_deepstream.html#sink-group) for the usage of each sink.
+Launch the container from current directory, and execute the 3D tracking pipeline inside the container. The current [config](configs/deepstream_app_source1_3d_tracking.txt) requires users to run with a display because it uses EGL sink to visualize the overlay results. To run through ssh without display, please change `type=2` to `1` in group `[sink0]` in that file. Users can check [DeepStream sink group](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_ref_app_deepstream#sink-group) for the usage of each sink.
 
 ```bash
 cd ../..
@@ -93,7 +93,7 @@ When the pipeline is launced, DeepStream shows the output video like below while
 ![sample 3d tracking results](figures/.retail_osd.png)
 
 ### 3D Metadata Processing and Visualization
-The extracted metadata (e.g., bounding box, frame num, target ID, etc.) is saved in both extended MOT and KITTI format. For detailed explanation, please refer to [DeepStream Tracker Miscellaneous Data Output](https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_plugin_gst-nvtracker.html#miscellaneous-data-output).
+The extracted metadata (e.g., bounding box, frame num, target ID, etc.) is saved in both extended MOT and KITTI format. For detailed explanation, please refer to [DeepStream Tracker Miscellaneous Data Output](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_plugin_gst-nvtracker#miscellaneous-data-output).
 
 The MOT results can be found in `track_dump_0.txt` file, which contains all the object metadata for one stream, and the data format is defined below. The foot image position and the convex hull of the projected cylindrical human model are defined in video frame coordinates, and can be used to draw the visualization figures below. Users can create such overlay video or image using their favorite tools like [OpenCV](https://github.com/opencv/opencv). The foot world position is defined in the 3D world ground plane corresponding to the 3x4 camera projection matrix.
 

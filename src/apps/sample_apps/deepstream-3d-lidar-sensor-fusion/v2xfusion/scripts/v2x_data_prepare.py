@@ -35,6 +35,17 @@ def load_json(path):
     return data
 
 
+def safe_join(base_dir, *paths):
+    """Join path components under base_dir and reject the result if it
+    would escape base_dir (e.g. via '..' segments coming from untrusted
+    JSON input), preventing path traversal."""
+    base_dir = os.path.realpath(base_dir)
+    full_path = os.path.realpath(os.path.join(base_dir, *paths))
+    if os.path.commonpath([base_dir, full_path]) != base_dir:
+        raise ValueError(f"Unsafe path detected outside of {base_dir}: {full_path}")
+    return full_path
+
+
 def convert_to_homogeneous(matrix):
     homogeneous_matrix = np.pad(matrix, ((0, 1), (0, 1)), mode="constant")
     homogeneous_matrix[3, 3] = 1
@@ -163,10 +174,10 @@ if __name__ == "__main__":
                 lidar_to_camera_path = item.get("calib_virtuallidar_to_camera_path")
 
                 camera_intrinsic = load_json(
-                    os.path.join(infrastructure_side_data_path, camera_intrinsic_path)
+                    safe_join(infrastructure_side_data_path, camera_intrinsic_path)
                 )
                 lidar_to_camera = load_json(
-                    os.path.join(infrastructure_side_data_path, lidar_to_camera_path)
+                    safe_join(infrastructure_side_data_path, lidar_to_camera_path)
                 )
 
                 camera_intrinsic_matrix = convert_to_homogeneous(
@@ -207,8 +218,8 @@ if __name__ == "__main__":
             if dump_info[sequence_id] == 200:
                 continue
 
-            img_path = os.path.join(infrastructure_side_data_path, item["image_path"])
-            lidar_path = os.path.join(
+            img_path = safe_join(infrastructure_side_data_path, item["image_path"])
+            lidar_path = safe_join(
                 infrastructure_side_data_path, item["pointcloud_path"]
             )
 
