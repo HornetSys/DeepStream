@@ -343,12 +343,6 @@ build a pipeline
 **Dependency:** install the pinned PyYAML version with
 `python3 -m pip install -r skills/deepstream-generate-config/scripts/requirements.txt`.
 
-**Regression tests:**
-
-```bash
-python3 -m unittest discover -s tests/skills/deepstream-generate-config -p 'test_*.py' -v
-```
-
 **Install** (same paths as `deepstream-dev`):
 
 ```bash
