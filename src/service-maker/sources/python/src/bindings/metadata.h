@@ -433,8 +433,8 @@ py::list audio_batch_metadata_extract(BatchMetadata& self, unsigned int max_item
  * Creates a duplicate of the C string.
  */
 static void* copy_cstring_user_data(void* data, void* user_data) {
-    const char* str = static_cast<const char*>(data);
-    return strdup(str);
+    NvDsUserMeta* usermeta = (NvDsUserMeta*)(data);
+    return (usermeta && usermeta->user_meta_data) ? strdup((char*)usermeta->user_meta_data) : NULL;
 }
 
 /**
@@ -443,7 +443,11 @@ static void* copy_cstring_user_data(void* data, void* user_data) {
  * Frees the C string.
  */
 static void release_cstring_user_data(void* data, void* user_data) {
-    free(data);
+    NvDsUserMeta* usermeta = (NvDsUserMeta*)data;
+    if (usermeta && usermeta->user_meta_data) {
+        free(usermeta->user_meta_data);
+        usermeta->user_meta_data = NULL;
+    }
 }
 
 void module_metadata_bind(py::module &m);

@@ -352,21 +352,21 @@ void gst_nvquery_model_status_set_response (GstQuery * query, const gchar * json
 gboolean gst_nvquery_model_status_parse_response (GstQuery * query,
     const gchar ** json);
 
-/* ---- stream route (native REST GET /api/v1/stream/route) ---- */
+/* ---- model routing (native REST GET /api/v1/model/routing) ---- */
 
 /**
- * Creates a new stream-route query - the read side of the routing plane, which
+ * Creates a new model-routing query - the read side of the routing plane, which
  * the REST server sends downstream for the model-managing element to answer.
  *
  * @return  A pointer to the new query.
  */
-GstQuery * gst_nvquery_stream_route_new (void);
+GstQuery * gst_nvquery_model_routing_new (void);
 
 /**
- * \brief  Creates a stream-route query carrying an optional point lookup.
+ * \brief  Creates a model-routing query carrying an optional point lookup.
  *
  * The filter is a camera_id, the same identifier that
- * POST /api/v1/stream/route accepts. Pass NULL, and only NULL, for no filter;
+ * POST /api/v1/model/routing accepts. Pass NULL, and only NULL, for no filter;
  * any non-NULL value, including an empty string, is a filter which is present,
  * so a malformed point lookup matches nothing instead of returning every route.
  *
@@ -374,12 +374,12 @@ GstQuery * gst_nvquery_stream_route_new (void);
  *
  * @return  A pointer to the new query.
  */
-GstQuery * gst_nvquery_stream_route_new_filtered (const gchar * camera_id);
+GstQuery * gst_nvquery_model_routing_new_filtered (const gchar * camera_id);
 
 /**
- * \brief  Parses the request filter from a stream-route query.
+ * \brief  Parses the request filter from a model-routing query.
  *
- * params[in] query          A pointer to a stream-route query.
+ * params[in] query          A pointer to a model-routing query.
  * params[out] camera_id     A pointer to the camera ID. The string should not
  *                           be modified, and remains valid until the query is
  *                           unreffed. Please use or make a copy within scope.
@@ -389,36 +389,36 @@ GstQuery * gst_nvquery_stream_route_new_filtered (const gchar * camera_id);
  *
  * @return  A Boolean; true if the query was successfully parsed.
  */
-gboolean gst_nvquery_stream_route_parse_request (GstQuery * query,
+gboolean gst_nvquery_model_routing_parse_request (GstQuery * query,
     const gchar ** camera_id, gboolean * filtered);
 
 /**
- * Determines whether a query is a stream-route query.
+ * Determines whether a query is a model-routing query.
  *
  * params[in] query   A pointer to the query to be checked.
  *
- * @return  A Boolean; true if the query is a stream-route query.
+ * @return  A Boolean; true if the query is a model-routing query.
  */
-gboolean gst_nvquery_is_stream_route (GstQuery * query);
+gboolean gst_nvquery_is_model_routing (GstQuery * query);
 
 /**
- * Sets the JSON routing response on a stream-route query.
+ * Sets the JSON routing response on a model-routing query.
  *
- * params[in] query   A pointer to a stream-route query.
+ * params[in] query   A pointer to a model-routing query.
  * params[in] json    The JSON routing response.
  */
-void gst_nvquery_stream_route_set_response (GstQuery * query, const gchar * json);
+void gst_nvquery_model_routing_set_response (GstQuery * query, const gchar * json);
 
 /**
- * \brief  Parses the JSON routing response from a stream-route query.
+ * \brief  Parses the JSON routing response from a model-routing query.
  *
- * params[in] query     A pointer to a stream-route query.
+ * params[in] query     A pointer to a model-routing query.
  * params[out] json     A pointer to the JSON response. The string should not be
  *                      modified, and remains valid until the query is unreffed.
  *
  * @return  A Boolean; true if a response was set.
  */
-gboolean gst_nvquery_stream_route_parse_response (GstQuery * query,
+gboolean gst_nvquery_model_routing_parse_response (GstQuery * query,
     const gchar ** json);
 
 /* ---- generic control op: SYNCHRONOUS admission query ---- */
@@ -495,7 +495,7 @@ gboolean gst_nvquery_control_parse_response (GstQuery * query, gint * http_code,
  * Creates a new model-update message - denoting an in-place checkpoint
  * transition on the model plane.
  *
- * This never routes streams; routing is the stream-route message below.
+ * This never routes streams; routing is the model-routing message below.
  *
  * params[in] obj           The GStreamer object creating the message.
  * params[in] model_info    A pointer to @ref NvDsModelInfo holding value_json.
@@ -529,10 +529,10 @@ gboolean gst_nvmessage_is_model_update (GstMessage * message);
 gboolean gst_nvmessage_parse_model_update (GstMessage * message,
     NvDsModelInfo * model_info);
 
-/* ---- stream plane (native REST /api/v1/stream/route) ---- */
+/* ---- routing plane (native REST /api/v1/model/routing) ---- */
 
 /**
- * \brief  Creates a new stream-route message - the write side of the routing
+ * \brief  Creates a new model-routing message - the write side of the routing
  * plane.
  *
  * The message carries the declarative routing document as verbatim JSON, with
@@ -543,22 +543,22 @@ gboolean gst_nvmessage_parse_model_update (GstMessage * message,
  *
  * @return  A pointer to the new message.
  */
-GstMessage * gst_nvmessage_new_stream_route (GstObject * obj,
+GstMessage * gst_nvmessage_new_model_routing (GstObject * obj,
     NvDsRouteInfo * route_info);
 
 /**
- * Determines whether a message is a stream-route message.
+ * Determines whether a message is a model-routing message.
  *
  * params[in] message   A pointer to the message to be checked.
  *
- * @return  A Boolean; true if the message is a stream-route message.
+ * @return  A Boolean; true if the message is a model-routing message.
  */
-gboolean gst_nvmessage_is_stream_route (GstMessage * message);
+gboolean gst_nvmessage_is_model_routing (GstMessage * message);
 
 /**
- * \brief  Parses the route info from a stream-route message.
+ * \brief  Parses the route info from a model-routing message.
  *
- * params[in] message        A pointer to a stream-route message.
+ * params[in] message        A pointer to a model-routing message.
  * params[out] route_info    A pointer to @ref NvDsRouteInfo
  *    The string NvDsRouteInfo->value_json should not be modified,
  *    and remains valid until the next
@@ -567,7 +567,7 @@ gboolean gst_nvmessage_is_stream_route (GstMessage * message);
  *
  * @return  A Boolean; true if the message was successfully parsed.
  */
-gboolean gst_nvmessage_parse_stream_route (GstMessage * message,
+gboolean gst_nvmessage_parse_model_routing (GstMessage * message,
     NvDsRouteInfo * route_info);
 
 /**

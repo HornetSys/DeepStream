@@ -46,7 +46,9 @@ class CudaTensorContext : public Tensor::Context {
   CudaTensorContext(void* ptr): data_ptr_(ptr) {}
   virtual ~CudaTensorContext() {
     if (data_ptr_) {
-      cudaFree(data_ptr_);
+      // stream-ordered free: returns the allocation to CUDA's device memory
+      // pool for reuse instead of an expensive driver-level deallocation.
+      cudaFreeAsync(data_ptr_, 0);
     }
   }
 
@@ -203,15 +205,24 @@ Tensor* Tensor::clone() const {
   Tensor* tensor = nullptr;
   if (this->impl_->device == Tensor::DeviceType::GPU) {
     cudaSetDevice((int)this->impl_->device_id);
-    cudaError_t err = cudaMalloc(&data_ptr, this->size());
+    // Stream-ordered allocation from CUDA's device memory pool: avoids the
+    // cost of a driver-level cudaMalloc on every clone() call by reusing
+    // freed blocks (see CudaTensorContext's matching cudaFreeAsync).
+    cudaError_t err = cudaMallocAsync(&data_ptr, this->size(), 0);
     if (err != cudaSuccess) {
       snprintf(err_msg, sizeof(err_msg), "CUDA malloc failed: %s", cudaGetErrorString(err));
       throw std::runtime_error(err_msg);
     }
     if (strides[0] == (int64_t) this->impl_->strides[0]) {
-      err = cudaMemcpy(data_ptr, this->impl_->data, this->size(), cudaMemcpyDeviceToDevice);
+      err = cudaMemcpyAsync(data_ptr, this->impl_->data, this->size(), cudaMemcpyDeviceToDevice, 0);
     } else {
-      err = cudaMemcpy2D(data_ptr, strides[0], this->impl_->data, this->impl_->strides[0], strides[0], shape[0], cudaMemcpyDeviceToDevice);
+      err = cudaMemcpy2DAsync(data_ptr, strides[0], this->impl_->data, this->impl_->strides[0], strides[0], shape[0], cudaMemcpyDeviceToDevice, 0);
+    }
+    if (err == cudaSuccess) {
+      // Preserve clone()'s synchronous contract: the returned Tensor's data
+      // must be ready to read immediately, so block until the async copy
+      // (and allocation) on the default stream complete.
+      err = cudaStreamSynchronize(0);
     }
     if (err == cudaSuccess) {
       CudaTensorContext* context = new CudaTensorContext(data_ptr);
@@ -228,7 +239,7 @@ Tensor* Tensor::clone() const {
         context);
     } else {
       g_printerr("CUDA memcpy failed\n");
-      cudaFree(data_ptr);
+      cudaFreeAsync(data_ptr, 0);
     }
   } else if (this->impl_->device == Tensor::DeviceType::CPU) {
     data_ptr = malloc(this->size());

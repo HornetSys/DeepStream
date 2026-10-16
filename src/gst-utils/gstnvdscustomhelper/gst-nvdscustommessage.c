@@ -22,13 +22,13 @@
 #define MODEL_LOAD_STRUCT_NAME "model-load"
 #define MODEL_UNLOAD_STRUCT_NAME "model-unload"
 #define MODEL_UPDATE_STRUCT_NAME "model-update"
-#define STREAM_ROUTE_STRUCT_NAME "stream-route"
+#define MODEL_ROUTING_STRUCT_NAME "model-routing"
 #define PIPELINE_EOS_STRUCT_NAME "force-pipeline-eos"
 #define PIPELINE_RTSP_RECONNECT_ATTEMPT_STRUCT_NAME "attempt-exceeded"
 #define MODEL_STATUS_QUERY_NAME "nv-model-status"
-/* distinct from STREAM_ROUTE_STRUCT_NAME above: that names the control
+/* distinct from MODEL_ROUTING_STRUCT_NAME above: that names the control
  * MESSAGE (the write), this names the read-back QUERY. */
-#define STREAM_ROUTE_QUERY_NAME "nv-stream-route"
+#define MODEL_ROUTING_QUERY_NAME "nv-model-routing"
 #define CONTROL_QUERY_NAME "nv-control"
 #define MODEL_EVENT_STRUCT_NAME "nv-model-event"
 
@@ -197,7 +197,7 @@ gst_nvmessage_parse_fps_stream_remove (GstMessage * message,
 
 /* ---- model load / unload ---- */
 
-/* Model-plane + stream-route messages: ONE payload -- the request "value"
+/* Model-plane + model-routing messages: ONE payload -- the request "value"
  * object as verbatim JSON (NvDsModelInfo/NvDsRouteInfo value_json). One schema
  * end-to-end; the consumer parses the document. */
 
@@ -324,25 +324,25 @@ gst_nvmessage_parse_model_update (GstMessage * message, NvDsModelInfo * model_in
   return s_parse_json_payload_message (message, &model_info->value_json);
 }
 
-/* ---- stream/route: the declarative routing document (stream plane) ---- */
+/* ---- model/routing: the declarative routing document (routing plane) ---- */
 
 GstMessage *
-gst_nvmessage_new_stream_route (GstObject * obj, NvDsRouteInfo * route_info)
+gst_nvmessage_new_model_routing (GstObject * obj, NvDsRouteInfo * route_info)
 {
-  return s_new_json_payload_message (obj, STREAM_ROUTE_STRUCT_NAME,
+  return s_new_json_payload_message (obj, MODEL_ROUTING_STRUCT_NAME,
       route_info->value_json);
 }
 
 gboolean
-gst_nvmessage_is_stream_route (GstMessage * message)
+gst_nvmessage_is_model_routing (GstMessage * message)
 {
-  CHECK_MESSAGE_TYPE (message, STREAM_ROUTE_STRUCT_NAME);
+  CHECK_MESSAGE_TYPE (message, MODEL_ROUTING_STRUCT_NAME);
 }
 
 gboolean
-gst_nvmessage_parse_stream_route (GstMessage * message, NvDsRouteInfo * route_info)
+gst_nvmessage_parse_model_routing (GstMessage * message, NvDsRouteInfo * route_info)
 {
-  if (!gst_nvmessage_is_stream_route (message))
+  if (!gst_nvmessage_is_model_routing (message))
     return FALSE;
   return s_parse_json_payload_message (message, &route_info->value_json);
 }
@@ -424,36 +424,36 @@ gst_nvquery_model_status_parse_response (GstQuery * query, const gchar ** json)
 }
 
 GstQuery *
-gst_nvquery_stream_route_new_filtered (const gchar * camera_id)
+gst_nvquery_model_routing_new_filtered (const gchar * camera_id)
 {
-  GstStructure *str = gst_structure_new (STREAM_ROUTE_QUERY_NAME,
+  GstStructure *str = gst_structure_new (MODEL_ROUTING_QUERY_NAME,
       "req-filtered", G_TYPE_BOOLEAN, (camera_id != NULL),
       "req-camera-id", G_TYPE_STRING, s_str_or_empty (camera_id), NULL);
   return gst_query_new_custom (GST_QUERY_CUSTOM, str);
 }
 
 GstQuery *
-gst_nvquery_stream_route_new (void)
+gst_nvquery_model_routing_new (void)
 {
-  return gst_nvquery_stream_route_new_filtered (NULL);
+  return gst_nvquery_model_routing_new_filtered (NULL);
 }
 
 gboolean
-gst_nvquery_is_stream_route (GstQuery * query)
+gst_nvquery_is_model_routing (GstQuery * query)
 {
   const GstStructure *str;
   if (!query || GST_QUERY_TYPE (query) != GST_QUERY_CUSTOM)
     return FALSE;
   str = gst_query_get_structure (query);
-  return (str != NULL) && gst_structure_has_name (str, STREAM_ROUTE_QUERY_NAME);
+  return (str != NULL) && gst_structure_has_name (str, MODEL_ROUTING_QUERY_NAME);
 }
 
 gboolean
-gst_nvquery_stream_route_parse_request (GstQuery * query,
+gst_nvquery_model_routing_parse_request (GstQuery * query,
     const gchar ** camera_id, gboolean * filtered)
 {
   const GstStructure *str;
-  if (!gst_nvquery_is_stream_route (query))
+  if (!gst_nvquery_is_model_routing (query))
     return FALSE;
   str = gst_query_get_structure (query);
   if (camera_id)
@@ -464,20 +464,20 @@ gst_nvquery_stream_route_parse_request (GstQuery * query,
 }
 
 void
-gst_nvquery_stream_route_set_response (GstQuery * query, const gchar * json)
+gst_nvquery_model_routing_set_response (GstQuery * query, const gchar * json)
 {
   GstStructure *str;
-  if (!gst_nvquery_is_stream_route (query))
+  if (!gst_nvquery_is_model_routing (query))
     return;
   str = gst_query_writable_structure (query);
   gst_structure_set (str, "response-json", G_TYPE_STRING, s_str_or_empty (json), NULL);
 }
 
 gboolean
-gst_nvquery_stream_route_parse_response (GstQuery * query, const gchar ** json)
+gst_nvquery_model_routing_parse_response (GstQuery * query, const gchar ** json)
 {
   const GstStructure *str;
-  if (!gst_nvquery_is_stream_route (query) || !json)
+  if (!gst_nvquery_is_model_routing (query) || !json)
     return FALSE;
   str = gst_query_get_structure (query);
   *json = gst_structure_get_string (str, "response-json");

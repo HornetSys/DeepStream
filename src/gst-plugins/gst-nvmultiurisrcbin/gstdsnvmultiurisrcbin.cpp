@@ -2444,6 +2444,7 @@ nv_http_download_release_slot (GstDsNvMultiUriBin * self)
  * => rejected, and we surface the element's OWN reason to the caller verbatim.
  *   @answered  did a downstream element actually handle the query?
  *   @ok/@fail  the op's success/failure status enums (for the async ledger). */
+
 /* Write the REST response from a nvmodelmux control-query verdict. Shared by every
  * model-plane op (load / unload / update): the element answers {http_code,
  * err_code, reason, hint} -- 202 => accepted (may still warm asynchronously),
@@ -2468,7 +2469,7 @@ s_set_response_from_verdict (NvDsServerModelInfo * model_info, GstQuery * query,
       model_info->model_log = (reason && *reason) ? reason : "request accepted";
     } else {                                  /* rejected -- element's own reason */
       model_info->status = failure_status;
-      model_info->err_info.code = StatusBadRequest;
+      model_info->err_info.code = NvDsServerHttpStatusCodeToStatusCode (http_code);
       model_info->err_info.err_code =
           (err_code && *err_code) ? err_code : "REQUEST_REJECTED";
       model_info->model_log = (reason && *reason) ? reason : "request rejected";
@@ -2478,7 +2479,7 @@ s_set_response_from_verdict (NvDsServerModelInfo * model_info, GstQuery * query,
   } else {                                    /* nothing downstream answered */
     model_info->status = failure_status;
     model_info->err_info.code = StatusInternalServerError;
-    model_info->err_info.err_code = "REQUEST_FAILED";
+    model_info->err_info.err_code = "MODEL_OPERATION_FAILED";
     model_info->model_log = std::string (op_name) + ": no model element answered "
         "(is nvmodelmux present and the pipeline PLAYING?)";
     model_info->err_info.hint =
@@ -2513,7 +2514,7 @@ s_model_api_impl (NvDsServerModelInfo * model_info, void *ctx)
   gst_query_unref (query);
 }
 
-/* Native REST /api/v1/stream/route handler (the declarative stream-routing
+/* Native REST /api/v1/model/routing handler (the declarative stream-routing
  * request). nvmultiurisrcbin owns the camera_id -> source_id map, so ATOMIC
  * ADMISSION for stream existence happens here: every camera_id in every route
  * must resolve to a live source or the WHOLE request is rejected (an invalid
@@ -2533,10 +2534,10 @@ s_route_api_impl (NvDsServerRouteInfo * route_info, void *ctx)
   if (!reader->parse (route_info->value_json.c_str (),
           route_info->value_json.c_str () + route_info->value_json.size (),
           &value, &errs)) {
-    route_info->status = STREAM_ROUTE_FAIL;
-    route_info->route_log = "STREAM_ROUTE_FAIL, internal payload re-parse error";
+    route_info->status = MODEL_ROUTING_FAIL;
+    route_info->route_log = "MODEL_ROUTING_FAIL, internal payload re-parse error";
     route_info->err_info.code = StatusInternalServerError;
-    route_info->err_info.err_code = "REQUEST_FAILED";
+    route_info->err_info.err_code = "MODEL_OPERATION_FAILED";
     return;
   }
 
@@ -2555,16 +2556,22 @@ s_route_api_impl (NvDsServerRouteInfo * route_info, void *ctx)
       if (!sc) {
         /* ATOMIC ADMISSION: one unknown camera_id rejects the whole request */
         g_mutex_unlock (&nvmultiurisrcbin->bin_lock);
-        route_info->status = STREAM_ROUTE_FAIL;
-        route_info->route_log = "STREAM_ROUTE_FAIL, unknown stream '" +
+        route_info->status = MODEL_ROUTING_FAIL;
+        route_info->route_log = "MODEL_ROUTING_FAIL, unknown stream '" +
             entry.camera_ids[i] + "' (no live source with that camera_id)";
-        route_info->err_info.code = StatusBadRequest;
+        /* 404, not 400: the request is well-formed and the named resource simply
+         * does not exist. The contract spells its 404 rule in terms of models,
+         * but the rule it encodes -- "you named something that is not here" --
+         * is the same one, and a reconciler routing to a camera that has not been
+         * added yet needs to tell that apart from a malformed body so it can
+         * retry rather than give up. */
+        route_info->err_info.code = StatusNotFound;
         route_info->err_info.err_code = "STREAM_UNKNOWN";
-        /* point at stream/route's GET, not model/status: model/status reports the
+        /* point at model/routing's GET, not model/status: model/status reports the
          * element's DISPLAY name under its camera_id key, which this API will not
-         * route by. stream/route's read returns the routable camera_ids. */
+         * route by. model/routing's read returns the routable camera_ids. */
         route_info->err_info.hint = "add the stream first (stream/add), or "
-            "check GET /api/v1/stream/route for the routable camera ids "
+            "check GET /api/v1/model/routing for the routable camera ids "
             "(model/status reports the display name, which is not routable)";
         return;
       }
@@ -2584,7 +2591,7 @@ s_route_api_impl (NvDsServerRouteInfo * route_info, void *ctx)
    * scope?) instead of a blind 202. The actual reroute still settles async. The
    * stream-existence check (STREAM_UNKNOWN) above stays here -- only nvmultiuri
    * owns the camera_id -> source_id map. */
-  GstQuery *query = gst_nvquery_control_new ("stream/route", augmented.c_str ());
+  GstQuery *query = gst_nvquery_control_new ("model/routing", augmented.c_str ());
   GstPad *src_pad = (GstPad *) (nvmultiurisrcbin->bin_src_pad);
   gint http_code = 0;
   const gchar *err_code = NULL, *reason = NULL, *hint = NULL;
@@ -2593,22 +2600,22 @@ s_route_api_impl (NvDsServerRouteInfo * route_info, void *ctx)
           &hint);
 
   if (answered && http_code == 202) {           /* admitted */
-    route_info->status = STREAM_ROUTE_SUCCESS;
+    route_info->status = MODEL_ROUTING_SUCCESS;
     route_info->err_info.code = StatusAccepted;
-    route_info->route_log = (reason && *reason) ? reason : "stream/route accepted";
+    route_info->route_log = (reason && *reason) ? reason : "model/routing accepted";
   } else if (answered) {                        /* rejected -- element's reason */
-    route_info->status = STREAM_ROUTE_FAIL;
-    route_info->err_info.code = StatusBadRequest;
+    route_info->status = MODEL_ROUTING_FAIL;
+    route_info->err_info.code = NvDsServerHttpStatusCodeToStatusCode (http_code);
     route_info->err_info.err_code =
-        (err_code && *err_code) ? err_code : "STREAM_ROUTE_REJECTED";
-    route_info->route_log = (reason && *reason) ? reason : "stream/route rejected";
+        (err_code && *err_code) ? err_code : "MODEL_ROUTING_REJECTED";
+    route_info->route_log = (reason && *reason) ? reason : "model/routing rejected";
     if (hint && *hint)
       route_info->err_info.hint = hint;
   } else {                                      /* nothing downstream answered */
-    route_info->status = STREAM_ROUTE_FAIL;
+    route_info->status = MODEL_ROUTING_FAIL;
     route_info->err_info.code = StatusInternalServerError;
-    route_info->err_info.err_code = "REQUEST_FAILED";
-    route_info->route_log = "stream/route: no model element answered "
+    route_info->err_info.err_code = "MODEL_OPERATION_FAILED";
+    route_info->route_log = "model/routing: no model element answered "
         "(is nvmodelmux present and the pipeline PLAYING?)";
     route_info->err_info.hint =
         "ensure nvmodelmux is downstream and the pipeline is PLAYING";
@@ -3982,7 +3989,7 @@ s_uri_query_has (const std::string & uri, const char *key)
  * keys (model / version / source_id) never carry reserved characters. But
  * stream/add accepts ANY non-empty camera_id, so a route lookup for an id
  * containing a space, '&', '=' or '%' could not round-trip without decoding.
- * Applied ONLY to stream/route's ?stream=; model/status's parsing is untouched. */
+ * Applied ONLY to model/routing's ?stream=; model/status's parsing is untouched. */
 static std::string
 s_uri_unescape (const std::string & in)
 {
@@ -4004,8 +4011,8 @@ s_uri_unescape (const std::string & in)
 }
 
 /* Ask the downstream app for a model-status snapshot. Used by the model/status
- * GET only -- stream/route is a SEPARATE protocol: it builds its own
- * stream-route query and the element answers that plane whole, so there is no
+ * GET only -- model/routing is a SEPARATE protocol: it builds its own
+ * model-routing query and the element answers that plane whole, so there is no
  * shared projection step to factor out here. Returns FALSE if nothing answered
  * or the answer was not parseable. */
 static gboolean
@@ -4038,12 +4045,12 @@ s_get_request_api_impl (NvDsServerGetRequestInfo * get_request_info, void *ctx)
   GstDsNvMultiUriBin *nvmultiurisrcbin = (GstDsNvMultiUriBin *) ctx;
   (void) nvmultiurisrcbin;
 
-  /* stream/route (GET): the ROUTING plane. Answered whole by the model-managing
+  /* model/routing (GET): the ROUTING plane. Answered whole by the model-managing
    * element downstream -- it owns both the routing state and, since it records
    * the routable camera_id per stream, the identifiers the response is keyed by.
    * Nothing is projected or joined here; this forwards the body, exactly as the
    * model/status branch below does. Fails safe (FAIL) if no handler answers. */
-  if (get_request_info->get_request_flag == GET_STREAM_ROUTE_INFO) {
+  if (get_request_info->get_request_flag == GET_MODEL_ROUTING_INFO) {
     /* ?stream=<camera_id> -- percent-decoded, and PRESENCE-checked so that a
      * present-but-empty `?stream=` is a filter matching nothing rather than an
      * absent filter matching everything. An embedded NUL is rejected for the
@@ -4065,9 +4072,9 @@ s_get_request_api_impl (NvDsServerGetRequestInfo * get_request_info, void *ctx)
     if (has_stream_filter && f_stream.find ('\0') != std::string::npos)
       f_stream.clear ();
 
-    query = gst_nvquery_stream_route_new_filtered (has_stream_filter ? f_stream.c_str () : NULL);
+    query = gst_nvquery_model_routing_new_filtered (has_stream_filter ? f_stream.c_str () : NULL);
     if (srcpad && gst_pad_peer_query (srcpad, query)
-        && gst_nvquery_stream_route_parse_response (query, &json) && json && *json) {
+        && gst_nvquery_model_routing_parse_response (query, &json) && json && *json) {
       Json::Reader reader;
       /* Parseable is not the same as VALID. A downstream element that answered
        * with {}, null, "ok", or a version-skewed body is a failure, not an empty
@@ -4088,25 +4095,25 @@ s_get_request_api_impl (NvDsServerGetRequestInfo * get_request_info, void *ctx)
 
     if (ok) {
       get_request_info->stream_info = root;
-      get_request_info->status = GET_STREAM_ROUTE_INFO_SUCCESS;
+      get_request_info->status = GET_MODEL_ROUTING_INFO_SUCCESS;
       get_request_info->err_info.code = StatusOk;
-      get_request_info->get_request_log = "GET_STREAM_ROUTE_INFO_SUCCESS";
+      get_request_info->get_request_log = "GET_MODEL_ROUTING_INFO_SUCCESS";
     } else {
       /* Machine-readable identity alongside the prose: the POST on this uri
        * already answers failures as {code,message,hint}, so the GET carries the
        * same vocabulary and one client-side parser covers both verbs. The two
        * failures are distinguishable -- a malformed body is the element's bug,
        * an unanswered query means nothing downstream handles the plane. */
-      get_request_info->status = GET_STREAM_ROUTE_INFO_FAIL;
+      get_request_info->status = GET_MODEL_ROUTING_INFO_FAIL;
       get_request_info->err_info.code = StatusInternalServerError;
       get_request_info->err_info.err_code = parse_failed
           ? "ROUTE_SNAPSHOT_MALFORMED" : "ROUTE_SNAPSHOT_UNAVAILABLE";
       get_request_info->err_info.hint = parse_failed
           ? "the model-managing element returned a body that is not valid JSON"
-          : "no downstream element answered the stream-route query -- is nvmodelmux in the pipeline?";
+          : "no downstream element answered the model-routing query -- is nvmodelmux in the pipeline?";
       get_request_info->get_request_log = parse_failed
-          ? "GET_STREAM_ROUTE_INFO_FAIL, malformed route json"
-          : "GET_STREAM_ROUTE_INFO_FAIL, application did not answer (no downstream handler?)";
+          ? "GET_MODEL_ROUTING_INFO_FAIL, malformed route json"
+          : "GET_MODEL_ROUTING_INFO_FAIL, application did not answer (no downstream handler?)";
     }
     return;
   }
@@ -4128,7 +4135,7 @@ s_get_request_api_impl (NvDsServerGetRequestInfo * get_request_info, void *ctx)
     gboolean parse_failed = FALSE;
 
     /* version is a refinement of model (separate params, never combined).
-     * The query/peer_query/parse sequence is shared with stream/route's GET
+     * The query/peer_query/parse sequence is shared with model/routing's GET
      * (s_query_model_status) -- same construction, same lifetime, same
      * success/failure classification as before, just factored out so the two
      * readers cannot drift apart. */
@@ -4144,6 +4151,13 @@ s_get_request_api_impl (NvDsServerGetRequestInfo * get_request_info, void *ctx)
     } else {
       get_request_info->status = GET_MODEL_STATUS_INFO_FAIL;
       get_request_info->err_info.code = StatusInternalServerError;
+      /* err_code deliberately left unset: the contract names one code for an
+       * internal failure, and the REST layer defaults to it. The hint carries the
+       * distinguishing detail instead, mirroring the routing GET's diagnosis
+       * without inventing endpoint-specific codes the contract does not define. */
+      get_request_info->err_info.hint = parse_failed
+          ? "the model-managing element returned a body that is not valid JSON"
+          : "no downstream element answered the model-status query -- is nvmodelmux in the pipeline?";
       get_request_info->get_request_log = parse_failed
           ? "GET_MODEL_STATUS_INFO_FAIL, malformed status json"
           : "GET_MODEL_STATUS_INFO_FAIL, application did not answer (no downstream handler?)";
@@ -4588,7 +4602,7 @@ gGstNvMultiUriSrcBinStaticInit ()
 {
   return gst_plugin_register_static (GST_VERSION_MAJOR, GST_VERSION_MINOR,
       "nvdsgst_deepstream_bins2",
-      DESCRIPTION, plugin_init_2, "9.1", LICENSE, BINARY_PACKAGE, PACKAGE,
+      DESCRIPTION, plugin_init_2, "9.2", LICENSE, BINARY_PACKAGE, PACKAGE,
       URL);
 }
 #endif

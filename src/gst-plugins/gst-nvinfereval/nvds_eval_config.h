@@ -72,7 +72,7 @@ struct GlobalConfig
   std::string default_gt_file;
   /* Base URL of the nvmodelmux REST server (e.g. http://localhost:9000).
    * When a shadow wins an epoch, the win-action below is applied by POSTing to
-   * <rest_url>/api/v1/stream/route. Empty (default) => no action taken. */
+   * <rest_url>/api/v1/model/routing. Empty (default) => no action taken. */
   std::string rest_url;
   /* Action when the shadow wins an epoch:
    *   0 = promote (default): winner -> primary, shadow cleared (A/B ends)

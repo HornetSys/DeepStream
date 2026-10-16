@@ -320,7 +320,7 @@ void module_tensor_bind(py::module &m) {
       }, pydeepstreamdoc::tensor::TensorDoc::dlpack, py::arg("stream") = py::none())
       .def("__dlpack_device__", &TensorWrapper::dlpackDevice, pydeepstreamdoc::tensor::TensorDoc::dlpack_device)
       .def("wrap", &TensorWrapper::wrap, pydeepstreamdoc::tensor::TensorDoc::wrap)
-      .def("clone", &TensorWrapper::clone, py::return_value_policy::take_ownership, pydeepstreamdoc::tensor::TensorDoc::clone)
+      .def("clone", &TensorWrapper::clone, py::call_guard<py::gil_scoped_release>(), py::return_value_policy::take_ownership, pydeepstreamdoc::tensor::TensorDoc::clone)
       .def("to_gpu", &TensorWrapper::toGPU, py::arg("device_id"), py::return_value_policy::take_ownership, pydeepstreamdoc::tensor::TensorDoc::to_gpu)
       .def("size", &TensorWrapper::size, pydeepstreamdoc::tensor::TensorDoc::size)
       .def("__bool__", [](TensorWrapper& self) { return self.hasTensor(); })

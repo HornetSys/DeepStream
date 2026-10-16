@@ -261,7 +261,7 @@ typedef struct
   gchar         *default_shadow;           /** default shadow model NAME (NULL=>none)    */
   gchar         *default_shadow_version;   /** default shadow model VERSION (NULL=>none)  */
   gint           default_primary_gpu;      /** requested instance placement of the runtime
-                                            *   default (stream/route default{}.gpu); -1 =
+                                            *   default (model/routing default{}.gpu); -1 =
                                             *   any instance. Applied to every stream that
                                             *   RESOLVES to the default (add/bind/sweep).  */
   gint           default_shadow_gpu;
@@ -452,7 +452,7 @@ typedef struct
  *
  * SEEDED ONCE from the parsed ModelMuxConfig in modelmux_bin_new(); after that
  * the config's default_* fields are never read nor written again -- ALL runtime
- * re-designation (stream/route default{}, model/load default flags, OTA rename
+ * re-designation (model/routing default{}, model/load default flags, OTA rename
  * commit/rollback, promote/swap default-follows-the-slot) mutates the pool
  * refs, under modelmux_bin->lock (same discipline the config fields had).
  *
@@ -468,7 +468,7 @@ typedef struct
 {
   gchar    *name;             /** model NAME; NULL => no default for this role  */
   gchar    *version;          /** model VERSION ("1", ...); NULL only with name */
-  gint      gpu;              /** placement pin (stream/route default{}.gpu);
+  gint      gpu;              /** placement pin (model/routing default{}.gpu);
                                *   MM_GPU_ANY = any instance                    */
   gchar    *key;              /** cached canonical "name@version" (NULL <=> no
                                *   default) -- what every guard compares        */
@@ -542,7 +542,7 @@ typedef enum
 /*                                                                     */
 /* ModelMuxStreamEntry + ModelMuxRoleAttach are the bin's record of    */
 /* WHAT IT HAS WIRED UP for every attached stream, so a later detach / */
-/* stream-route / promote / compaction can find and unplug exactly the */
+/* model-routing / promote / compaction can find and unplug exactly the */
 /* pads and elements that belong to that stream -- and nothing else.   */
 /*                                                                     */
 /*   ModelMuxBin.stream_wiring (hash: source_id -> ModelMuxStreamEntry*) */
@@ -571,7 +571,7 @@ typedef enum
 
 /** One role branch (Primary or Shadow) attached for a stream: the model this
  *  role is currently routed to + every element/pad of its lane, recorded so
- *  the lane can later be swapped (stream/route) or torn down surgically. */
+ *  the lane can later be swapped (model/routing) or torn down surgically. */
 typedef struct
 {
   gboolean     active;
@@ -690,7 +690,7 @@ typedef struct
   ModelMuxAcctRole  role[MM_ROLE_SLOTS];/** [0]=Primary, [1]=Shadow                  */
 } ModelMuxAcct;
 
-/** One ACCEPTED-but-not-yet-applied stream/route, mirrored down from the control
+/** One ACCEPTED-but-not-yet-applied model/routing, mirrored down from the control
  *  layer so the status view can see it.
  *
  *  A POST that targets a still-warming model is accepted (202) and parked on the
@@ -759,7 +759,7 @@ typedef struct
    *  Kept SEPARATE from stream_names on purpose. stream_names holds the DISPLAY
    *  name (stream/add's `camera_name`, falling back to camera_id when the host
    *  supplied only one), which is what the overlay and model/status show -- but
-   *  a display name is NOT routable: POST /api/v1/stream/route resolves its
+   *  a display name is NOT routable: POST /api/v1/model/routing resolves its
    *  `streams` scope by camera_id and rejects a display name with
    *  STREAM_UNKNOWN. Storing only the merged name is why the routing READ had to
    *  be assembled in nvmultiurisrcbin, joining this element's answer against the
@@ -820,7 +820,7 @@ typedef struct
   guint        compact_poll_id; /**< debounce g_timeout id for shard compaction (0=none) */
   guint        dump_source_id; /**< pending debug dump source id, under free_lock */
   guint        perf_timer_id;   /**< perf-metric tick g_timeout id (0=none/off)          */
-  guint64      routing_revision; /**< monotonic; bumps on every APPLIED stream/route,
+  guint64      routing_revision; /**< monotonic; bumps on every APPLIED model/routing,
                                  *   default switch or model/update (under ib->lock);
                                  *   surfaced by model/status for if_revision CAS      */
   GPtrArray   *pending_routes; /**< ModelMuxPendingRouteNote*: routes ACCEPTED but still
@@ -1019,7 +1019,7 @@ GstPad     *modelmux_bin_get_sink (ModelMuxBin * ib);
  *           host supplied only one identifier.
  * cam_id  = the ROUTABLE camera_id from stream/add, or NULL when none was given.
  *           Kept apart from `name` because only this one is accepted by
- *           POST /api/v1/stream/route (see ModelMuxBin.stream_cam_ids). */
+ *           POST /api/v1/model/routing (see ModelMuxBin.stream_cam_ids). */
 gboolean    modelmux_bin_attach_stream (ModelMuxBin * ib, guint stream_id,
                                             const gchar * name, const gchar * cam_id,
                                             const gchar * primary, const gchar * shadow,
@@ -1099,6 +1099,18 @@ void        modelmux_bin_set_default (ModelMuxBin * ib, gboolean shadow,
  * pointer is owned by the pool; main-loop readers are same-thread with all
  * writers, streaming-thread readers must hold ib->lock. */
 const DefaultModelRef *modelmux_bin_get_default (ModelMuxBin * ib, gboolean shadow);
+/* LOCKED "is this the configured default?" predicate, for callers that are NOT on
+ * the main loop -- the REST control plane answers model/unload synchronously on the
+ * civetweb thread. The DefaultModelRef strings are replaced+freed by the default
+ * writers under ib->lock, so dereferencing the borrowed ref from
+ * modelmux_bin_get_default() off the main loop races a writer freeing the old
+ * key/name. This compares UNDER ib->lock and returns only a boolean, so no borrowed
+ * pointer escapes to the caller.
+ *   version != NULL/"" -> exact (name, version) IDENTITY match ("name@version")
+ *   version == NULL/"" -> bare NAME match (ANY version of the name is a default)
+ * Locks internally: callers must NOT already hold ib->lock. */
+gboolean    modelmux_bin_is_configured_default (ModelMuxBin * ib, const gchar * name,
+                const gchar * version);
 /* Collect source-ids of streams currently routed to `key` in the given role (incl. a
  * passthrough stream awaiting promotion to it). Fills `out` (capacity `cap`), returns count.
  * Used to reroute streams off a demoted old default onto the new one. */
@@ -1149,7 +1161,7 @@ gint        modelmux_bin_model_status (ModelMuxBin * ib,
 gchar      *modelmux_bin_status_json (ModelMuxBin * ib, const gchar * f_model,
                                            const gchar * f_version, const gchar * f_stream,
                                            gint f_sid);
-/* Build the ROUTING-PLANE snapshot for GET /api/v1/stream/route: routes[] +
+/* Build the ROUTING-PLANE snapshot for GET /api/v1/model/routing: routes[] +
  * default{} + routing_revision, with streams GROUPED by identical routing state.
  * f_camera = optional strict point lookup on camera_id. NULL (and only NULL) is
  * the full snapshot; any non-NULL value -- INCLUDING "" -- is a PRESENT filter,
@@ -1218,7 +1230,7 @@ void        modelmux_bin_clear_pending_model (ModelMuxBin * ib, guint stream_id)
 /* List the streams (within the src_ids scope; n==0 => all active streams) whose PRIMARY is a
  * no-infer PASSTHROUGH branch. *out is allocated to the scope size (caller g_free's);
  * returns the count -- sized dynamically so a route-all can never silently truncate. Used by
- * stream/route: a passthrough stream can't be rerouted through the normal role machinery
+ * model/routing: a passthrough stream can't be rerouted through the normal role machinery
  * (no model lane to swap) -- it must go through the deferred-PROMOTE path instead. */
 guint       modelmux_bin_passthru_streams (ModelMuxBin * ib,
                 const guint * src_ids, guint n, guint ** out);

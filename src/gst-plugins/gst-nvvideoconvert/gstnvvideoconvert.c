@@ -3547,7 +3547,7 @@ gst_nvvideoconvert_transform (GstBaseTransform * btrans, GstBuffer * inbuf,
 
   space = GST_NVVIDEOCONVERT (btrans);
   char context[100];
-  sprintf (context, "gst_nvvideoconvert_transform()_ctx=%p", space);
+  snprintf (context, sizeof (context), "gst_nvvideoconvert_transform()_ctx=%p", space);
 #if defined(__aarch64__)
   nvtx_helper_push_pop (context);
 #endif

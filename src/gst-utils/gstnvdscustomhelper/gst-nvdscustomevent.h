@@ -97,7 +97,7 @@ extern "C"
   /** Specifies a custom event carrying a REST model/update request: an
    IN-PLACE checkpoint transition on the live instance group (same network,
    new weights, NEW version). Model plane only -- never routes streams
-   (routing is GST_NVEVENT_STREAM_ROUTE). Verbatim JSON payload. */
+   (routing is GST_NVEVENT_MODEL_ROUTING). Verbatim JSON payload. */
     GST_NVEVENT_MODEL_UPDATE
         = GST_EVENT_MAKE_TYPE (413, FLAG (DOWNSTREAM) | FLAG (SERIALIZED)),
   /** Specifies a custom event carrying a REST stream/add per-stream model
@@ -106,11 +106,11 @@ extern "C"
    when the host owns the pipeline bus. */
     GST_NVEVENT_STREAM_MODEL_BIND
         = GST_EVENT_MAKE_TYPE (414, FLAG (DOWNSTREAM) | FLAG (SERIALIZED)),
-  /** Specifies a custom event carrying a REST stream/route request: the
+  /** Specifies a custom event carrying a REST model/routing request: the
    declarative routing document (routes[] + default{}), with each route
-   AUGMENTED by nvmultiurisrcbin with the resolved source_ids. Stream plane
+   AUGMENTED by nvmultiurisrcbin with the resolved source_ids. Routing plane
    only -- never loads or destroys models. Verbatim JSON payload. */
-    GST_NVEVENT_STREAM_ROUTE
+    GST_NVEVENT_MODEL_ROUTING
         = GST_EVENT_MAKE_TYPE (415, FLAG (DOWNSTREAM) | FLAG (SERIALIZED))
   } GstNvDsCustomEventType;
 #undef FLAG
@@ -251,13 +251,13 @@ GstEvent *gst_nvevent_new_model_update (const gchar * value_json);
 /** Parses a "nv-model-update" event. Caller frees *value_json. */
 void gst_nvevent_parse_model_update (GstEvent * event, gchar ** value_json);
 
-/** Creates a new "nv-stream-route" event: the declarative routing document
+/** Creates a new "nv-model-routing" event: the declarative routing document
  * (routes[] + default{}), each route augmented with resolved source_ids by
  * nvmultiurisrcbin. Verbatim JSON payload. */
-GstEvent *gst_nvevent_new_stream_route (const gchar * value_json);
+GstEvent *gst_nvevent_new_model_routing (const gchar * value_json);
 
-/** Parses a "nv-stream-route" event. Caller frees *value_json. */
-void gst_nvevent_parse_stream_route (GstEvent * event, gchar ** value_json);
+/** Parses a "nv-model-routing" event. Caller frees *value_json. */
+void gst_nvevent_parse_model_routing (GstEvent * event, gchar ** value_json);
 
 /**
  * Creates a new "nv-stream-model-bind" event carrying a stream/add's per-stream

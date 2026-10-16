@@ -914,7 +914,13 @@ gst_nvstreammux_reset_pad_data (GstNvStreamMuxPadData * pad_data)
 
   g_mutex_lock (&pad_data->queue_lock);
   while (!g_queue_is_empty (&pad_data->buf_queue)) {
-    gst_buffer_unref (GST_BUFFER (g_queue_pop_head (&pad_data->buf_queue)));
+    GstMiniObject *obj = (GstMiniObject *) g_queue_pop_head (&pad_data->buf_queue);
+    if (GST_IS_BUFFER (obj))
+      gst_buffer_unref (GST_BUFFER (obj));
+    else if (GST_IS_EVENT (obj))
+      gst_event_unref (GST_EVENT (obj));
+    else if (obj)
+      gst_mini_object_unref (obj);
   }
   while (!g_queue_is_empty (&pad_data->sync_queue)) {
     GstNvStreamMuxSyncInfo *sync_info = (GstNvStreamMuxSyncInfo *)g_queue_pop_head (&pad_data->sync_queue);
@@ -1949,6 +1955,8 @@ gst_nvstreammux_release_pad (GstElement * element, GstPad * pad)
 
   g_mutex_lock (&data->queue_lock);
 
+  data->stopping = TRUE;
+
   gst_buffer_replace(&data->cached_src_buffers, NULL);
 
   if(data->buffer_available_pad==FALSE){
@@ -2719,6 +2727,10 @@ static GstClockTime get_ntp_timestamp_from_sei_meta(GstBuffer *buffer) {
     const int MAX_RETRIES = 3;
     const int RETRY_DELAY_US = 100; // 100 microseconds
 
+    if (!buffer || !GST_IS_BUFFER (buffer)) {
+      return GST_CLOCK_TIME_NONE;
+    }
+
     for (int retry = 0; retry < MAX_RETRIES; retry++) {
         GstVideoSEIMeta *meta = (GstVideoSEIMeta *) gst_buffer_get_meta(buffer, GST_VIDEO_SEI_META_API_TYPE);
 
@@ -2762,6 +2774,60 @@ static GstClockTime get_ntp_timestamp_from_sei_meta(GstBuffer *buffer) {
     }
 
     return GST_CLOCK_TIME_NONE;
+}
+
+/* Ref queue head under trylock so get_meta is safe if the pad is released. */
+static GstBuffer *
+ref_pad_queue_head (GstNvStreamMuxPadData * pad_data)
+{
+  GstBuffer *buf = NULL;
+  if (!pad_data || !g_mutex_trylock (&pad_data->queue_lock))
+    return NULL;
+  if (!g_queue_is_empty (&pad_data->buf_queue)) {
+    GstMiniObject *obj = (GstMiniObject *) g_queue_peek_head (&pad_data->buf_queue);
+    if (GST_IS_BUFFER (obj))
+      buf = gst_buffer_ref (GST_BUFFER (obj));
+  }
+  g_mutex_unlock (&pad_data->queue_lock);
+  return buf;
+}
+
+/* Caller holds pad_data->queue_lock. Empties buffers and events (including
+ * pad-deleted queued by release_pad) and wakes release_pad. */
+static guint
+drain_pad_buf_queue (GstNvStreamMux * mux, GstNvStreamMuxPadData * pad_data)
+{
+  guint dropped = 0;
+
+  while (!g_queue_is_empty (&pad_data->buf_queue)) {
+    GstMiniObject *obj = (GstMiniObject *) g_queue_pop_head (&pad_data->buf_queue);
+    if (GST_IS_BUFFER (obj)) {
+      GstBuffer *buf = GST_BUFFER (obj);
+      get_sync_obj_and_wait (buf, &pad_data->sync_queue, -1);
+      gst_buffer_unref (buf);
+      dropped++;
+    } else if (GST_IS_EVENT (obj)) {
+      GstEvent *event = GST_EVENT (obj);
+      if ((guint32) GST_EVENT_TYPE (event) == GST_NVEVENT_PAD_DELETED) {
+        if (pad_data->num_bufs_in_current_batch > 0 || mux->event_list) {
+          mux->event_list = g_list_prepend (mux->event_list,
+              gst_nvevent_new_pad_deleted (pad_data->pad_id));
+        } else {
+          gst_pad_push_event (mux->srcpad,
+              gst_nvevent_new_pad_deleted (pad_data->pad_id));
+        }
+      }
+      gst_event_unref (event);
+      dropped++;
+    } else if (obj) {
+      gst_mini_object_unref (obj);
+      dropped++;
+    }
+  }
+
+  if (dropped)
+    g_cond_broadcast (&pad_data->queue_cond);
+  return dropped;
 }
 
 static void adjust_base_ntp(GstNvStreamMux *mux) {
@@ -2965,6 +3031,15 @@ gst_nvstreammux_src_collect_buffers (GstNvStreamMux * mux, GstBuffer * out_buf,
     }
 
     g_mutex_lock (&pad_data->queue_lock);
+
+    /* NTP HOLD never pops the head buffer. release_pad waits for an empty
+     * queue, so drain immediately when this pad is being removed. */
+    if (pad_data->stopping) {
+      drain_pad_buf_queue (mux, pad_data);
+      g_mutex_unlock (&pad_data->queue_lock);
+      mux->current_loc++;
+      continue;
+    }
 
     GstMiniObject *obj;
     while ((obj = (GstMiniObject *) g_queue_peek_head (&pad_data->buf_queue))) {
@@ -3184,11 +3259,11 @@ gst_nvstreammux_src_collect_buffers (GstNvStreamMux * mux, GstBuffer * out_buf,
                   GstNvStreamMuxPadData *check_pad =
                       (GstNvStreamMuxPadData *)g_object_get_data(G_OBJECT(mux->sink_pads[check_idx]), PAD_DATA_KEY);
 
-                  if (check_pad && !g_queue_is_empty(&check_pad->buf_queue)) {
-                    GstMiniObject *peek_obj = (GstMiniObject *)g_queue_peek_head(&check_pad->buf_queue);
-                    if (GST_IS_BUFFER(peek_obj)) {
-                      GstBuffer *peek_buf = GST_BUFFER(peek_obj);
+                  if (check_pad) {
+                    GstBuffer *peek_buf = ref_pad_queue_head (check_pad);
+                    if (peek_buf) {
                       GstClockTime peek_ntp = get_ntp_timestamp_from_sei_meta(peek_buf);
+                      gst_buffer_unref (peek_buf);
 
                       if (peek_ntp != GST_CLOCK_TIME_NONE) {
                         pads_with_buffers++;
@@ -3239,10 +3314,10 @@ gst_nvstreammux_src_collect_buffers (GstNvStreamMux * mux, GstBuffer * out_buf,
               pad_data->pad_holding_iterations++;
 
               // Log WHY this buffer is being held
-              GstMiniObject *held_obj = (GstMiniObject *)g_queue_peek_head(&pad_data->buf_queue);
-              if (GST_IS_BUFFER(held_obj)) {
-                GstBuffer *held_buf = GST_BUFFER(held_obj);
+              GstBuffer *held_buf = ref_pad_queue_head (pad_data);
+              if (held_buf) {
                 GstClockTime held_ntp = get_ntp_timestamp_from_sei_meta(held_buf);
+                gst_buffer_unref (held_buf);
                 gint64 held_diff = held_ntp - mux->base_ntp;
                 GST_DEBUG_OBJECT(mux, "[FAILSAFE-COUNT] pad_id=%d: holding_iterations=%u (max=%u), buffer_ntp=%ld, base_ntp=%ld, diff=%ld (buffer is %s)",
                     pad_data->pad_id, pad_data->pad_holding_iterations, mux->failsafe_flush_count,
@@ -3275,8 +3350,9 @@ gst_nvstreammux_src_collect_buffers (GstNvStreamMux * mux, GstBuffer * out_buf,
 
                 // Drain ALL buffers from this pad's queue
                 while (!g_queue_is_empty(&pad_data->buf_queue)) {
-                  GstBuffer *stuck_buf = GST_BUFFER(g_queue_pop_head(&pad_data->buf_queue));
-                  if (stuck_buf) {
+                  GstMiniObject *stuck_obj = (GstMiniObject *) g_queue_pop_head(&pad_data->buf_queue);
+                  if (GST_IS_BUFFER (stuck_obj)) {
+                    GstBuffer *stuck_buf = GST_BUFFER (stuck_obj);
                     GstClockTime buf_ntp __attribute__((unused)) = get_ntp_timestamp_from_sei_meta(stuck_buf);
                     gint64 time_diff __attribute__((unused)) = 0;
                     if (buf_ntp != GST_CLOCK_TIME_NONE) {
@@ -3288,6 +3364,22 @@ gst_nvstreammux_src_collect_buffers (GstNvStreamMux * mux, GstBuffer * out_buf,
 
                     get_sync_obj_and_wait(stuck_buf, &pad_data->sync_queue, -1);
                     gst_buffer_unref(stuck_buf);
+                    dropped_count++;
+                  } else if (GST_IS_EVENT (stuck_obj)) {
+                    GstEvent *stuck_event = GST_EVENT (stuck_obj);
+                    if ((guint32) GST_EVENT_TYPE (stuck_event) == GST_NVEVENT_PAD_DELETED) {
+                      if (pad_data->num_bufs_in_current_batch > 0 || mux->event_list) {
+                        mux->event_list = g_list_prepend (mux->event_list,
+                            gst_nvevent_new_pad_deleted (pad_data->pad_id));
+                      } else {
+                        gst_pad_push_event (mux->srcpad,
+                            gst_nvevent_new_pad_deleted (pad_data->pad_id));
+                      }
+                    }
+                    gst_event_unref (stuck_event);
+                    dropped_count++;
+                  } else if (stuck_obj) {
+                    gst_mini_object_unref (stuck_obj);
                     dropped_count++;
                   }
                 }
@@ -3326,11 +3418,11 @@ gst_nvstreammux_src_collect_buffers (GstNvStreamMux * mux, GstBuffer * out_buf,
                   GstNvStreamMuxPadData *check_pad =
                       (GstNvStreamMuxPadData *)g_object_get_data(G_OBJECT(mux->sink_pads[check_idx]), PAD_DATA_KEY);
 
-                  if (check_pad && !g_queue_is_empty(&check_pad->buf_queue)) {
-                    GstMiniObject *peek_obj = (GstMiniObject *)g_queue_peek_head(&check_pad->buf_queue);
-                    if (GST_IS_BUFFER(peek_obj)) {
-                      GstBuffer *peek_buf = GST_BUFFER(peek_obj);
+                  if (check_pad) {
+                    GstBuffer *peek_buf = ref_pad_queue_head (check_pad);
+                    if (peek_buf) {
                       GstClockTime peek_ntp = get_ntp_timestamp_from_sei_meta(peek_buf);
+                      gst_buffer_unref (peek_buf);
 
                       if (peek_ntp != GST_CLOCK_TIME_NONE) {
                         pads_with_buffers++;

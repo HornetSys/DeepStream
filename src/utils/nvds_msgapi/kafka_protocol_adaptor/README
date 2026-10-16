@@ -162,13 +162,23 @@ Publishing on a topic
 example:
   msgapi_send_ptr(conn_handle, (char *)topic, (const uint8_t*) SEND_MSG, strlen(SEND_MSG));
 
-Before running the sample applications, enable logs by running the logger setup script:
-For x86,
+Before running the sample applications, enable logs by running the logger setup script
+(same steps on x86 and Jetson):
+
+NOTE: <DS_ROOT> is the path where the DeepStream repo is cloned.
+      $SDK_ROOT is the installed DeepStream SDK root (deb/tar package or DeepStream
+      Docker image): /opt/nvidia/deepstream/deepstream, a symlink to
+      /opt/nvidia/deepstream/deepstream-<version>. Set and verify it with:
+        $ export SDK_ROOT=/opt/nvidia/deepstream/deepstream
+        $ cat $SDK_ROOT/version
+
+From the repo clone:
  chmod u+x <DS_ROOT>/src/utils/nvds_logger/setup_nvds_logger.sh
  sudo <DS_ROOT>/src/utils/nvds_logger/setup_nvds_logger.sh
-On Jetson,
- chmod u+x <DS_ROOT>/src/utils/nvds_logger/setup_nvds_logger.sh
- sudo <DS_ROOT>/src/utils/nvds_logger/setup_nvds_logger.sh
+From the installed SDK (deb/tar/Docker):
+ ls $SDK_ROOT/sources/tools/nvds_logger/setup_nvds_logger.sh
+ chmod u+x $SDK_ROOT/sources/tools/nvds_logger/setup_nvds_logger.sh
+ sudo $SDK_ROOT/sources/tools/nvds_logger/setup_nvds_logger.sh
 
 Note that for complete set of logs, set the logger level to 7 (DEBUG), as described in the logger README.
 

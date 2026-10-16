@@ -30,6 +30,7 @@ usage() {
     echo "  $0 --arch aarch64                     # Cross-compile for aarch64"
     echo "  $0 --minor-ver 9 --output-dir /tmp/build --arch aarch64  # Cross-compile for aarch64 with python3.9"
     exit 1
+    return 1
 }
 
 # Default values
@@ -42,7 +43,7 @@ while [[ $# -gt 0 ]]; do
     case $1 in
         --minor-ver)
             if [[ -z "$2" || "$2" =~ ^-- ]]; then
-                echo "Error: --minor-ver requires a value"
+                echo "Error: --minor-ver requires a value" >&2
                 usage
             fi
             PYTHON_VER="python3.$2"
@@ -50,7 +51,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         --output-dir)
             if [[ -z "$2" || "$2" =~ ^-- ]]; then
-                echo "Error: --output-dir requires a value"
+                echo "Error: --output-dir requires a value" >&2
                 usage
             fi
             OUTPUT_DIR="$2"
@@ -58,11 +59,11 @@ while [[ $# -gt 0 ]]; do
             ;;
         --arch)
             if [[ -z "$2" || "$2" =~ ^-- ]]; then
-                echo "Error: --arch requires a value"
+                echo "Error: --arch requires a value" >&2
                 usage
             fi
             if [[ "$2" != "x86_64" && "$2" != "aarch64" ]]; then
-                echo "Error: --arch must be either x86_64 or aarch64"
+                echo "Error: --arch must be either x86_64 or aarch64" >&2
                 usage
             fi
             TARGET_ARCH="$2"
@@ -146,7 +147,7 @@ $PYTHON_VER -m build
 cp dist/pyservicemaker*.whl "$OUTPUT_DIR/"
 
 rm -rf dist/
-rm -rf *.egg-info
+rm -rf ./*.egg-info
 cd $OUTPUT_DIR
 
 # Clean up toolchain file if it was created

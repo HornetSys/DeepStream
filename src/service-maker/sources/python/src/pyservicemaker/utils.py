@@ -92,7 +92,7 @@ class FrameSampler:
     def done(self):
         return self._done
 
-    def sample(self, buffer, pts):
+    def sample(self, buffer, pts, batch_id=0):
         if self._chunk._start_pts == 0:
             self._chunk._start_pts = pts
         if self._chunk.duration > 0 and pts > self._chunk._start_pts + self._chunk.duration:
@@ -105,7 +105,7 @@ class FrameSampler:
         if pts < self._chunk._start_pts:
             logger.info(f"Frame skipped: pts: {pts} < start_pts: {self._chunk._start_pts}")
         elif pts >= expected_pts:
-            frame = VideoFrame(buffer.extract(0).clone(), pts)
+            frame = VideoFrame(buffer.extract(batch_id).clone(), pts)
             self._n_frames += 1
             logger.info(f"Frame captured: {self._n_frames}, pts: {pts}")
         else:
@@ -291,7 +291,7 @@ class BulkFrameRetriever(BufferRetriever):
             for frame_meta in buffer.batch_meta.frame_items:
                 id = frame_meta.pad_index
                 sampler = self._samplers[id]
-                frame = sampler.sample(buffer, frame_meta.buffer_pts)
+                frame = sampler.sample(buffer, frame_meta.buffer_pts, id)
                 if frame:
                     while not self._stopped:
                         try:
@@ -354,7 +354,7 @@ class MediaExtractor:
             batch_size: int=0,
             scaling: Tuple=DEFAULT_RESOLUTION,
             n_thread: int=1,
-            q_size: int=1,
+            q_size: int=8,
             enable_seek: bool=False,
             blocking: bool=False
         ):

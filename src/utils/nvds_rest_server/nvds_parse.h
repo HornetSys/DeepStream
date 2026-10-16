@@ -33,17 +33,19 @@ bool nvds_rest_model_parse (const Json::Value & in,
     NvDsServerModelInfo * model_info);
 bool nvds_rest_model_update_parse (const Json::Value & in,
     NvDsServerModelInfo * model_info);
-bool nvds_rest_stream_route_parse (const Json::Value & in,
+bool nvds_rest_model_routing_parse (const Json::Value & in,
     NvDsServerRouteInfo * route_info);
 /* Response tail shared by this plane's async POSTs (model/load|unload,
- * model/update, stream/route). Defined in nvds_model_parse.cpp beside the
+ * model/update, model/routing). Defined in nvds_model_parse.cpp beside the
  * model_fail / route_fail vocabulary they belong to, so nvds_rest_server.cpp
  * stays a thin dispatcher and a future endpoint adds its tail to its own
  * *_parse.cpp instead of to the shared server body. */
 void nvds_rest_ctl_fail_no_handler (NvDsServerErrorInfo & err,
     std::string & log, const char *what);
 NvDsServerStatusCode nvds_rest_ctl_finish_async_response (Json::Value & response,
-    const NvDsServerErrorInfo & err_info, const std::string & log);
+    const NvDsServerErrorInfo & err_info, const std::string & log,
+    const char *model_name = nullptr, const char *model_version = nullptr,
+    const char *state = nullptr);
 bool nvds_rest_infer_parse (const Json::Value & in, NvDsServerInferInfo * infer_info);
 bool nvds_rest_nvtracker_parse (const Json::Value & in, NvDsServerNvTrackerInfo * trackerInfo);
 bool nvds_rest_osd_parse (const Json::Value & in, NvDsServerOsdInfo * osd_info);

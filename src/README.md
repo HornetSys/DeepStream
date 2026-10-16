@@ -51,6 +51,12 @@ Located in `service-maker/`. A C++ and Python SDK that abstracts GStreamer/GLib 
 
 See [`service-maker/README.md`](service-maker/README.md) for build instructions, API overview, and app list. See also the [Service Maker introduction](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_service_maker_intro).
 
+- **Core** — `service-maker/sources/core/` — the runtime library (`libnvds_service_maker.so`)
+  and its static helper archive (`libnvds_service_maker_utils.a`)
+- **Engine** — `service-maker/sources/engine/` — `ds-launch`, which runs a pipeline
+  described by a YAML graph file
+- **Python bindings** — `service-maker/sources/python/` — the `pyservicemaker`
+  wheel (pybind11 extension plus the pure-Python package)
 - **C++ apps** — `service-maker/sources/apps/cpp/`
 - **Python apps** — `service-maker/sources/apps/python/` (flow API and pipeline API)
 - **Modules** — reusable signal handlers, probes, video sinks/sources, and more

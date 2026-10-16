@@ -18,10 +18,8 @@ Refer to the DeepStream SDK documentation for a description of the library.
 --------------------------------------------------------------------------------
 Compile the library :
 
-  # Export correct CUDA version as per the platform
-      For x86, Jetson & SBSA, CUDA_VER=13.2
-
-  $ sudo -E make install
+  $ export CUDA_VER=13.2 # x86, Jetson and SBSA. For IGX Thor, CUDA_VER=13.0
+  $ make && sudo -E make install
 
 --------------------------------------------------------------------------------
 This source has been written to parse the output layers of the resnet10 detector

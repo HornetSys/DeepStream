@@ -77,7 +77,7 @@ struct ModelPairContext
    * populated lazily on each frame from the per-frame sensor info the chain
    * function already reads (frame_meta->sensorInfo_meta.sensor_id -- the SAME
    * stable stream/add id nvmodelmux publishes as "camera_id" in model/status
-   * and accepts in stream/route). Used for targeted stream/route at the epoch
+   * and accepts in model/routing). Used for targeted model/routing at the epoch
    * boundary WITHOUT any status round-trip. A source whose sensor_id was
    * never seen maps to "" and is skipped (warned) at route time.
    *
@@ -189,7 +189,7 @@ NvdsEvalEngine::get_or_create_context (const std::string &model_name,
 }
 
 /* ------------------------------------------------------------------ */
-/* mm_rest_stream_route                                               */
+/* mm_rest_model_routing                                               */
 /* ------------------------------------------------------------------ */
 /* Promote / reroute by POSTing to the nvmodelmux v1 ROUTING plane.
  * This replaces the in-process "update-routing" GObject signal, so promotion
@@ -197,8 +197,8 @@ NvdsEvalEngine::get_or_create_context (const std::string &model_name,
  * — it works regardless of pipeline topology, as long as the REST server URL
  * is configured.
  *
- *   POST <base_url>/api/v1/stream/route
- *   {"key":"stream","value":{"routes":[{"streams":"all",
+ *   POST <base_url>/api/v1/model/routing
+ *   {"key":"routing","value":{"routes":[{"streams":"all",
  *     "model":{"name":"<name>","version":"<ver>"},
  *     "shadow":{"name":...,"version":...} | null}]}}
  *
@@ -213,7 +213,7 @@ NvdsEvalEngine::get_or_create_context (const std::string &model_name,
  * the route always carries the explicit camera_id list. Returns true on
  * HTTP 2xx. The one remaining `curl` POST is synchronous with --max-time
  * (bounded), and fires at most once per epoch win. */
-/* Minimal JSON string escaping for values placed into the stream/route body.
+/* Minimal JSON string escaping for values placed into the model/routing body.
  * model_name / model_version originate from InferenceProvenanceMeta and could in
  * principle contain characters ('"', '\\', control chars) that would otherwise
  * produce a malformed request body. */
@@ -249,7 +249,7 @@ mm_rest_clean_base_url (const std::string &base_url)
 }
 
 static bool
-mm_rest_stream_route (const std::string &base_url,
+mm_rest_model_routing (const std::string &base_url,
                       const std::map<uint32_t, std::string> &sources,
                       const std::string &primary_model,
                       const std::string &primary_version,
@@ -260,9 +260,9 @@ mm_rest_stream_route (const std::string &base_url,
   if (base_url.empty ())
     return false;
 
-  /* Build the stream/route body to the v1 schema nvds_rest_server expects
-   * (nvds_model_parse.cpp, nvds_rest_stream_route_parse): the envelope
-   * { "key":"stream", "value": {"routes":[...]} } with ONE route covering
+  /* Build the model/routing body to the v1 schema nvds_rest_server expects
+   * (nvds_model_parse.cpp, nvds_rest_model_routing_parse): the envelope
+   * { "key":"routing", "value": {"routes":[...]} } with ONE route covering
    * exactly the eval's streams. Refs carry SEPARATE name + version strings;
    * a shadow of "none" becomes the explicit clear ("shadow": null); an empty
    * shadow leaves the role unchanged (member omitted). The serving model is
@@ -270,7 +270,7 @@ mm_rest_stream_route (const std::string &base_url,
    * passthrough, NOT_IMPLEMENTED) and the eval never asks for that. */
   if (primary_model.empty () || primary_model == "none") {
     GST_WARNING_OBJECT (self,
-        "nvinfereval: stream/route needs a serving model ref — got '%s'",
+        "nvinfereval: model/routing needs a serving model ref — got '%s'",
         primary_model.c_str ());
     return false;
   }
@@ -326,14 +326,14 @@ mm_rest_stream_route (const std::string &base_url,
     route += ",\"shadow\":" + ref (shadow_model, shadow_version);
   route += "}";
 
-  std::string body = "{\"key\":\"stream\",\"value\":{\"routes\":[" + route + "]}}";
+  std::string body = "{\"key\":\"routing\",\"value\":{\"routes\":[" + route + "]}}";
 
   /* Be forgiving of leading/trailing whitespace or an accidental inline
    * "# comment" in the config value (GKeyFile keeps inline comments as part of
    * the value). A URL has no spaces, so cut at the first whitespace or '#'. */
   std::string url = mm_rest_clean_base_url (base_url);
   if (url.empty ()) return false;
-  url += "/api/v1/stream/route";
+  url += "/api/v1/model/routing";
 
   gchar *q_url  = g_shell_quote (url.c_str ());
   gchar *q_body = g_shell_quote (body.c_str ());
@@ -355,10 +355,10 @@ mm_rest_stream_route (const std::string &base_url,
     const long http = out ? (long) g_ascii_strtoll (out, nullptr, 10) : 0;
     ok = (http >= 200 && http < 300);
     if (ok)
-      GST_INFO_OBJECT (self, "nvinfereval: stream/route accepted (http=%ld)", http);
+      GST_INFO_OBJECT (self, "nvinfereval: model/routing accepted (http=%ld)", http);
     else
       GST_WARNING_OBJECT (self,
-          "nvinfereval: stream/route POST failed (http=%ld, curl-status=%d) %s",
+          "nvinfereval: model/routing POST failed (http=%ld, curl-status=%d) %s",
           http, status, (err && *err) ? err : "");
   } else {
     GST_WARNING_OBJECT (self, "nvinfereval: could not run curl (%s) — is it installed?",
@@ -454,7 +454,7 @@ NvdsEvalEngine::fire_epoch (const std::string &model_name,
                 model_name.c_str (), shadow->model_name.c_str (),
                 shadow->model_version.c_str (), shadow->ap50, action);
           } else {
-            /* One stream/route REST POST per pair; the route is scoped to
+            /* One model/routing REST POST per pair; the route is scoped to
              * THIS pair's streams via the locally tracked source_id ->
              * camera_id map (built from per-frame sensor info -- no status
              * round-trip on the streaming thread). For both actions
@@ -479,7 +479,7 @@ NvdsEvalEngine::fire_epoch (const std::string &model_name,
                     shadow->model_name.c_str (), shadow->model_version.c_str ());
             fflush (stdout);
 
-            bool ok = mm_rest_stream_route (cfg.global.rest_url, live_sources,
+            bool ok = mm_rest_model_routing (cfg.global.rest_url, live_sources,
                 shadow->model_name, shadow->model_version,  /* -> new primary  */
                 new_shadow_model,   new_shadow_ver,          /* swap: old prim; */
                 self);                                       /* promote: none   */
@@ -674,7 +674,7 @@ nvds_eval_engine_process_frame (NvdsEvalEngine *eng,
   /* Lazily create context for this model_name on first encounter */
   ModelPairContext &ctx = eng->get_or_create_context (mname, self);
 
-  /* Track source_id -> camera_id for the epoch-boundary stream/route scope.
+  /* Track source_id -> camera_id for the epoch-boundary model/routing scope.
    * stream_name is the per-frame sensor_id (frame_meta->sensorInfo_meta) --
    * the SAME stable stream/add id nvmodelmux routes by; an absent sensor_id
    * is recorded as "" (kept for the stream count, skipped at route time).

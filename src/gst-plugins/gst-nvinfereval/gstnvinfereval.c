@@ -394,7 +394,7 @@ gst_nv_infer_eval_class_init (GstNvInferEvalClass *klass)
       "NVIDIA DeepStream Inference Evaluator",
       "Filter/Analyzer",
       "Live multi-model accuracy evaluation with per-model GT, "
-      "A/B promotion gating, and targeted stream routing",
+      "A/B promotion gating, and targeted model routing",
       "NVIDIA Corporation");
 
   gst_element_class_add_static_pad_template (element_class, &sink_template);
@@ -724,7 +724,7 @@ gst_nv_infer_eval_chain (GstPad *pad, GstObject *parent, GstBuffer *buf)
     if (prov) {
       /* Mode B: full provenance found on frame. Promotion no longer needs the
        * upstream element handle (mm_element) — it is performed via the
-       * nvmodelmux stream/route REST API (set promote-rest-url in
+       * nvmodelmux model/routing REST API (set promote-rest-url in
        * [eval]). So a missing mm_element is no longer a promotion blocker. */
       /* Mode B: full provenance — model_name / role / version / stream.
        * Use frame_meta->sensorInfo_meta.sensor_id for the camera/GT lookup:

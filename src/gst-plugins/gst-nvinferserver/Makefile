@@ -17,11 +17,20 @@ TRITON_GRPC_CLIENT ?= /opt/tritonclient
 PROTOBUF_BIN_DIR ?= /opt/proto/bin
 
 LIB := libnvdsgst_inferserver.so
-NVDS_VERSION := 9.1
+NVDS_VERSION := 9.2
 
-CUDA_VER ?=
+CUDA_VER?=
+# Require CUDA_VER for every goal except a clean-only invocation.
+# A bare `make` has empty MAKECMDGOALS and still checks.
+ifneq ($(filter-out clean,$(MAKECMDGOALS)),)
+  _DS_NEED_CUDA_VER := 1
+else ifeq ($(MAKECMDGOALS),)
+  _DS_NEED_CUDA_VER := 1
+endif
+ifeq ($(_DS_NEED_CUDA_VER),1)
 ifeq ($(CUDA_VER),)
   $(error "CUDA_VER is not set")
+endif
 endif
 
 CXX := g++
@@ -48,7 +57,7 @@ CFLAGS+= \
     -DNDEBUG \
     -fPIC \
     -std=c++17 \
-    -DDS_VERSION=\"9.1.1\" \
+    -DDS_VERSION=\"9.2.0\" \
     -DFOR_PRIVATE \
     $(NULL)
 

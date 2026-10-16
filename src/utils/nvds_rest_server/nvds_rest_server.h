@@ -83,7 +83,7 @@ typedef enum
  * GET_METRICS_INFO     - Query application metrics via /api/v1/metrics
  * GET_METADATA_INFO    - Query application metadata via /api/v1/metadata
  * GET_MODEL_STATUS_INFO - Query the MODEL plane via /api/v1/model/status
- * GET_STREAM_ROUTE_INFO - Query the ROUTING plane via GET /api/v1/stream/route.
+ * GET_MODEL_ROUTING_INFO - Query the ROUTING plane via GET /api/v1/model/routing.
  *                        Optional ?stream=<camera_id> point lookup; an absent
  *                        filter returns every route, a present-but-empty one
  *                        matches nothing. Unlike the flags above, a backend
@@ -99,7 +99,7 @@ typedef enum
   GET_METRICS_INFO = 1 << 4,
   GET_METADATA_INFO = 1 << 5,
   GET_MODEL_STATUS_INFO = 1 << 6,   /* /api/v1/model/status -- app model-pool state */
-  GET_STREAM_ROUTE_INFO = 1 << 7,   /* GET /api/v1/stream/route -- routing plane only */
+  GET_MODEL_ROUTING_INFO = 1 << 7,   /* GET /api/v1/model/routing -- routing plane only */
 } NvDsServerGetRequestPropFlag;
 
 typedef enum
@@ -153,16 +153,16 @@ typedef enum
   MODEL_UNLOAD_SUCCESS,
   MODEL_UNLOAD_FAIL,
   /* model/update = IN-PLACE checkpoint transition on the live instance group
-   * (same network, new weights, NEW version). Stream routing is a different
-   * plane: see NvDsServerRouteStatus / /api/v1/stream/route. */
+   * (same network, new weights, NEW version). Model routing is a different
+   * plane: see NvDsServerRouteStatus / /api/v1/model/routing. */
   MODEL_UPDATE_SUCCESS,
   MODEL_UPDATE_FAIL,
 } NvDsServerModelStatus;
 
 typedef enum
 {
-  STREAM_ROUTE_SUCCESS = 0,
-  STREAM_ROUTE_FAIL,
+  MODEL_ROUTING_SUCCESS = 0,
+  MODEL_ROUTING_FAIL,
 } NvDsServerRouteStatus;
 
 typedef enum
@@ -181,8 +181,8 @@ typedef enum
   GET_METADATA_INFO_FAIL,
   GET_MODEL_STATUS_INFO_SUCCESS,
   GET_MODEL_STATUS_INFO_FAIL,
-  GET_STREAM_ROUTE_INFO_SUCCESS,
-  GET_STREAM_ROUTE_INFO_FAIL,
+  GET_MODEL_ROUTING_INFO_SUCCESS,
+  GET_MODEL_ROUTING_INFO_FAIL,
 } NvDsServerGetRequestStatus;
 
 typedef enum
@@ -292,19 +292,22 @@ typedef enum
   StatusUnsupportedMediaType,           // HTTP error code : 415
   StatusInternalServerError,            // HTTP error code : 500
   StatusNotImplemented,                 // HTTP error code : 501
-  StatusServiceUnavailable              // HTTP error code : 503
+  StatusServiceUnavailable,             // HTTP error code : 503
+  StatusNotFound,                       // HTTP error code : 404
+  StatusConflict                        // HTTP error code : 409
 } NvDsServerStatusCode;
 
 typedef struct NvDsServerErrorInfo
 {
   std::pair < int, std::string > err_log;
   NvDsServerStatusCode code;
-  /* Machine-readable error envelope (emitted as error{code,message,hint} in the
-   * HTTP response body when code != StatusOk). Clients must never parse prose:
-   * `err_code` is a stable identifier (e.g. "MODEL_NOT_LOADED",
-   * "SHADOW_WITHOUT_MODEL"); `hint` is the actionable next step. */
+  /* Machine-readable error envelope (error{code,message,field,hint} in HTTP body when code != StatusOk).
+     Clients must never parse prose: `err_code` is a stable id (e.g. "MODEL_NOT_LOADED"); `hint` gives an actionable step.
+     `field` is the dotted path of the offending member (e.g. "value.gpus"), present only if the reject knows it.
+     An empty `field` is honest; guessing would mislead clients. */
   std::string err_code;
   std::string hint;
+  std::string field;
 } NvDsServerErrorInfo;
 
 typedef struct NvDsServerDecInfo
@@ -410,7 +413,7 @@ typedef struct NvDsServerStreamInfo
  *           guard. Engines: `engine_file` (single-instance groups only) XOR
  *           `engine_files` (exact per-GPU map).
  *
- * Stream routing is a different plane (never mixed in here): NvDsServerRouteInfo.
+ * Model routing is a different plane (never mixed in here): NvDsServerRouteInfo.
  * The raw request `value` object is also carried verbatim in `value_json` --
  * that is what travels in-band to the consuming element (one schema end-to-end). */
 typedef struct NvDsServerModelInfo
@@ -432,7 +435,7 @@ typedef struct NvDsServerModelInfo
   NvDsServerErrorInfo err_info;
 } NvDsServerModelInfo;
 
-/* STREAM PLANE (routing) request info -- /api/v1/stream/route.
+/* ROUTING PLANE request info -- /api/v1/model/routing.
  * Declarative routing request: per-group desired (model, shadow) state plus an
  * optional default switch. Parse/admission constraints enforced at this layer:
  *   - at least one of routes[] / default present (EMPTY_REQUEST);
@@ -476,7 +479,7 @@ typedef struct NvDsServerRouteInfo
   NvDsServerRouteRef default_shadow;
   gint64 if_revision;              /**< -1 = no optimistic-concurrency guard       */
   std::string value_json;          /**< the request "value" object, serialized verbatim */
-  std::string value_change;        /**< set by handler: "stream_route"             */
+  std::string value_change;        /**< set by handler: "model_routing"             */
   NvDsServerRouteStatus status;
   std::string route_log;
   std::string uri;
@@ -649,6 +652,8 @@ typedef struct NvDsServerCallbacks
 class NvDsRestServer;
 NvDsRestServer* nvds_rest_server_start (NvDsServerConfig * server_config, NvDsServerCallbacks * server_cb, void* custom_ctx);
 void nvds_rest_server_stop (NvDsRestServer *ctx);
+/* Map an HTTP status integer onto NvDsServerStatusCode. */
+NvDsServerStatusCode NvDsServerHttpStatusCodeToStatusCode (int http_code);
 bool iequals (const std::string & a, const std::string & b);
 
 #endif

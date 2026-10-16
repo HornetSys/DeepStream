@@ -43,7 +43,7 @@ service-maker/
 
 ## Prerequisites
 
-- DeepStream 9.1 installed (via `build/build.sh` or the Debian package + `install.sh`)
+- DeepStream 9.2 installed (via `build/build.sh` or the Debian package + `install.sh`)
 - CMake 3.16+
 - GCC 9+
 
@@ -71,26 +71,26 @@ through `find_package(nvds_service_maker)`.
 Libraries are installed to:
 
 ```
-/opt/nvidia/deepstream/deepstream-9.1/lib/
+/opt/nvidia/deepstream/deepstream-9.2/lib/
 ```
 
 Binaries are installed to:
 
 ```
-/opt/nvidia/deepstream/deepstream-9.1/bin/service-maker-<app>
-/opt/nvidia/deepstream/deepstream-9.1/bin/ds-launch
+/opt/nvidia/deepstream/deepstream-9.2/bin/service-maker-<app>
+/opt/nvidia/deepstream/deepstream-9.2/bin/ds-launch
 ```
 
 Modules are installed to:
 
 ```
-/opt/nvidia/deepstream/deepstream-9.1/service-maker/modules/
+/opt/nvidia/deepstream/deepstream-9.2/service-maker/modules/
 ```
 
 The `pyservicemaker` wheel is installed to:
 
 ```
-/opt/nvidia/deepstream/deepstream-9.1/service-maker/python/
+/opt/nvidia/deepstream/deepstream-9.2/service-maker/python/
 ```
 
 overwriting the prebuilt wheel placed there by the `artifacts` stage, so the
@@ -265,5 +265,5 @@ Located in `sources/modules/`. These are loadable shared-library modules that pl
 
 ## Further Reading
 
-- [DeepStream Service Maker Developer Guide](https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_service_maker_python.html)
-- [DeepStream SDK Documentation](https://docs.nvidia.com/metropolis/deepstream/dev-guide/)
+- [DeepStream Service Maker Developer Guide](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_service_maker_python)
+- [DeepStream SDK Documentation](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2)
