@@ -18,13 +18,13 @@ OTELCOL="${HOME}/.local/bin/otelcol"
 CONFIG="$(dirname "$0")/otel-collector-config.yaml"
 
 if [[ ! -f "$OTELCOL" ]]; then
-    echo "Error: OpenTelemetry Collector not found at $OTELCOL"
+    echo "Error: OpenTelemetry Collector not found at $OTELCOL" >&2
     echo "Please run ./setup-collector.sh first"
     exit 1
 fi
 
 if [[ ! -f "$CONFIG" ]]; then
-    echo "Error: Config file not found at $CONFIG"
+    echo "Error: Config file not found at $CONFIG" >&2
     exit 1
 fi
 

@@ -87,13 +87,14 @@ cmd_start() {
     local model_root="${MCP_MODEL_ROOT:-}"
 
     while [[ $# -gt 0 ]]; do
-        case "$1" in
+        local opt="$1"
+        case "${opt}" in
             --host)           host="$2";           shift 2 ;;
             --port)           port="$2";           shift 2 ;;
             --api-key)        api_key="$2";        shift 2 ;;
             --workspace-root) workspace_root="$2"; shift 2 ;;
             --model-root)     model_root="$2";     shift 2 ;;
-            *) die "Unknown option for start: $1" ;;
+            *) die "Unknown option for start: ${opt}" ;;
         esac
     done
 
