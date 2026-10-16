@@ -87,8 +87,8 @@ After the first install, clear the GStreamer plugin cache: `rm -rf ~/.cache/gstr
 | Full build | `bash build/build.sh` |
 | Build one stage (after deps/artifacts installed) | `bash build/build.sh --only=<stage> --skip-deps --skip-artifacts` |
 | Resume interrupted build | `bash build/build.sh --resume` |
-| Install system deps only | `bash build/build.sh --only=deps` |
-| Download + install artifacts only | `bash build/build.sh --only=artifacts` |
+| Install system deps only | `sudo bash scripts/install_opensource_deps.sh` |
+| Install artifacts only | Not a separate step: the `artifacts` stage runs as part of a full `bash build/build.sh`. For a bare-metal install use the all-in-one package (see **GitHub Release Assets**). |
 | Clear GStreamer plugin cache | `rm -rf ~/.cache/gstreamer-1.0/` |
 | Run DeepStream reference app | `deepstream-app -c <config-file>` |
 | Print environment (for diagnostics) | `bash scripts/print_env.sh` |
