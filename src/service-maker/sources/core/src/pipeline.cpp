@@ -924,12 +924,12 @@ start_rtsp_streaming (guint rtsp_port_num, guint updsink_port_num,
   if (udp_buffer_size == 0)
     udp_buffer_size = 512 * 1024;
 
-  sprintf (udpsrc_pipeline,
+  snprintf (udpsrc_pipeline, sizeof(udpsrc_pipeline),
       "( udpsrc name=pay0 port=%d buffer-size=%lu caps=\"application/x-rtp, media=video, "
       "clock-rate=90000, encoding-name=%s, payload=96 \" )",
       updsink_port_num, udp_buffer_size, encoder_name);
 
-  sprintf (port_num_Str, "%d", rtsp_port_num);
+  snprintf (port_num_Str, sizeof(port_num_Str), "%d", rtsp_port_num);
 
   g_mutex_lock (&server_cnt_lock);
 

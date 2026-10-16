@@ -1,0 +1,9 @@
+# nv3dsink — Jetson display path. Use with tiled-display.enable=1.
+
+[sink0]
+enable=1
+type=7
+sync=1
+source-id=0
+gpu-id=0
+nvbuf-memory-type=4

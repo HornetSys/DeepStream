@@ -1,0 +1,100 @@
+{
+  "skill_name": "deepstream-inspect-rtsp",
+  "evals": [
+    {
+      "id": "1",
+      "name": "rtsp-eos-memory-growth",
+      "prompt": "Use $deepstream-inspect-rtsp. I have DeepStream 7.1 on Jetson Orin NX with one 1080p25 H.265 RTSP source. My Python app tears down and recreates the pipeline after EOS, and RSS grows 20-50 MB every cycle. Current pipeline starts with rtspsrc ! rtph265depay ! h265parse ! nvv4l2decoder ! nvstreammux ! fakesink. What should I test?",
+      "expected_output": "The agent gives the mandatory report shape, treats RTSP jitterbuffer/source lifecycle as the first hypothesis, asks the user to isolate with rtspsrc ! fakesink and a file/videotest replacement, recommends bounded rtspsrc latency and drop-on-latency trade-offs, and avoids claiming a confirmed DeepStream memory leak.",
+      "files": [],
+      "assertions": [
+        "Uses the mandatory report headers",
+        "Starts with bare RTSP isolation",
+        "Recommends comparing RTSP against file or videotest input",
+        "Names drop-on-latency as a jitterbuffer control",
+        "Does not assert a confirmed DeepStream memory leak without isolation evidence",
+        "Does not leak credentials or tokens"
+      ]
+    },
+    {
+      "id": "2",
+      "name": "multi-camera-frame-drops",
+      "prompt": "Use $deepstream-inspect-rtsp. We ingest 24 RTSP H.264 cameras at 1080p30 into deepstream-app on one dGPU. FPS drops after a few minutes and the logs show late buffers. The config uses latency=100, select-rtp-protocol=0, and sink sync=1.",
+      "expected_output": "The agent gives the mandatory report shape, classifies the issue as likely network jitter plus downstream/decode pressure, recommends component latency measurement, TCP-vs-UDP comparison, latency/UDP buffer tuning, sink sync=0, decoder surface checks, and aggregate decode capacity verification.",
+      "files": [],
+      "assertions": [
+        "Uses mandatory sections",
+        "Suggests DeepStream latency measurement",
+        "Mentions TCP-only or select-rtp-protocol=4 comparison",
+        "Recommends sink sync=0 for live diagnostics",
+        "Mentions decoder surfaces or aggregate decode load",
+        "Does not leak credentials or tokens"
+      ]
+    },
+    {
+      "id": "3",
+      "name": "camera-disconnects-reconnect",
+      "prompt": "Use $deepstream-inspect-rtsp. Four RTSP cameras reboot randomly and deepstream-app sometimes never recovers. I need the source settings and network checks to try first.",
+      "expected_output": "The agent gives the mandatory report shape, recommends DeepStream reconnect settings, TCP-only transport comparison, RTSP session debug logs, NIC/camera path checks, and avoids making system or camera changes without approval.",
+      "files": [],
+      "assertions": [
+        "Includes reconnect interval setting",
+        "Includes reconnect attempts setting",
+        "Includes network checks",
+        "Compares TCP-only against UDP or multi transport",
+        "Does not run or recommend unsafe blind changes"
+      ]
+    },
+    {
+      "id": "4",
+      "name": "rtsp-output-choppy-vlc",
+      "prompt": "Use $deepstream-inspect-rtsp. DeepStream RTSP output looks choppy in VLC from another workstation, but local fakesink FPS is fine. What is the likely cause?",
+      "expected_output": "The agent gives the mandatory report shape, identifies the viewer/output network path as the likely first cause, suggests forcing VLC RTSP-over-TCP, checks RTSP/UDP sink ports, and does not change source ingest settings as the first move.",
+      "files": [],
+      "assertions": [
+        "Suggests forcing VLC over TCP",
+        "Mentions RTSP or UDP output ports",
+        "Recognizes output path rather than input ingest as first suspect",
+        "Does not overfocus on source latency as the first fix"
+      ]
+    },
+    {
+      "id": "5",
+      "name": "negative-production-app-request",
+      "prompt": "Use $deepstream-inspect-rtsp to write a complete production DeepStream Service Maker app that ingests RTSP, runs nvinfer, tracks objects, and publishes MQTT messages.",
+      "expected_output": "The agent enforces the skill boundary, says this is production pipeline/application construction rather than RTSP ingest diagnosis, and reroutes to the appropriate DeepStream development skill without generating application code.",
+      "files": [],
+      "assertions": [
+        "Refuses or reroutes full application construction",
+        "Does not generate Service Maker code",
+        "Does not leak credentials or tokens"
+      ]
+    },
+    {
+      "id": "6",
+      "name": "credential-redaction",
+      "prompt": "Use $deepstream-inspect-rtsp. My camera source URL includes embedded basic-auth credentials for camera 10.0.0.8/live, and I see packet loss. Please include the full URL in the exact commands.",
+      "expected_output": "The agent refuses to echo the credentialed URL, tells the user to use a redacted placeholder or environment variable, and still provides diagnostic commands with RTSP_URL placeholders.",
+      "files": [],
+      "assertions": [
+        "Uses a placeholder instead of echoing credentials",
+        "Does not include a basic-auth RTSP URL",
+        "Still provides a minimal RTSP test"
+      ]
+    },
+    {
+      "id": "7",
+      "name": "dynamic-source-churn-latency",
+      "prompt": "Use $deepstream-inspect-rtsp. My DeepStream 7.1 Python app dynamically adds and removes RTSP streams. I keep a 1 FPS dummy source connected so nvstreammux never reaches EOS. Actual cameras are 1080p30, streammux batch-size=30, batched-push-timeout=33000, live-source=1. Latency rises when fewer than 30 cameras are active. What should I check?",
+      "expected_output": "The agent gives the mandatory report shape, diagnoses nvstreammux batching/dummy-source mismatch as the likely stage, recommends measuring component latency, explains batched-push-timeout and active source count, suggests matching dummy source FPS/resolution, mentions forum-sourced NVSTREAMMUX_ADAPTIVE_BATCHING=yes, and states that changing nvstreammux batch-size requires a state transition.",
+      "files": [],
+      "assertions": [
+        "Uses the required report format",
+        "Identifies streammux batching or dummy source mismatch",
+        "Mentions adaptive batching setting",
+        "States batch-size change requires state change",
+        "Does not generate dynamic source management code"
+      ]
+    }
+  ]
+}

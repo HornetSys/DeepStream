@@ -137,8 +137,8 @@ typedef struct _NvDsModelInfo
   gchar const* value_json;          /**< the request "value" object, verbatim JSON */
 }NvDsModelInfo;
 
-/* STREAM-ROUTING control payload -- carried on the stream-route custom event
- * (and bus message) for /api/v1/stream/route. Same verbatim-JSON contract as
+/* STREAM-ROUTING control payload -- carried on the model-routing custom event
+ * (and bus message) for /api/v1/model/routing. Same verbatim-JSON contract as
  * NvDsModelInfo. nvmultiurisrcbin AUGMENTS each route entry with the resolved
  * "source_ids" array (it owns the camera_id -> source_id map) before
  * forwarding; a camera_id that resolves to no live stream rejects the whole

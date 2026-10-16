@@ -20,7 +20,7 @@
 # all DeepStream deployments.
 
 # pull the latest DeepStream Triton multiarch image
-FROM gitlab-master.nvidia.com:5005/deepstreamsdk/release_image/deepstream:9.1.1-26.08.2-triton-20260817-ma-dev99 AS cv_tao_base
+FROM ghcr.io/nvidia/deepstream:9.2-triton-multiarch AS cv_tao_base
 
 # Install system dependencies used to build DeepStream TAO post-processors
 # (yaml-cpp, cmake, etc.).
@@ -57,7 +57,7 @@ ARG CUDA_VERSION_FULL=$CUDA_VERSION_MAJOR_MINOR.$CUDA_VERSION_PATCH.$CUDA_VERSIO
 
 WORKDIR /tmp
 
-# TensorRT OSS build is disabled by default. The DeepStream 9.1 base image
+# TensorRT OSS build is disabled by default. The DeepStream 9.2 base image
 # already includes TensorRT plugin/parser libraries and trtexec.
 # Enable the TensorRT OSS build if specific operators required by a model are missing.
 # To re-enable, uncomment and update the block below as needed.

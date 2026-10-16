@@ -1,0 +1,60 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+DS3D gst is the GStreamer glue layer for DS3D. It carries a `ds3d::datamap`
+inside a GstBuffer as DS3D meta, and it wraps custom `ds3d::` modules into
+ready-to-use GStreamer elements so that a DS3D pipeline can be assembled with
+plain GStreamer API or a YAML graph.
+
+`libnvdsgst_3d_gst.so` is built from these source files. Unlike the other DS3D
+modules it is not loaded through `custom_lib_path` — it is linked directly by
+the DS3D GStreamer plugins and sample apps:
+
+    gst-nvds3dbridge, gst-nvds3dfilter, gst-nvds3dmixer, gst-nvmsgconv
+    deepstream-3d-depth-camera, deepstream-3d-lidar-sensor-fusion,
+    deepstream-lidar-inference-app, deepstream-can-orientation-app
+
+The main entry points, declared in `includes/ds3d/gst`, are:
+
+    NvDs3D_CreateDataLoaderSrc(config, ...)     wrap a ds3d::dataloader in appsrc
+    NvDs3D_CreateDataRenderSink(config, ...)    wrap a ds3d::datarender in appsink
+    NvDs3D_GstAppSrcSetDataloader               bind a dataloader to an existing appsrc
+    NvDs3D_GstAppSinkSetDataRender              bind a datarender to an existing appsink
+    NvDs3D_CreateGstBuf / NvDs3D_UpdateDataMap  put or update a datamap in a GstBuffer
+    NvDs3D_IsDs3DBuf / NvDs3D_Find1stDataMap    DS3D meta access on a GstBuffer
+    NvDs3D_BatchMeta_SetDataMapAsMeta           attach a datamap to NvDsBatchMeta
+
+The element-configuration YAML that these helpers consume is the same
+`type:`/`custom_lib_path:`/`custom_create_function:`/`config_body:` form used by
+the other DS3D modules.
+
+More details, refer to the DeepStream SDK documentation for section of "DeepStream 3D Custom Manual".
+https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_3D_Custom_Manual.html
+
+--------------------------------------------------------------------------------
+Pre-requisites:
+- libnvds_3d_common.so (build and install ds3d/common first)
+- libgstreamer1.0 and libgstreamer-plugins-base1.0 Development packages
+- libyaml-cpp Development package
+- CUDA Runtime
+
+--------------------------------------------------------------------------------
+Compiling and installing this lib:
+- Export CUDA_VER, then build. sudo -E keeps the variable for make.
+  $ export CUDA_VER=13.2 # x86, Jetson and SBSA. For IGX Thor, CUDA_VER=13.0
+  $ make && sudo -E make install
+- Verify `libnvdsgst_3d_gst.so` exist and installed well.
+
+NOTE: Compiling does not need root. Install with `sudo -E` so CUDA_VER is kept. Skip sudo when already root (for example inside a container).

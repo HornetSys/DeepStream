@@ -21,7 +21,7 @@ FROM nvcr.io/nvidia/cuda:13.2.1-cudnn-runtime-ubuntu24.04
 ARG OPENTELEMETRY_CPP_VERSION=v1.23.0
 ARG OPENTELEMETRY_BUILD_JOBS
 
-ENV DS_VERSION=9.1
+ENV DS_VERSION=9.2
 
 RUN apt-key adv --fetch-keys https://repo.download.nvidia.com/jetson/jetson-ota-public.asc
 
@@ -71,6 +71,7 @@ RUN  --mount=type=bind,src=jetson_dockerfiles,target=/tmp/docker  \
         librdkafka1 \
         python3-pip \
         gnupg2 \
+        kmod \
         tensorrt-libs=10.16.1.11-1+cuda13.2 \
         libnvvpi4 \
         vpi4-dev && \
@@ -150,7 +151,7 @@ RUN --mount=type=bind,src=jetson_dockerfiles,target=/tmp/docker \
         mv  /opt/nvidia/deepstream/deepstream/user_additional_install_runtime.sh /opt/nvidia/deepstream/deepstream/user_additional_install.sh && \
         rm -rf /var/lib/apt/lists/* && \
         rm -rf /root/tmp && \
-        apt autoremove 
+        apt autoremove -y
 
 # WAR for CUDA compatability so DeepStream will run without errors with JP 7.2 - 580.xx drivers
 RUN apt purge -y cuda-compat-13-2 cuda-compat-orin-13-2
@@ -161,6 +162,11 @@ RUN  ln -s /usr/local/cuda-13.2/lib64/libcufft.so.12.2.0.46 /usr/local/cuda-13.2
      ln -s /usr/local/cuda-13.2/lib64/libcublas.so.13.4.0.1 /usr/local/cuda-13.2/lib64/libcublas.so && \
      ln -s /usr/lib/aarch64-linux-gnu/libcudnn.so.9.20.0 /usr/lib/aarch64-linux-gnu/libcudnn.so && \
      ln -s /usr/local/cuda-13.2/targets/sbsa-linux/lib/libcudart.so.13.2.75 /usr/local/cuda-13.2/targets/sbsa-linux/lib/libcudart.so 
+
+# for reference apps
+RUN ln -sfn "/opt/nvidia/deepstream/deepstream-9.2/includes" "/opt/nvidia/deepstream/deepstream-9.2/sources/includes"
+
+
 
 # IP requirement for removal
 RUN rm -f /usr/lib/aarch64-linux-gnu/libavresample* /usr/lib/aarch64-linux-gnu/libavutil* \
@@ -199,7 +205,7 @@ WORKDIR /opt/nvidia/deepstream/deepstream
 
 ENTRYPOINT ["/opt/nvidia/deepstream/deepstream/entrypoint.sh"]
 
-ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda-13.2/lib64:/opt/nvidia/deepstream/deepstream-9.1/lib
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda-13.2/lib64:/opt/nvidia/deepstream/deepstream-9.2/lib
 
 ENV NVIDIA_VISIBLE_DEVICES=all
 ENV NVIDIA_DRIVER_CAPABILITIES=all

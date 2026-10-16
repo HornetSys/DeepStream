@@ -41,3 +41,24 @@ artifacts/
 *.zip
 .mcp.json
 .claude/settings.local.json
+
+artifacts/samples/models/**/*.engine
+src/service-maker/sources/**/*.o
+src/service-maker/sources/engine/ds-launch
+__pycache__/
+.ipynb_checkpoints/
+
+# Docker build contexts are staged by the setup_*_build.sh scripts; the copies
+# they leave behind (scripts, licenses, libraries, SDK and BSP tarballs) are
+# build inputs, not sources.
+deepstream_dockers/sbsa_dockerfiles/*
+!deepstream_dockers/sbsa_dockerfiles/Dockerfile_SBSA_Triton
+
+# Brev code-agent launchable outputs (default OUTPUT_ROOT is deploy/brev/outputs);
+# /outputs/ + brev_agent_outputs/ are kept for older defaults / overrides.
+/deploy/brev/outputs/
+/outputs/
+brev_agent_outputs/
+
+# Generated-code download zips (served by Jupyter for download links)
+deploy/brev/_downloads/

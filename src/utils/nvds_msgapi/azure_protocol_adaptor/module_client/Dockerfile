@@ -13,10 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM nvcr.io/nvidia/deepstream:<ds-version>-<tag>
+FROM ghcr.io/nvidia/deepstream:<ds-version>-<tag>
 
 # Jetson deepstream-<ds-version> image
-#FROM nvcr.io/nvidia/deepstream-l4t:<ds-version>-<tag>
+#FROM ghcr.io/nvidia/deepstream:<ds-version>-<tag>
 
 # copy the compiled sample test applications
 COPY test_azure_iotedge_sync /root

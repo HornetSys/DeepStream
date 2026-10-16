@@ -104,8 +104,8 @@ Create a container which includes the azure libs + test apps compiled above:
 #Build a docker image using the sample Dockerfile in this directory
  #NOTE:
  #Edit the Dockerfile to use the base docker image for specific ds-version and tag
- #The Dockerfile uses the x86 version of nvidia deepstream:<ds-version>-<tag> image as default
- #For jetson: Edit the Dockerfile to use the image nvcr.io/nvidia/deepstream-l4t:<ds-version>-<tag>
+ #The Dockerfile uses the x86 version of nvidia ghcr.io/nvidia/deepstream:<ds-version>-<tag> image as default
+ #For jetson: Edit the Dockerfile to use the image ghcr.io/nvidia/deepstream:<ds-version>-<tag>
 
  sudo docker build -t mytest:0 .
  sudo docker tag mytest:0 localhost:5000/mytest:latest

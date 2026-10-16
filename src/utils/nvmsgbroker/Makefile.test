@@ -14,7 +14,7 @@
 # limitations under the License.
 
 CXX:=g++
-NVDS_VERSION:=9.1
+NVDS_VERSION:=9.2
 DS_INC:= ../../../includes
 DS_LIB:=/opt/nvidia/deepstream/deepstream-$(NVDS_VERSION)/lib
 

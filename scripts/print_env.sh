@@ -63,17 +63,19 @@ echo
 
 echo "***Environment Variables***"
 
-printf '%-32s: %s\n' PATH $PATH
+local env_var_fmt='%-32s: %s\n'
 
-printf '%-32s: %s\n' LD_LIBRARY_PATH $LD_LIBRARY_PATH
+printf "$env_var_fmt" PATH $PATH
 
-printf '%-32s: %s\n' NUMBAPRO_NVVM $NUMBAPRO_NVVM
+printf "$env_var_fmt" LD_LIBRARY_PATH $LD_LIBRARY_PATH
 
-printf '%-32s: %s\n' NUMBAPRO_LIBDEVICE $NUMBAPRO_LIBDEVICE
+printf "$env_var_fmt" NUMBAPRO_NVVM $NUMBAPRO_NVVM
 
-printf '%-32s: %s\n' CONDA_PREFIX $CONDA_PREFIX
+printf "$env_var_fmt" NUMBAPRO_LIBDEVICE $NUMBAPRO_LIBDEVICE
 
-printf '%-32s: %s\n' PYTHON_PATH $PYTHON_PATH
+printf "$env_var_fmt" CONDA_PREFIX $CONDA_PREFIX
+
+printf "$env_var_fmt" PYTHON_PATH $PYTHON_PATH
 
 echo
 
@@ -93,6 +95,7 @@ else
 echo "conda not found"
 echo "pip not found"
 fi
+return 0
 }
 
 echo "<details><summary>Click here to see environment details</summary><pre>"

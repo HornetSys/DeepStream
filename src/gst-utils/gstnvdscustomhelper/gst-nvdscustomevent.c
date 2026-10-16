@@ -264,16 +264,16 @@ gst_nvevent_parse_model_update (GstEvent * event, gchar ** value_json)
 }
 
 GstEvent *
-gst_nvevent_new_stream_route (const gchar * value_json)
+gst_nvevent_new_model_routing (const gchar * value_json)
 {
-  return s_new_json_payload_event (GST_NVEVENT_STREAM_ROUTE, "nv-stream-route",
+  return s_new_json_payload_event (GST_NVEVENT_MODEL_ROUTING, "nv-model-routing",
       value_json);
 }
 
 void
-gst_nvevent_parse_stream_route (GstEvent * event, gchar ** value_json)
+gst_nvevent_parse_model_routing (GstEvent * event, gchar ** value_json)
 {
-  s_parse_json_payload_event (event, GST_NVEVENT_STREAM_ROUTE, value_json);
+  s_parse_json_payload_event (event, GST_NVEVENT_MODEL_ROUTING, value_json);
 }
 
 /* ------------------------------------------------------------------ */

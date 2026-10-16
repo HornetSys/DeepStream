@@ -137,10 +137,10 @@ handleModelUpdate (const Json::Value & req_info, const Json::Value & in,
     std::function < void (NvDsServerModelInfo * model_ctx, void *ctx) > model_cb,
     std::string uri);
 
-/* stream/route serves BOTH verbs on one uri, so it needs both callbacks:
+/* model/routing serves BOTH verbs on one uri, so it needs both callbacks:
  * route_cb for the POST (write) and get_request_cb for the GET (snapshot). */
 NvDsServerStatusCode
-handleStreamRoute (const Json::Value & req_info, const Json::Value & in,
+handleModelRouting (const Json::Value & req_info, const Json::Value & in,
     Json::Value & response, struct mg_connection *conn,
     std::function < void (NvDsServerRouteInfo * route_ctx, void *ctx) > route_cb,
     std::function < void (NvDsServerGetRequestInfo * get_request_ctx, void *ctx) > get_request_cb,
@@ -199,6 +199,10 @@ NvDsServerStatusCodeToHttpStatusCode (NvDsServerStatusCode code)
       return std::make_pair (202, "Accepted");
     case StatusBadRequest:
       return std::make_pair (400, "Bad Request");
+    case StatusNotFound:
+      return std::make_pair (404, "Not Found");
+    case StatusConflict:
+      return std::make_pair (409, "Conflict");
     case StatusUnauthorized:
       return std::make_pair (401, "Unauthorized");
     case StatusForbidden:
@@ -228,6 +232,19 @@ NvDsServerStatusCodeToHttpStatusCode (NvDsServerStatusCode code)
     default:
       return std::make_pair (501, "Not Implemented");
   }
+}
+
+/* Reverse of the table above, so the enum <-> HTTP correspondence is defined
+ * once. Unrecognised codes map to StatusBadRequest. */
+NvDsServerStatusCode
+NvDsServerHttpStatusCodeToStatusCode (int http_code)
+{
+  for (int c = StatusOk; c <= StatusConflict; ++c) {   /* StatusConflict is last */
+    NvDsServerStatusCode code = (NvDsServerStatusCode) c;
+    if (NvDsServerStatusCodeToHttpStatusCode (code).first == http_code)
+      return code;
+  }
+  return StatusBadRequest;
 }
 
 bool
@@ -460,7 +477,7 @@ NvDsServerStatusCode
 VersionInfo (Json::Value & response, struct mg_connection *conn)
 {
   NvDsServerStatusCode ret = NvDsServerStatusCode::StatusOk;
-  response["version"] = "DeepStream-SDK " "9.1" " - REST API Version v1";
+  response["version"] = "DeepStream-SDK " "9.2" " - REST API Version v1";
   return ret;
 }
 
@@ -1422,7 +1439,7 @@ handleRemoveStream (const Json::Value & req_info, const Json::Value & in,
 }
 
 /* The no-handler failure and the async-POST response tail used by the three
- * handlers below (model/load|unload, model/update, stream/route) live in
+ * handlers below (model/load|unload, model/update, model/routing) live in
  * nvds_model_parse.cpp -- nvds_rest_ctl_fail_no_handler /
  * nvds_rest_ctl_finish_async_response, declared in nvds_parse.h. They are that
  * endpoint group's error vocabulary, not HTTP transport, so they sit beside
@@ -1471,8 +1488,11 @@ handleModelReq (const Json::Value & req_info, const Json::Value & in,
      * update/route. The SUCCESS enums are 0, so a zero-initialized info from
      * a parse failure would look "successful" -- gate on the 202 too, so a
      * rejected body never echoes a handle. */
+    /* load is admitted then warms asynchronously -> "accepted"; unload executes on
+     * this thread, so by the time we answer the version is gone -> "unloaded". */
     ret = nvds_rest_ctl_finish_async_response (response, model_info.err_info,
-        model_info.model_log);
+        model_info.model_log, model_info.name.c_str (),
+        model_info.version.c_str (), is_load ? "accepted" : "unloaded");
   }
   return ret;
 }
@@ -1497,7 +1517,7 @@ handleModelUnload (const Json::Value & req_info, const Json::Value & in,
 
 /* /api/v1/model/update: IN-PLACE checkpoint transition on the live instance
  * group (same network, new weights, NEW version; from_version = CAS guard).
- * Model plane only -- never routes streams (that is /api/v1/stream/route). */
+ * Model plane only -- never routes streams (that is /api/v1/model/routing). */
 NvDsServerStatusCode
 handleModelUpdate (const Json::Value & req_info, const Json::Value & in,
     Json::Value & response, struct mg_connection *conn,
@@ -1530,13 +1550,15 @@ handleModelUpdate (const Json::Value & req_info, const Json::Value & in,
         model_info.status = MODEL_UPDATE_FAIL;
       }
     }
+    /* update is admitted here and confirmed later by nvinfer -> "accepted". */
     ret = nvds_rest_ctl_finish_async_response (response, model_info.err_info,
-        model_info.model_log);
+        model_info.model_log, model_info.name.c_str (),
+        model_info.version.c_str (), "accepted");
   }
   return ret;
 }
 
-/* /api/v1/stream/route: the ENTIRE routing plane, one declarative document
+/* /api/v1/model/routing: the ENTIRE routing plane, one declarative document
  * (routes[] + default{}). Atomic admission -- the parser and the callback
  * validate the whole request and reject it whole on any invalid part; only
  * then does execution start (per-route results reported by the consumer).
@@ -1549,7 +1571,7 @@ handleModelUpdate (const Json::Value & req_info, const Json::Value & in,
  * Delegates to handleGetRequest, which owns the GET plumbing for every
  * endpoint. */
 NvDsServerStatusCode
-handleStreamRoute (const Json::Value & req_info, const Json::Value & in,
+handleModelRouting (const Json::Value & req_info, const Json::Value & in,
     Json::Value & response, struct mg_connection *conn,
     std::function < void (NvDsServerRouteInfo * route_ctx, void *ctx) > route_cb,
     std::function < void (NvDsServerGetRequestInfo * get_request_ctx, void *ctx) > get_request_cb,
@@ -1578,17 +1600,23 @@ handleStreamRoute (const Json::Value & req_info, const Json::Value & in,
 
     void *custom_ctx = NULL;
 
-    if (nvds_rest_stream_route_parse (in, &route_info)) {
+    if (nvds_rest_model_routing_parse (in, &route_info)) {
       if (route_cb) {
         route_cb (&route_info, &custom_ctx);
       } else {
         nvds_rest_ctl_fail_no_handler (route_info.err_info, route_info.route_log,
-            "stream/route");
-        route_info.status = STREAM_ROUTE_FAIL;
+            "model/routing");
+        route_info.status = MODEL_ROUTING_FAIL;
       }
     }
+    /* "applying", not "accepted": the routing verdict is returned synchronously
+     * but the routes are applied on the main loop afterwards, so at this instant
+     * the change is admitted and in progress. (This is also why the contract's
+     * optional routing_revision is NOT emitted here -- the revision has not
+     * bumped yet, and the pre-apply value would be stale the moment a client fed
+     * it back as if_revision.) */
     ret = nvds_rest_ctl_finish_async_response (response, route_info.err_info,
-        route_info.route_log);
+        route_info.route_log, nullptr, nullptr, "applying");
     return ret;
   }
 
@@ -1599,11 +1627,11 @@ handleStreamRoute (const Json::Value & req_info, const Json::Value & in,
    * envelope matches what the POST tail emits, so one client-side parser handles
    * every failure from this uri. */
   response["status"] = std::string ("HTTP/1.1 405 Method Not Allowed");
-  response["reason"] = "METHOD_NOT_ALLOWED, stream/route accepts GET and POST";
+  response["reason"] = "METHOD_NOT_ALLOWED, model/routing accepts GET and POST";
   {
     Json::Value e;
     e["code"] = "METHOD_NOT_ALLOWED";
-    e["message"] = "stream/route accepts GET and POST";
+    e["message"] = "model/routing accepts GET and POST";
     e["hint"] = "GET reads the routing plane; POST writes it";
     response["error"] = e;
   }
@@ -1678,10 +1706,10 @@ handleGetRequest (const Json::Value & req_info, const Json::Value & in,
     else if (request_api.find ("model/status") != std::string::npos) {
       get_request_info.get_request_flag = GET_MODEL_STATUS_INFO;
     }
-    /* Appended, not prepended: "stream/route" is a substring of none of the keys
+    /* Appended, not prepended: "model/routing" is a substring of none of the keys
      * above, so ordering is free and the existing branches stay untouched. */
-    else if (request_api.find ("stream/route") != std::string::npos) {
-      get_request_info.get_request_flag = GET_STREAM_ROUTE_INFO;
+    else if (request_api.find ("model/routing") != std::string::npos) {
+      get_request_info.get_request_flag = GET_MODEL_ROUTING_INFO;
     }
     if (get_request_cb) {
       get_request_cb (&get_request_info, &custom_ctx);
@@ -1705,13 +1733,17 @@ handleGetRequest (const Json::Value & req_info, const Json::Value & in,
           http_err_code = NvDsServerStatusCodeToHttpStatusCode(get_request_info.err_info.code);
           break;
         case GET_MODEL_STATUS_INFO:
-          http_err_code = NvDsServerStatusCodeToHttpStatusCode(get_request_info.err_info.code);
-          break;
-        case GET_STREAM_ROUTE_INFO:
+        case GET_MODEL_ROUTING_INFO:
           http_err_code = NvDsServerStatusCodeToHttpStatusCode(get_request_info.err_info.code);
           /* Failure goes on the WIRE status line, not only in the body, so a client
            * keying off HTTP status cannot read a failed snapshot as a good one.
-           * Scoped to this flag: the GETs above keep their body-only behaviour. */
+           *
+           * model/status joins model/routing here. It previously answered 200 with
+           * the failure only in the body, which made the two model-plane reads
+           * disagree about how failure is reported -- and on the read that carries
+           * fleet state, `if (resp.ok) use(body)` silently turned a failed query
+           * into "no models loaded". The other GETs above keep their body-only
+           * behaviour; this is scoped to the two model-plane snapshots. */
           if (get_request_info.err_info.code != NvDsServerStatusCode::StatusOk)
             ret = get_request_info.err_info.code;
           break;
@@ -1722,10 +1754,15 @@ handleGetRequest (const Json::Value & req_info, const Json::Value & in,
       /* No GET callback registered: err_info is zero-initialized and StatusOk == 0,
        * so mapping it as-is would answer 200 with an empty body. Fail loudly instead,
        * reusing the POST tail's no-handler vocabulary. Scoped as above. */
-      if (get_request_info.get_request_flag == GET_STREAM_ROUTE_INFO) {
+      if (get_request_info.get_request_flag == GET_MODEL_ROUTING_INFO) {
         nvds_rest_ctl_fail_no_handler (get_request_info.err_info,
-            get_request_info.get_request_log, "stream/route GET");
-        get_request_info.status = GET_STREAM_ROUTE_INFO_FAIL;
+            get_request_info.get_request_log, "model/routing GET");
+        get_request_info.status = GET_MODEL_ROUTING_INFO_FAIL;
+        ret = get_request_info.err_info.code;
+      } else if (get_request_info.get_request_flag == GET_MODEL_STATUS_INFO) {
+        nvds_rest_ctl_fail_no_handler (get_request_info.err_info,
+            get_request_info.get_request_log, "model/status GET");
+        get_request_info.status = GET_MODEL_STATUS_INFO_FAIL;
         ret = get_request_info.err_info.code;
       }
       http_err_code = NvDsServerStatusCodeToHttpStatusCode(get_request_info.err_info.code);
@@ -1738,11 +1775,12 @@ handleGetRequest (const Json::Value & req_info, const Json::Value & in,
     response["status"] = res_info.status;
     response["reason"] = res_info.reason;
 
-    if (get_request_info.get_request_flag == GET_STREAM_ROUTE_INFO &&
+    if ((get_request_info.get_request_flag == GET_MODEL_ROUTING_INFO ||
+         get_request_info.get_request_flag == GET_MODEL_STATUS_INFO) &&
         get_request_info.err_info.code != NvDsServerStatusCode::StatusOk) {
       Json::Value e;
       e["code"] = get_request_info.err_info.err_code.empty ()
-          ? "REQUEST_FAILED" : get_request_info.err_info.err_code;
+          ? "MODEL_OPERATION_FAILED" : get_request_info.err_info.err_code;
       e["message"] = res_info.reason;
       if (!get_request_info.err_info.hint.empty ())
         e["hint"] = get_request_info.err_info.hint;
@@ -1772,11 +1810,19 @@ handleGetRequest (const Json::Value & req_info, const Json::Value & in,
         }
       }
     } else if (request_api.find ("model/status") != std::string::npos) {
-      response["model-status"] = res_info.stream_info;
-    } else if (request_api.find ("stream/route") != std::string::npos) {
+      /* Success carries the snapshot; failure carries error{} instead. The key is
+       * OMITTED rather than set to null on failure -- a null payload is
+       * indistinguishable from "the fleet has no models" to anything that reads
+       * the body before the status, which is exactly the confusion this endpoint
+       * used to invite. */
+      if (get_request_info.err_info.code == NvDsServerStatusCode::StatusOk)
+        response["model-status"] = res_info.stream_info;
+    } else if (request_api.find ("model/routing") != std::string::npos) {
       /* GET on the routing endpoint -- the POST branch is handled earlier, in
-       * handleStreamRoute, and never reaches here. */
-      response["stream-route"] = res_info.stream_info;
+       * handleModelRouting, and never reaches here. Same success/failure split as
+       * model/status above. */
+      if (get_request_info.err_info.code == NvDsServerStatusCode::StatusOk)
+        response["routing"] = res_info.stream_info;
     } else if (request_api.find ("metadata") != std::string::npos) {
       response = res_info.stream_info;
     } else if (request_api.find ("metrics") != std::string::npos) {
@@ -1979,7 +2025,7 @@ nvds_rest_server_start (NvDsServerConfig * server_config,
       "/api/v1/model/update", "v1"}
   );
   m_versions.insert ( {
-      "/api/v1/stream/route", "v1"}
+      "/api/v1/model/routing", "v1"}
   );
   m_versions.insert ( {
       "/api/v1/roi/update", "v1"}
@@ -2152,15 +2198,15 @@ nvds_rest_server_start (NvDsServerConfig * server_config,
           struct mg_connection * conn) {
         return handleModelUpdate (req_info, in, out, conn, model_cb, uri);
       };
-    } else if (uri.find ("/stream/route") != std::string::npos) {
-      /* Stream plane: POST = declarative routing request (routes[] + default{}),
+    } else if (uri.find ("/model/routing") != std::string::npos) {
+      /* Routing plane: POST = declarative routing request (routes[] + default{}),
        * GET = read-only snapshot of the same plane. One uri, two verbs, so the
        * handler needs BOTH callbacks. */
       m_func[uri] =
           [route_cb, get_request_cb, uri] (const Json::Value & req_info,
           const Json::Value & in, Json::Value & out,
           struct mg_connection * conn) {
-        return handleStreamRoute (req_info, in, out, conn, route_cb,
+        return handleModelRouting (req_info, in, out, conn, route_cb,
             get_request_cb, uri);
       };
     } else if (uri.find ("/stream/get-stream-info") != std::string::npos) {

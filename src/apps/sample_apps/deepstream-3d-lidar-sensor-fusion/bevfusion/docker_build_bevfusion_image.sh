@@ -22,10 +22,10 @@
 # $ xhost +
 # $ docker run --gpus all -it --rm --net=host --privileged \
 #  -v /var/run/docker.sock:/var/run/docker.sock-v /tmp/.X11-unix:/tmp/.X11-unix \
-#  -e DISPLAY=$DISPLAY nvcr.io/nvidia/deepstream:{xx.xx.xx}-triton-multiarch
+#  -e DISPLAY=$DISPLAY ghcr.io/nvidia/deepstream:{xx.xx.xx}-triton-multiarch
 #
 # Usage:
-#       bevfusion/docker_build_bevfusion_image.sh nvcr.io/nvidia/deepstream:{xx.xx.xx}-triton-multiarch [TARGET_IMAGE]
+#       bevfusion/docker_build_bevfusion_image.sh ghcr.io/nvidia/deepstream:{xx.xx.xx}-triton-multiarch [TARGET_IMAGE]
 #       TARGET_IMAGE: user defined the target image name, default: deepstream-triton-bevfusion
 
 set -e
@@ -34,9 +34,9 @@ set -e
 # set -x
 
 # update BASE_IMAGE to deepstream triton release version, minumum version: 7.0.0
-# BASE_IMAGE=nvcr.io/nvidia/deepstream:{xx.xx.xx}-triton-multiarch
-BASE_IMAGE="nvcr.io/nvidia/deepstream:9.1-triton-multiarch"
-NVDS_VERSION=${NVDS_VERSION:-9.1}
+# BASE_IMAGE=ghcr.io/nvidia/deepstream:{xx.xx.xx}-triton-multiarch
+BASE_IMAGE="ghcr.io/nvidia/deepstream:9.2-triton-multiarch"
+NVDS_VERSION=${NVDS_VERSION:-9.2}
 TARGET_IMAGE="deepstream-triton-bevfusion:${NVDS_VERSION}"
 WORKSPACE=/opt/nvidia/deepstream/deepstream/sources/apps/sample_apps/deepstream-3d-lidar-sensor-fusion
 COMMIT_ID=7c1623f234d5a9794fd862c9456f68f87ae7b900

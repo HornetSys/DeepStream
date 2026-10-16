@@ -67,10 +67,8 @@ echo ""
 # The venv is built ONCE, IN THE CONTAINER, by setup.sh — with virtualenv, because the DeepStream
 # container's python lacks ensurepip (so `python3 -m venv` would fail here). Reuse it; never recreate.
 if [ ! -x "$VENV_PY" ]; then
-    echo "ERROR: venv not found at $VENV_DIR — run the one-time bootstrap first (in-container):" >&2
-    echo "  docker run --rm -it --gpus all --shm-size=16g -v \"\$PWD\":/work -w /work \\" >&2
-    echo "    --entrypoint bash nvcr.io/nvidia/deepstream:9.1-triton-multiarch \\" >&2
-    echo "    .claude/skills/deepstream-import-vision-model/setup.sh" >&2
+    echo "ERROR: venv not found at $VENV_DIR." >&2
+    echo "Run setup.sh in the named digest-pinned campaign container from SKILL.md." >&2
     exit 1
 fi
 echo "Using venv: $VENV_DIR"

@@ -211,7 +211,14 @@ docker compose down
 ```
 
 ### Sample Data Setup
-From the AutoMagicCalib directory, unzip the compressed sample data file `assets/sdg_08_2_sample_data_010926.zip`. The sample folder includes 4 different types of data to help you run end-to-end calibration and evaluation.
+The sample data file `sdg_08_2_sample_data_010926.zip` is published as a [DeepStream v9.2.0 release asset](https://github.com/NVIDIA/DeepStream/releases/tag/v9.2.0), not stored in the repository. From the AutoMagicCalib directory, download it into `assets/` and unzip it:
+
+```bash
+curl -L -o assets/sdg_08_2_sample_data_010926.zip \
+  https://github.com/NVIDIA/DeepStream/releases/download/v9.2.0/sdg_08_2_sample_data_010926.zip
+```
+
+The sample folder includes 4 different types of data to help you run end-to-end calibration and evaluation.
 1. Input video files
 2. Ground truth data
 3. BirdEyeView map image

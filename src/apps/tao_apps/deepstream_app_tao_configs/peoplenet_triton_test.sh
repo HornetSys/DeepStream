@@ -18,9 +18,11 @@
 
 #This script is to download peoplenet pretrained model and run peoplenet DeepStream application
 
-echo "==================================================================="
+SEPARATOR="==================================================================="
+
+echo "$SEPARATOR"
 echo "begin download models for peopleNet "
-echo "==================================================================="
+echo "$SEPARATOR"
 mkdir -p ./triton/peopleNet/
 wget --content-disposition 'https://api.ngc.nvidia.com/v2/models/org/nvidia/team/tao/peoplenet/pruned_quantized_decrypted_v2.3.4/files?redirect=true&path=labels.txt' \
 -O ./triton/peopleNet/labels.txt
@@ -31,7 +33,7 @@ mkdir -p ./triton/peopleNet/1
 trtexec --onnx=./triton/peopleNet/resnet34_peoplenet_int8.onnx --fp16 --saveEngine=./triton/peopleNet/1/resnet34_peoplenet_int8.onnx_b1_gpu0_fp16.engine --minShapes="input_1:0":1x3x544x960 --optShapes="input_1:0":1x3x544x960 --maxShapes="input_1:0":1x3x544x960 
 cp triton/peopleNet_config.pbtxt ./triton/peopleNet/config.pbtxt
 
-echo "==================================================================="
+echo "$SEPARATOR"
 echo "Run deepstream-app"
-echo "==================================================================="
+echo "$SEPARATOR"
 deepstream-app -c deepstream_app_source1_peoplenet.txt

@@ -32,6 +32,7 @@ For build and installation instructions, see [build/BUILD.md](../../build/BUILD.
 | `nvdsinfer` | `libnvds_infer.so` | TensorRT inference engine wrapper. Provides the `NvDsInferContext` API for running TRT engines from plugins and apps. See [README](nvdsinfer/README). |
 | `nvdsinferserver` | `libnvds_inferserver.so` | Triton Inference Server client wrapper. Provides the `NvDsInferServerContext` API. See [README](nvdsinferserver/README). |
 | `nvdsinfer_customparser` | `libnvdsinfer_customparser.so` | Reference implementation for custom bounding-box and classifier parsers. See [README](nvdsinfer_customparser/README). |
+| `nvdsinferutils` | `libnvds_inferutils.so` | Inference helpers used by Gst-nvinfer — DBScan object clustering and decoding of TAO/TLT encoded models into a TensorRT engine. See [README](nvdsinferutils/README). |
 
 ### Stream Multiplexing
 
@@ -67,11 +68,17 @@ For build and installation instructions, see [build/BUILD.md](../../build/BUILD.
 |---|---|---|
 | `nvds_rest_server` | `libnvds_rest_server.so` | Embedded REST server library for live pipeline control (source add/remove, config reload). See [README](nvds_rest_server/README). |
 
+### Calibration
+
+| Library | Output | Description |
+|---|---|---|
+| `nv_csvparser` | `libnvds_csvparser.so` | Parses aisle and parking-spot calibration CSV files (`AisleCSVParser`, `SpotCSVParser`). See [README](nv_csvparser/README). |
+
 ### 3D Sensing
 
 | Library | Output | Description |
 |---|---|---|
-| `ds3d` | `libnvds_3d_*.so` | DS3D utility library for 3D sensor pipelines — data loaders (LiDAR, depth camera), data filters, data bridges, and inference custom libs for 3D detection and V2X fusion. See [README](ds3d/README.md). |
+| `ds3d` | `libnvds_3d_*.so`, `libnvdsgst_3d_gst.so`, `libnvds_tritoninferfilter.so`, `libnvds_lidarfileread.so`, `libnvds_lidarfilewrite.so` | DS3D 3D-sensor framework: common runtime, GL process, GStreamer glue, loaders (RealSense, depth files, LiDAR files), filters (depth-to-point, lidar preprocess/inference, alignment, fusion cluster), mixer, GL/file renders, video databridge, and V2X/LiDAR inference custom libs. See [README](ds3d/README.md). |
 
 ---
 

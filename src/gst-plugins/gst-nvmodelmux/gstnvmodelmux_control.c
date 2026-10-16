@@ -45,7 +45,7 @@
 #include "gstnvdsmeta.h"               /* gst_buffer_get_nvds_batch_meta */
 #include "nvdsmeta.h"                  /* NvDsBatchMeta, NvDsFrameMeta */
 #include "gst-nvevent.h"              /* GST_NVEVENT_PAD_ADDED/PAD_DELETED/STREAM_EOS */
-#include "gst-nvdscustomevent.h"      /* GST_NVEVENT_MODEL_*/ /* + STREAM_ROUTE (in-band REST) */
+#include "gst-nvdscustomevent.h"      /* GST_NVEVENT_MODEL_*/ /* + MODEL_ROUTING (in-band REST) */
 #include <json-glib/json-glib.h>       /* v1 control payloads arrive as ONE JSON document */
 #include <string.h>
 
@@ -117,7 +117,7 @@ requested_binding_info_free (gpointer p)
 
 /* --- thread-local capture of the FIRST MODELMUX_CONTROL_ERR message ---
  * Lets the synchronous control-admission query turn a handler's reject into a
- * REST reason WITHOUT instrumenting every reject site (stream/route has ~20).
+ * REST reason WITHOUT instrumenting every reject site (model/routing has ~20).
  * Arm it on the calling (REST) thread, run the handler's admission pass, then
  * read the reason it logged. Keeps the FIRST message so a specific reject wins
  * over any generic "rejected whole" logged afterwards. Per-thread, so logging on
@@ -142,6 +142,40 @@ static inline const gchar *modelmux_control_err_capture_get (void)
 { return (const gchar *) g_private_get (&mm_ctrl_err_capture); }
 static inline void modelmux_control_err_capture_disarm (void)
 { g_private_replace (&mm_ctrl_err_capture, NULL); }
+
+/* --- machine-readable CLASSIFICATION for the captured reject ---
+ * The message capture above is prose: it tells a human what went wrong, but the
+ * API contract requires clients to branch on error.code, and every routing
+ * reject used to collapse to one generic bucket regardless of cause. A route
+ * naming an unloaded model said MODEL_NOT_LOADED in its prose while error.code
+ * said MODEL_ROUTING_REJECTED -- unactionable, and the wrong status besides.
+ *
+ * Rather than instrument all ~20 reject sites (the reason the prose capture
+ * exists at all), only the causes the contract actually names classify
+ * themselves; everything else keeps the generic bucket and 400. Set alongside
+ * the message, so the first specific reject wins there too. */
+typedef struct { gint http; const gchar *err_code; } ModelMuxRejectClass;
+static GPrivate mm_ctrl_err_class = G_PRIVATE_INIT (g_free);
+
+static inline void
+modelmux_control_err_classify (gint http, const gchar * err_code)
+{
+  ModelMuxRejectClass *c;
+  const gchar *msg = (const gchar *) g_private_get (&mm_ctrl_err_capture);
+  if (!msg)                             /* not armed -- nothing is collecting */
+    return;
+  if (g_private_get (&mm_ctrl_err_class))   /* first classification wins */
+    return;
+  c = g_new0 (ModelMuxRejectClass, 1);
+  c->http = http;
+  c->err_code = err_code;               /* static string literal; not owned */
+  g_private_replace (&mm_ctrl_err_class, c);
+}
+
+static inline const ModelMuxRejectClass *modelmux_control_err_class_get (void)
+{ return (const ModelMuxRejectClass *) g_private_get (&mm_ctrl_err_class); }
+static inline void modelmux_control_err_class_clear (void)
+{ g_private_replace (&mm_ctrl_err_class, NULL); }
 
 /* Element-scoped logging (guarded INFO; GST warning/error like any plugin).
  * ERR also feeds the admission-query capture above (no-op unless armed). */
@@ -674,7 +708,7 @@ static void modelmux_control_enqueue_shadow_join (GstNvModelMux * self, guint so
 /* fwd-decl: reroute streams off a demoted old default onto the new one (zero-drop, deferred
  * until the new default warms). Defined with the pending-reroute machinery below.
  * excl/n_excl/excl_all: source_ids already covered by an EXPLICIT SERVING-MODEL route
- * in the SAME stream/route request -- the sweep must skip them (an explicit route that
+ * in the SAME model/routing request -- the sweep must skip them (an explicit route that
  * CHANGES THE SERVING MODEL always wins over the default sweep; shadow-only routes
  * remain sweepable). */
 static void modelmux_control_switch_default_reroute (GstNvModelMux * self, gboolean shadow,
@@ -727,7 +761,7 @@ modelmux_control_lazy_warm (GstNvModelMux * self, gboolean shadow, const gchar *
  * stream-bind and the deferred promote/join paths:
  *   1. an EXPLICIT gpu on the request's own ref always wins;
  *   2. otherwise, when the resolved model IS the GLOBAL runtime default, the
- *      persisted default pin (stream/route default{}.gpu) applies -- including
+ *      persisted default pin (model/routing default{}.gpu) applies -- including
  *      when the request named the default explicitly WITHOUT a gpu (same model
  *      must not get different placement policies depending on whether the
  *      request spelled its name);
@@ -951,7 +985,7 @@ modelmux_control_handle_stream_add (GstNvModelMux * self, const NvDsSensorInfo *
         info->source_id, camera_id ? camera_id : "?");
 
   /* app-facing notice: announce what this stream/add actually BOUND to -- so the
-   * app sees the routing outcome of every add, mirroring stream/route. Uses the
+   * app sees the routing outcome of every add, mirroring model/routing. Uses the
    * FINAL attach decision, not just the request, so all three cases are covered:
    *   - an explicit / per-camera-bound model  -> "model=<name@ver>"
    *   - the pool DEFAULT it fell back to       -> "model=<name@ver> (default)"
@@ -1265,8 +1299,8 @@ modelmux_control_handle_model_load (GstNvModelMux * self, const ModelMuxModelPay
     }
   }
 
-  /* warm into limbo: roles/defaults/placement of STREAMS are the stream plane's
-   * job (stream/route); model/load never designates a default. */
+  /* warm into limbo: roles/defaults/placement of STREAMS are the routing plane's
+   * job (model/routing); model/load never designates a default. */
   /* engine/batch PRE-FLIGHT (best-effort, filename convention "_b<N>_"): a prebuilt
    * engine below the effective batch makes nvinfer reject it and rebuild (minutes)
    * or FAIL outright -- say so BEFORE the warm, with the cause. */
@@ -1351,19 +1385,26 @@ modelmux_control_handle_model_unload (GstNvModelMux * self,
         "set \"name\" to the model to unload");
     return;
   }
-  /* never unload a configured default name -- it backs the routing fallback (any version) */
-  {
-  const DefaultModelRef *udp = modelmux_bin_get_default (self->modelmux_bin, FALSE);
-  const DefaultModelRef *uds = modelmux_bin_get_default (self->modelmux_bin, TRUE);
-  if ((udp && udp->name && g_strcmp0 (name, udp->name) == 0) ||
-      (uds && uds->name && g_strcmp0 (name, uds->name) == 0)) {
-    msg = g_strdup_printf ("'%s' is a configured default (backs the routing fallback)", name);
+  /* never unload a configured default -- it backs the routing fallback. With an EXPLICIT
+   * version the default is the (name, version) IDENTITY, so compare the CANONICAL KEY
+   * (DefaultModelRef.key), never the bare name: comparing the name alone made every OTHER
+   * version of a defaulted name un-unloadable -- with Trafficcamnet@1 as the default, an
+   * idle Trafficcamnet@2 could never be reclaimed. A version-LESS unload still refuses on
+   * the name (it would sweep the default's own version too).
+   * The compare runs UNDER ib->lock INSIDE the bin: this handler answers the synchronous
+   * model/unload query on the REST thread, while the default writers replace+free those
+   * strings on the main loop under that lock -- dereferencing the borrowed ref from
+   * modelmux_bin_get_default() here would race them. */
+  if (modelmux_bin_is_configured_default (self->modelmux_bin, name, ver)) {
+    gchar *dkey = ver ? model_key (name, ver) : NULL;
+    msg = g_strdup_printf ("'%s' is a configured default (backs the routing fallback)",
+        dkey ? dkey : name);
     MODELMUX_CONTROL_ERR (self, "model unload rejected: %s", msg);
-    modelmux_control_result_set (res, 400, "MODEL_IS_DEFAULT", msg,
-        "reassign the default via stream/route before unloading");
+    modelmux_control_result_set (res, 409, "MODEL_IN_USE", msg,
+        "reassign the default via model/routing before unloading");
     g_free (msg);
+    g_free (dkey);
     return;
-  }
   }
 
   if (pl->n_gpus > 0) {
@@ -1420,20 +1461,20 @@ modelmux_control_handle_model_unload (GstNvModelMux * self,
         msg = g_strdup_printf ("'%s' instance on gpu %d is still inferring on "
             "%u stream(s) [%s]", key, sgpu, sstr, (scsv && *scsv) ? scsv : "?");
         MODELMUX_CONTROL_ERR (self, "model unload refused: %s", msg);
-        modelmux_control_result_set (res, 400, "MODEL_SERVING", msg,
-            "route/drain those streams via stream/route before unloading that gpu");
+        modelmux_control_result_set (res, 409, "MODEL_IN_USE", msg,
+            "route/drain those streams via model/routing before unloading that gpu");
         break;
       case MM_UNLOAD_GPU_NO_MATCH:
         msg = g_strdup_printf ("'%s' has no instance on gpu(s) [%s]", key, gs->str);
         MODELMUX_CONTROL_ERR (self, "model unload: %s -- nothing to unload there", msg);
-        modelmux_control_result_set (res, 400, "MODEL_NOT_LOADED", msg,
+        modelmux_control_result_set (res, 404, "MODEL_NOT_LOADED", msg,
             "see GET model/status for the version's live gpus");
         break;
       case MM_UNLOAD_GPU_ABSENT:
       default:
         msg = g_strdup_printf ("'%s' is not loaded", key);
         MODELMUX_CONTROL_ERR (self, "model unload: %s", msg);
-        modelmux_control_result_set (res, 400, "MODEL_NOT_LOADED", msg,
+        modelmux_control_result_set (res, 404, "MODEL_NOT_LOADED", msg,
             "check the name/version, or GET model/status");
         break;
     }
@@ -1453,14 +1494,14 @@ modelmux_control_handle_model_unload (GstNvModelMux * self,
     if (!modelmux_bin_key_serving (self->modelmux_bin, key, &sv, &sc)) {
       msg = g_strdup_printf ("'%s' is not loaded", key);
       MODELMUX_CONTROL_ERR (self, "model unload: %s", msg);
-      modelmux_control_result_set (res, 400, "MODEL_NOT_LOADED", msg,
+      modelmux_control_result_set (res, 404, "MODEL_NOT_LOADED", msg,
           "check the name/version, or GET model/status");
     } else if (sv > 0) {
       msg = g_strdup_printf ("'%s' is serving %u stream(s) [%s]", key, sv,
           (sc && *sc) ? sc : "?");
       MODELMUX_CONTROL_ERR (self, "model unload refused: %s", msg);
-      modelmux_control_result_set (res, 400, "MODEL_SERVING", msg,
-          "route its streams elsewhere via stream/route, then unload");
+      modelmux_control_result_set (res, 409, "MODEL_IN_USE", msg,
+          "route its streams elsewhere via model/routing, then unload");
     } else if (modelmux_bin_unload_model (self->modelmux_bin, key)) {
       msg = g_strdup_printf ("'%s' unloaded", key);
       MODELMUX_CONTROL_INFO (self, "model %s", msg);
@@ -1469,7 +1510,13 @@ modelmux_control_handle_model_unload (GstNvModelMux * self,
       /* idle at the check, then raced mid-load: teardown re-checks and refused */
       msg = g_strdup_printf ("'%s' could not be unloaded (mid-load); retry shortly", key);
       MODELMUX_CONTROL_ERR (self, "model unload: %s", msg);
-      modelmux_control_result_set (res, 400, "MODEL_UNLOAD_FAILED", msg,
+      /* 409 because this IS a live-state conflict -- but NOT UPDATE_IN_FLIGHT.
+       * The race is against a LOAD, not an update; reporting an update in flight
+       * would send a client to poll for an operation that does not exist. The
+       * unified contract names no code for "busy loading", so the shipped
+       * MODEL_UNLOAD_FAILED is kept: a truthful profile-specific code beats a
+       * wrong standard one. */
+      modelmux_control_result_set (res, 409, "MODEL_UNLOAD_FAILED", msg,
           "retry after the model finishes warming");
     }
     g_free (sc);
@@ -1490,13 +1537,13 @@ modelmux_control_handle_model_unload (GstNvModelMux * self,
       msg = g_strdup_printf ("'%s': all %u loaded version(s) still serving stream(s) "
           "[%s] (nothing unloaded)", name, present, (sc && *sc) ? sc : "?");
       MODELMUX_CONTROL_ERR (self, "model unload refused: %s", msg);
-      modelmux_control_result_set (res, 400, "MODEL_SERVING", msg,
-          "route their streams elsewhere via stream/route, then unload");
+      modelmux_control_result_set (res, 409, "MODEL_IN_USE", msg,
+          "route their streams elsewhere via model/routing, then unload");
       g_free (sc);
     } else {
       msg = g_strdup_printf ("'%s' is not loaded", name);
       MODELMUX_CONTROL_ERR (self, "model unload: %s", msg);
-      modelmux_control_result_set (res, 400, "MODEL_NOT_LOADED", msg,
+      modelmux_control_result_set (res, 404, "MODEL_NOT_LOADED", msg,
           "check the name, or GET model/status");
     }
     g_free (msg);
@@ -1528,7 +1575,7 @@ typedef struct
   gboolean promote;            /* TRUE: this stream is on a no-infer PASSTHROUGH while its
                                 * primary warms -> promote it to the model (not a reroute)
                                 * once warm_primary reaches WARMED. */
-  gboolean emit_routed;        /* TRUE: this entry came from an explicit stream/route POST
+  gboolean emit_routed;        /* TRUE: this entry came from an explicit model/routing POST
                                 * whose completion event was withheld at accept time, so the
                                 * poller owes a `streams-routed` when it lands. FALSE for
                                 * shadow joins, metadata rebinds and default sweeps -- none
@@ -1552,7 +1599,7 @@ modelmux_control_pending_free (gpointer data)
 
 /* Republish the deferred-route queue into the bin's status mirror, so an ACCEPTED
  * route that is still waiting on a warming target is visible to model/status (and
- * through it to GET /api/v1/stream/route). Until it applies the stream keeps
+ * through it to GET /api/v1/model/routing). Until it applies the stream keeps
  * serving its old model, so without this the 202 is the only evidence the request
  * ever existed -- a reconciler polling status cannot tell an in-flight route from
  * one that was silently dropped.
@@ -1919,7 +1966,7 @@ modelmux_control_apply_scoped_reroute (GstNvModelMux * self, const guint * src,
     g_free (pt);                          /* the id array is copied into each promote entry */
     promoted = npt;                       /* remember how many were queued (for revision/log below) */
     if (npt)
-      MODELMUX_CONTROL_INFO (self, "stream/route: %u passthrough stream(s) queued for "
+      MODELMUX_CONTROL_INFO (self, "model/routing: %u passthrough stream(s) queued for "
           "promotion to '%s' (inference attaches once the model is ready)",
           npt, eff_primary);
   }
@@ -1937,11 +1984,11 @@ modelmux_control_apply_scoped_reroute (GstNvModelMux * self, const guint * src,
   if (launched || promoted)
     modelmux_bin_bump_routing_revision (self->modelmux_bin);
   if (launched)
-    MODELMUX_CONTROL_INFO (self, "stream/route applied to %u stream(s) (model=%s shadow=%s)",
+    MODELMUX_CONTROL_INFO (self, "model/routing applied to %u stream(s) (model=%s shadow=%s)",
         launched, eff_primary ? eff_primary : "(unchanged)",
         clear_shadow ? "(cleared)" : (eff_shadow ? eff_shadow : "(unchanged)"));
   else if (!promoted)
-    MODELMUX_CONTROL_ERR (self, "stream/route: no streams updated (none in scope / not active)");
+    MODELMUX_CONTROL_ERR (self, "model/routing: no streams updated (none in scope / not active)");
   /* `promoted` counts streams that were only QUEUED for a later promote -- the
    * reroute has NOT attached inference to them yet. The fused return value hides
    * that, so a caller that needs to know whether the switch is genuinely complete
@@ -2039,7 +2086,7 @@ modelmux_control_pending_poll (gpointer data)
       if (deferred_reroute->n)
         modelmux_bin_promote_passthru (self->modelmux_bin, deferred_reroute->src[0], deferred_reroute->eff_primary,
             deferred_reroute->eff_shadow, deferred_reroute->p_gpu, deferred_reroute->s_gpu, deferred_reroute->p_via_default, deferred_reroute->s_via_default);
-      /* This promote carries the completion owed by the stream/route POST that
+      /* This promote carries the completion owed by the model/routing POST that
        * spawned it (set when that route's deferred apply could only queue
        * promotes). It is the LAST of that route's promotes, so the switch is now
        * complete for the whole scope -- announce it here, once. Ordinary promotes
@@ -2234,7 +2281,7 @@ modelmux_control_enqueue_shadow_join (GstNvModelMux * self, guint source_id,
  *
  * INVARIANT: an explicit route in the same request always wins over the default
  * sweep. excl/n_excl name the source_ids covered by explicit routes[] in the SAME
- * stream/route request (excl_all = an "all"-scope route covered everything): a
+ * model/routing request (excl_all = an "all"-scope route covered everything): a
  * stream whose explicit route DEFERRED (target still warming, parked on
  * pending_reroutes, physically still on the old default) must NOT be swept onto
  * the new default -- that would clobber the explicit intent. */
@@ -2328,7 +2375,7 @@ modelmux_control_switch_default_reroute (GstNvModelMux * self, gboolean shadow,
 }
 
 /* ================================================================== */
-/* /api/v1/stream/route -- the declarative routing plane               */
+/* /api/v1/model/routing -- the declarative routing plane               */
 /* ================================================================== */
 
 /* ROUTE EXECUTOR: apply one admitted route (an explicit source scope +
@@ -2344,7 +2391,7 @@ modelmux_control_exec_route (GstNvModelMux * self, const guint * src, guint n,
   const gchar *eff_primary = NULL, *eff_shadow = NULL;
   const gchar *warm_primary = NULL, *warm_shadow = NULL;
 
-  MODELMUX_CONTROL_INFO (self, "STREAM ROUTE scope=%s model=%s shadow=%s",
+  MODELMUX_CONTROL_INFO (self, "MODEL ROUTING scope=%s model=%s shadow=%s",
       n ? "explicit" : "ALL", p_key ? p_key : "-",
       clear_shadow ? "none" : (s_key ? s_key : "-"));
 
@@ -2357,7 +2404,7 @@ modelmux_control_exec_route (GstNvModelMux * self, const guint * src, guint n,
   if (p_key && p_gpu == MM_GPU_ANY && s_gpu == MM_GPU_ANY &&
       modelmux_bin_try_inplace (self->modelmux_bin, n ? src : NULL, n, p_key,
           clear_shadow ? "none" : s_key)) {
-    MODELMUX_CONTROL_INFO (self, "stream/route handled IN-PLACE (reused bins, gie preserved, "
+    MODELMUX_CONTROL_INFO (self, "model/routing handled IN-PLACE (reused bins, gie preserved, "
         "zero drop)");
     /* This route just LANDED, so any route still queued for these streams is
      * stale -- leaving it would let a warm completing later drag them back off
@@ -2371,6 +2418,7 @@ modelmux_control_exec_route (GstNvModelMux * self, const guint * src, guint n,
 
   if (p_key) {
     if (!modelmux_config_find_model (&self->config, p_bare)) {
+      modelmux_control_err_classify (404, "MODEL_NOT_LOADED");
       MODELMUX_CONTROL_ERR (self, "route rejected: model '%s' not loaded (MODEL_NOT_LOADED) "
           "-- POST /api/v1/model/load first", p_key);
       return;
@@ -2383,6 +2431,7 @@ modelmux_control_exec_route (GstNvModelMux * self, const guint * src, guint n,
 
   if (s_key) {
     if (!modelmux_config_find_model (&self->config, s_bare)) {
+      modelmux_control_err_classify (404, "MODEL_NOT_LOADED");
       MODELMUX_CONTROL_ERR (self, "route rejected: shadow '%s' not loaded (MODEL_NOT_LOADED) "
           "-- POST /api/v1/model/load first", s_key);
       return;
@@ -2439,7 +2488,7 @@ modelmux_control_exec_route (GstNvModelMux * self, const guint * src, guint n,
          * stream that attaches later, which is the exact defect freezing the scope
          * is here to prevent. Drop it instead: no stream was routed, so -- as with
          * an apply that touches nothing -- no completion is announced. */
-        MODELMUX_CONTROL_WARN (self, "stream/route: 'all' scope matched no wired "
+        MODELMUX_CONTROL_WARN (self, "model/routing: 'all' scope matched no wired "
             "stream at accept time -> nothing to defer");
         modelmux_control_pending_free (deferred_reroute);
         return;
@@ -2495,6 +2544,7 @@ modelmux_control_route_gpu_ok (GstNvModelMux * self, const gchar * role, const g
   if (want == G_MAXINT) {
     /* out-of-range sentinel (see modelmux_control_ctrl_json_gpu): print the teaching
      * bound, never "addressed on gpu 2147483647" */
+    modelmux_control_err_classify (400, "GPU_UNKNOWN");
     MODELMUX_CONTROL_ERR (self, "route[%u] rejected: %s '%s@%s' gpu id out of range "
         "(0..%d) (GPU_UNKNOWN)", route_idx, role, name, ver, MODELMUX_CONTROL_GPU_ID_MAX);
     return FALSE;
@@ -2502,6 +2552,7 @@ modelmux_control_route_gpu_ok (GstNvModelMux * self, const gchar * role, const g
   if (modelmux_control_ref_gpu_matches (self, name, ver, want))
     return TRUE;
   gpus = modelmux_control_live_gpu_list (self, name, ver);
+  modelmux_control_err_classify (400, "GPU_UNKNOWN");
   MODELMUX_CONTROL_ERR (self, "route[%u] rejected: %s '%s@%s' addressed on gpu %d but its "
       "instance(s) run on gpu(s) %s (GPU_UNKNOWN)", route_idx, role, name, ver,
       want, gpus ? gpus : "0");
@@ -2510,7 +2561,7 @@ modelmux_control_route_gpu_ok (GstNvModelMux * self, const gchar * role, const g
 }
 
 /* Move a role's runtime DEFAULT to (name, ver): the fallback every unbound
- * stream resolves to. The target must already be LOADED (stream/route never
+ * stream resolves to. The target must already be LOADED (model/routing never
  * creates models); the previous default's streams move over zero-drop.
  * `gpu` = the default{} ref's requested instance placement (validated upstream
  * by modelmux_control_route_gpu_ok; MM_GPU_ANY = any). PERSISTED on the role's
@@ -2547,6 +2598,7 @@ modelmux_control_route_set_default (GstNvModelMux * self, gboolean shadow,
   g_free (other_key);
 
   if (!modelmux_bin_model_loaded (self->modelmux_bin, key)) {
+    modelmux_control_err_classify (404, "MODEL_NOT_LOADED");
     MODELMUX_CONTROL_ERR (self, "default %s '%s' rejected: not loaded (MODEL_NOT_LOADED) -- "
         "POST /api/v1/model/load first", role_str, key);
     g_free (key);
@@ -2624,7 +2676,7 @@ modelmux_control_lookup_source_by_name (GstNvModelMux * self, const gchar * cam)
 }
 
 /* Element-boundary ref validation. The REST parser enforces this for its own
- * clients, but stream-route events/messages can also be APP-GENERATED -- the
+ * clients, but model-routing events/messages can also be APP-GENERATED -- the
  * same gate here keeps a malformed ref from ever warming a bin under a
  * garbage key ('@'/';' corrupt the canonical name@version key space; a
  * non-integer version could never be addressed by unload). */
@@ -2825,7 +2877,7 @@ modelmux_control_route_scope (GstNvModelMux * self, JsonObject * r, guint idx,
   return FALSE;
 }
 
-/* /api/v1/stream/route: ADMIT the whole routing request first, apply only if
+/* /api/v1/model/routing: ADMIT the whole routing request first, apply only if
  * EVERY part passes (atomic admission -- a partially-applied request is worse
  * than a rejected one), then execute route by route and move the defaults.
  * The REST parser and the upstream bin have already gated their own layers
@@ -2836,10 +2888,10 @@ modelmux_control_route_scope (GstNvModelMux * self, JsonObject * r, guint idx,
  * then schedules the real apply asynchronously. FALSE = validate AND apply (the
  * normal in-band event path). */
 static void
-modelmux_control_handle_stream_route (GstNvModelMux * self, const gchar * json,
+modelmux_control_handle_model_routing (GstNvModelMux * self, const gchar * json,
     gboolean admit_only)
 {
-  JsonParser *parser = modelmux_control_ctrl_json_load (self, json, "stream/route");
+  JsonParser *parser = modelmux_control_ctrl_json_load (self, json, "model/routing");
   JsonObject *v, *d = NULL;
   JsonArray *routes = NULL;
   ModelMuxDecodedRoute *dr = NULL;
@@ -2861,7 +2913,11 @@ modelmux_control_handle_stream_route (GstNvModelMux * self, const gchar * json,
       gint64 want = json_node_get_int (n);
       guint64 cur = modelmux_control_routing_revision (self);
       if (want >= 0 && (guint64) want != cur) {
-        MODELMUX_CONTROL_ERR (self, "stream/route rejected: if_revision %" G_GINT64_FORMAT
+        /* classify INSIDE the mismatch branch: the capture is armed for the whole
+         * admission pass, so classifying before the test would stamp
+         * REVISION_CONFLICT onto whatever unrelated reject happened to come later. */
+        modelmux_control_err_classify (409, "REVISION_CONFLICT");
+        MODELMUX_CONTROL_ERR (self, "model/routing rejected: if_revision %" G_GINT64_FORMAT
             " does not match routing_revision %" G_GUINT64_FORMAT
             " (REVISION_CONFLICT) -- re-read model/status and retry",
             want, cur);
@@ -2879,7 +2935,7 @@ modelmux_control_handle_stream_route (GstNvModelMux * self, const gchar * json,
        * decoding it as "no routes" would silently apply the default{} with
        * an empty exclusion set (partial intent, exactly what atomic
        * admission forbids) */
-      MODELMUX_CONTROL_ERR (self, "stream/route rejected: 'routes' must be an array "
+      MODELMUX_CONTROL_ERR (self, "model/routing rejected: 'routes' must be an array "
           "(FIELD_TYPE_INVALID)");
       goto reject;
     }
@@ -2948,6 +3004,7 @@ modelmux_control_handle_stream_route (GstNvModelMux * self, const gchar * json,
       if (!modelmux_control_ref_valid (self, i, "model", dr[i].p_name, dr[i].p_ver))
         goto reject;
       if (!modelmux_config_find_model (&self->config, dr[i].p_name)) {
+        modelmux_control_err_classify (404, "MODEL_NOT_LOADED");
         MODELMUX_CONTROL_ERR (self, "route rejected: model '%s@%s' not loaded "
             "(MODEL_NOT_LOADED) -- POST /api/v1/model/load first",
             dr[i].p_name, dr[i].p_ver);
@@ -2958,11 +3015,12 @@ modelmux_control_handle_stream_route (GstNvModelMux * self, const gchar * json,
       dr[i].p_key = model_key (dr[i].p_name, dr[i].p_ver);
       /* the catalog check above matches the NAME only -- the target VERSION
        * must ALSO be live (loaded/warming), exactly like the default{} targets
-       * below: stream/route never creates models, so a never-loaded version
+       * below: model/routing never creates models, so a never-loaded version
        * (Car@99) must reject here instead of letting modelmux_control_exec_route's
        * prepare_model silently create + warm it. A WARMING model has a live
        * bin, so deferred reroutes still admit. */
       if (!modelmux_bin_model_loaded (self->modelmux_bin, dr[i].p_key)) {
+        modelmux_control_err_classify (404, "MODEL_NOT_LOADED");
         MODELMUX_CONTROL_ERR (self, "route rejected: model '%s@%s' not loaded "
             "(MODEL_NOT_LOADED) -- POST /api/v1/model/load first",
             dr[i].p_name, dr[i].p_ver);
@@ -2973,6 +3031,7 @@ modelmux_control_handle_stream_route (GstNvModelMux * self, const gchar * json,
       if (!modelmux_control_ref_valid (self, i, "shadow", dr[i].s_name, dr[i].s_ver))
         goto reject;
       if (!modelmux_config_find_model (&self->config, dr[i].s_name)) {
+        modelmux_control_err_classify (404, "MODEL_NOT_LOADED");
         MODELMUX_CONTROL_ERR (self, "route rejected: shadow '%s@%s' not loaded "
             "(MODEL_NOT_LOADED) -- POST /api/v1/model/load first",
             dr[i].s_name, dr[i].s_ver);
@@ -2983,6 +3042,7 @@ modelmux_control_handle_stream_route (GstNvModelMux * self, const gchar * json,
       dr[i].s_key = model_key (dr[i].s_name, dr[i].s_ver);
       /* same version-liveness admission as the serving target above */
       if (!modelmux_bin_model_loaded (self->modelmux_bin, dr[i].s_key)) {
+        modelmux_control_err_classify (404, "MODEL_NOT_LOADED");
         MODELMUX_CONTROL_ERR (self, "route rejected: shadow '%s@%s' not loaded "
             "(MODEL_NOT_LOADED) -- POST /api/v1/model/load first",
             dr[i].s_name, dr[i].s_ver);
@@ -3003,7 +3063,7 @@ modelmux_control_handle_stream_route (GstNvModelMux * self, const gchar * json,
       /* a present-but-wrong-typed 'default' must reject WHOLE, like a
        * wrong-typed routes[]: proceeding would apply the routes while
        * silently dropping the stated default intent (partial mutation). */
-      MODELMUX_CONTROL_ERR (self, "stream/route rejected: 'default' must be an object "
+      MODELMUX_CONTROL_ERR (self, "model/routing rejected: 'default' must be an object "
           "(FIELD_TYPE_INVALID)");
       goto reject;
     }
@@ -3017,25 +3077,25 @@ modelmux_control_handle_stream_route (GstNvModelMux * self, const gchar * json,
     if (dm_malformed || ds_malformed) {
       /* same wrong-typed-ref hole as routes[] above: reject, never a silent
        * "unchanged" */
-      MODELMUX_CONTROL_ERR (self, "stream/route rejected: default '%s' must be a "
+      MODELMUX_CONTROL_ERR (self, "model/routing rejected: default '%s' must be a "
           "{\"name\",\"version\"} object or null (FIELD_TYPE_INVALID)",
           dm_malformed ? "model" : "shadow");
       goto reject;
     }
     if (dm_null) {
-      MODELMUX_CONTROL_ERR (self, "stream/route rejected: the default model cannot be null "
+      MODELMUX_CONTROL_ERR (self, "model/routing rejected: the default model cannot be null "
           "(SHADOW_WITHOUT_MODEL)");
       goto reject;
     }
     /* a gpu with no name+version addresses nothing -- acknowledging it and
      * then ignoring it would break the atomic-admission contract */
     if (!dm_name && !dm_ver && dm_gpu != -1) {
-      MODELMUX_CONTROL_ERR (self, "stream/route rejected: default model 'gpu' given without "
+      MODELMUX_CONTROL_ERR (self, "model/routing rejected: default model 'gpu' given without "
           "name+version (FIELD_MISSING)");
       goto reject;
     }
     if (has_def_shadow && !ds_null && !ds_name && !ds_ver && ds_gpu != -1) {
-      MODELMUX_CONTROL_ERR (self, "stream/route rejected: default shadow 'gpu' given without "
+      MODELMUX_CONTROL_ERR (self, "model/routing rejected: default shadow 'gpu' given without "
           "name+version (FIELD_MISSING)");
       goto reject;
     }
@@ -3047,7 +3107,7 @@ modelmux_control_handle_stream_route (GstNvModelMux * self, const gchar * json,
     if (has_def_shadow && ds_null) {
       /* clearing the DEFAULT shadow needs a dedicated bin primitive
        * (TODO API_DESIGN.md). HARD failure until then -- never a silent keep. */
-      MODELMUX_CONTROL_ERR (self, "stream/route rejected: default \"shadow\": null (clear "
+      MODELMUX_CONTROL_ERR (self, "model/routing rejected: default \"shadow\": null (clear "
           "the default shadow) is not available yet (NOT_IMPLEMENTED)");
       goto reject;
     }
@@ -3061,9 +3121,11 @@ modelmux_control_handle_stream_route (GstNvModelMux * self, const gchar * json,
     if (dm_name && dm_ver) {
       gchar *dk = model_key (dm_name, dm_ver);
       gboolean ok = modelmux_bin_model_loaded (self->modelmux_bin, dk);
-      if (!ok)
-        MODELMUX_CONTROL_ERR (self, "stream/route rejected: default model '%s' not loaded "
+      if (!ok) {
+        modelmux_control_err_classify (404, "MODEL_NOT_LOADED");
+        MODELMUX_CONTROL_ERR (self, "model/routing rejected: default model '%s' not loaded "
             "(MODEL_NOT_LOADED) -- POST /api/v1/model/load first", dk);
+      }
       g_free (dk);
       if (!ok)
         goto reject;
@@ -3071,9 +3133,11 @@ modelmux_control_handle_stream_route (GstNvModelMux * self, const gchar * json,
     if (has_def_shadow && ds_name && ds_ver) {
       gchar *dk = model_key (ds_name, ds_ver);
       gboolean ok = modelmux_bin_model_loaded (self->modelmux_bin, dk);
-      if (!ok)
-        MODELMUX_CONTROL_ERR (self, "stream/route rejected: default shadow '%s' not loaded "
+      if (!ok) {
+        modelmux_control_err_classify (404, "MODEL_NOT_LOADED");
+        MODELMUX_CONTROL_ERR (self, "model/routing rejected: default shadow '%s' not loaded "
             "(MODEL_NOT_LOADED) -- POST /api/v1/model/load first", dk);
+      }
       g_free (dk);
       if (!ok)
         goto reject;
@@ -3170,7 +3234,7 @@ modelmux_control_handle_stream_route (GstNvModelMux * self, const gchar * json,
   goto out;
 
 reject:
-  MODELMUX_CONTROL_ERR (self, "stream/route: request REJECTED WHOLE -- nothing was applied "
+  MODELMUX_CONTROL_ERR (self, "model/routing: request REJECTED WHOLE -- nothing was applied "
       "(admission is atomic)");
 out:
   g_free (dm_name);
@@ -3378,7 +3442,7 @@ modelmux_control_handle_model_inplace_update (GstNvModelMux * self, const ModelM
   if (def->type == MODEL_INFERSERVER) {
     MODELMUX_CONTROL_ERR (self, "model/update '%s' rejected: nvinferserver checkpoints live "
         "in the Triton model repository (MODEL_UPDATE_UNSUPPORTED_BACKEND) -- "
-        "add the new version there, then model/load + stream/route to it",
+        "add the new version there, then model/load + model/routing to it",
         pl->name);
     return;
   }
@@ -3401,7 +3465,7 @@ modelmux_control_handle_model_inplace_update (GstNvModelMux * self, const ModelM
       MODELMUX_CONTROL_ERR (self, "model/update '%s' -> '%s' rejected: version batch %u "
           "differs from the live instance's %u (UPDATE_BATCH_MISMATCH) -- an in-place "
           "checkpoint swap keeps the element and cannot resize it; model/load '%s@%s' "
-          "as a new version and stream/route to it instead",
+          "as a new version and model/routing to it instead",
           key, pl->version, to_b, live_batch, pl->name, pl->version);
       goto done;
     }
@@ -3726,7 +3790,7 @@ modelmux_control_handle_stream_model_bind (GstNvModelMux * self, const NvDsSenso
       ModelMuxPendingReroute *deferred_reroute = g_new0 (ModelMuxPendingReroute, 1);
       /* FRESHEST intent wins here too. A model bind can land on an ALREADY-LIVE
        * stream (see the STREAM_MODEL_BIND dispatch comment), so this stream may
-       * already have a deferred route queued from stream/route. Appending beside
+       * already have a deferred route queued from model/routing. Appending beside
        * it would let WARM ORDER pick the winner: whichever target warms last
        * overwrites the other, so a rebind issued after a route could still lose to
        * it. Withdraw this stream from any older queued entry first, per lane --
@@ -3787,7 +3851,7 @@ typedef enum
   MODELMUX_CONTROL_MODEL_LOAD,
   MODELMUX_CONTROL_MODEL_UNLOAD,
   MODELMUX_CONTROL_MODEL_UPDATE,               /* IN-PLACE checkpoint transition */
-  MODELMUX_CONTROL_STREAM_ROUTE                /* declarative stream-routing request */
+  MODELMUX_CONTROL_MODEL_ROUTING                /* declarative stream-routing request */
 } ModelMuxControlOperation;
 
 /* A deep-copied control event marshalled onto the main loop. Holds a ref on the
@@ -3899,8 +3963,8 @@ modelmux_control_mark_sensor_attach_failed (GstNvModelMux * self, guint source_i
 /* CENTRAL control-plane dispatcher: the single entry point that handles and routes
  * every control API received from upstream (nvmultiurisrcbin bus / action signals)
  * to its matching handler. Covers the model plane -- model/load, model/unload,
- * model/update -- and the stream plane -- stream add, stream model-bind, stream
- * remove and stream/route. Runs on the application main loop (marshalled here via
+ * model/update -- the routing plane -- model/routing -- and the stream plane --
+ * stream add, stream model-bind, stream remove. Runs on the application main loop (marshalled here via
  * g_idle_add_full by the posting thread), reconstructs the event's info from its
  * deep-copied strings, then calls the right modelmux_control_handle_* routine under
  * api_control_lock (so no handler ever touches self->modelmux_bin while teardown
@@ -4008,8 +4072,8 @@ modelmux_control_event_dispatch (gpointer data)
       }
       break;
     }
-    case MODELMUX_CONTROL_STREAM_ROUTE:
-      modelmux_control_handle_stream_route (self, event->value_json,
+    case MODELMUX_CONTROL_MODEL_ROUTING:
+      modelmux_control_handle_model_routing (self, event->value_json,
           FALSE /* async event: validate AND apply */);
       break;
   }
@@ -4079,10 +4143,10 @@ modelmux_control_bus_sync_message (GstBus * bus, GstMessage * msg, gpointer user
     NvDsModelInfo m = { 0 };
     if (gst_nvmessage_parse_model_update (msg, &m))
       modelmux_control_post_ctrl_json (self, MODELMUX_CONTROL_MODEL_UPDATE, m.value_json);
-  } else if (gst_nvmessage_is_stream_route (msg)) {
+  } else if (gst_nvmessage_is_model_routing (msg)) {
     NvDsRouteInfo r = { 0 };
-    if (gst_nvmessage_parse_stream_route (msg, &r))
-      modelmux_control_post_ctrl_json (self, MODELMUX_CONTROL_STREAM_ROUTE, r.value_json);
+    if (gst_nvmessage_parse_model_routing (msg, &r))
+      modelmux_control_post_ctrl_json (self, MODELMUX_CONTROL_MODEL_ROUTING, r.value_json);
   }
 }
 
@@ -4097,10 +4161,16 @@ modelmux_control_bus_sync_message (GstBus * bus, GstMessage * msg, gpointer user
 /* Reject helper for the admission functions: LOG the reason (with its machine
  * code, so operators and log-based tests see WHY) AND fill the query result that
  * the REST caller receives. Keeps the two in lockstep from one call site. */
-#define ADMIT_REJECT(self, res, code, hint, fmt, ...)  G_STMT_START {      \
+/* @http is explicit per call site. It used to be hardcoded 400, which flattened
+ * every admission reject into "bad request" -- including conditions the API
+ * contract classifies otherwise: an already-loaded model, an update in flight
+ * and a batch that cannot resize in place are all CONFLICTS with live state
+ * (409), and a model absent from the catalog does not exist (404). The request
+ * in those cases is perfectly well-formed; only the state disagrees. */
+#define ADMIT_REJECT(self, res, http, code, hint, fmt, ...)  G_STMT_START {  \
     gchar *_am = g_strdup_printf ((fmt), ##__VA_ARGS__);                   \
     MODELMUX_CONTROL_ERR ((self), "%s (%s)", _am, (code));                 \
-    modelmux_control_result_set ((res), 400, (code), _am, (hint));         \
+    modelmux_control_result_set ((res), (http), (code), _am, (hint));      \
     g_free (_am);                                                         \
   } G_STMT_END
 
@@ -4113,12 +4183,12 @@ modelmux_control_admit_model_load (GstNvModelMux * self, const ModelMuxModelPayl
   gchar *key, *ok;
 
   if (!name || !*name || !ver || !*ver) {
-    ADMIT_REJECT (self, res, "FIELD_MISSING", "both are required",
+    ADMIT_REJECT (self, res, 400, "FIELD_MISSING", "both are required",
         "model/load requires 'name' and 'version'");
     return;
   }
   if (modelmux_bin_update_in_flight (self->modelmux_bin, name)) {
-    ADMIT_REJECT (self, res, "UPDATE_IN_FLIGHT",
+    ADMIT_REJECT (self, res, 409, "UPDATE_IN_FLIGHT",
         "retry once the update commits or rolls back",
         "model/load rejected: a model/update on '%s' is awaiting nvinfer's confirm", name);
     return;
@@ -4127,7 +4197,7 @@ modelmux_control_admit_model_load (GstNvModelMux * self, const ModelMuxModelPayl
   if (pl->batch_size) {
     guint live_b = modelmux_bin_model_batch (self->modelmux_bin, key);
     if (live_b && live_b != pl->batch_size) {
-      ADMIT_REJECT (self, res, "BATCH_IMMUTABLE",
+      ADMIT_REJECT (self, res, 409, "BATCH_IMMUTABLE",
           "model/unload first, or load it as a new version",
           "model/load rejected: '%s' is LIVE with batch %u; batch_size %u cannot apply "
           "in place", key, live_b, pl->batch_size);
@@ -4136,7 +4206,7 @@ modelmux_control_admit_model_load (GstNvModelMux * self, const ModelMuxModelPayl
     }
   }
   if (modelmux_bin_model_loaded (self->modelmux_bin, key)) {
-    ADMIT_REJECT (self, res, "MODEL_ALREADY_LOADED",
+    ADMIT_REJECT (self, res, 409, "MODEL_ALREADY_LOADED",
         "use a different version (an in-place swap is model/update's job)",
         "model/load rejected: '%s' is already loaded", key);
     g_free (key);
@@ -4144,7 +4214,7 @@ modelmux_control_admit_model_load (GstNvModelMux * self, const ModelMuxModelPayl
   }
   def = modelmux_config_find_model (&self->config, name);
   if (def && def->type == MODEL_INFERSERVER && (pl->engine_file || pl->n_engines)) {
-    ADMIT_REJECT (self, res, "ENGINE_UNSUPPORTED_BACKEND",
+    ADMIT_REJECT (self, res, 400, "ENGINE_UNSUPPORTED_BACKEND",
         "add the checkpoint to the Triton model repository and load by config",
         "model/load rejected: engine_file/engine_files do not apply to nvinferserver "
         "model '%s'", key);
@@ -4166,39 +4236,45 @@ modelmux_control_admit_model_update (GstNvModelMux * self, const ModelMuxModelPa
   gchar *key, *ok;
 
   if (!name || !*name || !from_ver || !*from_ver || !ver || !*ver) {
-    ADMIT_REJECT (self, res, "FIELD_MISSING", "all three are required",
+    ADMIT_REJECT (self, res, 400, "FIELD_MISSING", "all three are required",
         "model/update requires 'name', 'from_version' and 'version'");
     return;
   }
   if (g_strcmp0 (from_ver, ver) == 0) {
-    ADMIT_REJECT (self, res, "VERSION_INVALID", "pick a new, distinct version",
+    ADMIT_REJECT (self, res, 400, "VERSION_INVALID", "pick a new, distinct version",
         "model/update rejected: 'version' must differ from 'from_version' "
         "(identity must move)");
     return;
   }
   def = modelmux_config_find_model (&self->config, name);
   if (!def) {
-    ADMIT_REJECT (self, res, "MODEL_NOT_IN_CATALOG",
+    ADMIT_REJECT (self, res, 404, "MODEL_NOT_IN_CATALOG",
         "model/load the model before updating it",
         "model/update rejected: '%s' is not in the catalog", name);
     return;
   }
   if (def->type == MODEL_INFERSERVER) {
-    ADMIT_REJECT (self, res, "MODEL_UPDATE_UNSUPPORTED_BACKEND",
-        "put the new checkpoint in the Triton repository, then model/load + stream/route",
+    ADMIT_REJECT (self, res, 400, "MODEL_UPDATE_UNSUPPORTED_BACKEND",
+        "put the new checkpoint in the Triton repository, then model/load + model/routing",
         "model/update rejected: '%s' is nvinferserver; in-place update is not supported",
         name);
     return;
   }
   if (modelmux_bin_update_in_flight (self->modelmux_bin, name)) {
-    ADMIT_REJECT (self, res, "UPDATE_IN_FLIGHT", "retry once it commits or rolls back",
+    ADMIT_REJECT (self, res, 409, "UPDATE_IN_FLIGHT", "retry once it commits or rolls back",
         "model/update rejected: another model/update on '%s' is awaiting confirm", name);
     return;
   }
   key = model_key (name, from_ver);
   if (!modelmux_bin_model_loaded (self->modelmux_bin, key)) {
-    ADMIT_REJECT (self, res, "UPDATE_FROM_MISMATCH",
-        "the precondition must name a live version; load it first",
+    /* 409, not 404: `from_version` is a COMPARE-AND-SET guard, not a resource
+     * name. The model exists -- MODEL_NOT_IN_CATALOG above already answered 404
+     * if it did not -- so this is a stale precondition, structurally identical to
+     * REVISION_CONFLICT on the routing plane, which is 409. Classifying the two
+     * CAS failures differently would stop a client using one retry path for both,
+     * and would tell a merely-stale updater that its model had been deleted. */
+    ADMIT_REJECT (self, res, 409, "UPDATE_FROM_MISMATCH",
+        "the precondition must name a live version; re-read model/status and retry",
         "model/update rejected: from_version '%s' is not loaded", key);
     g_free (key);
     return;
@@ -4210,8 +4286,8 @@ modelmux_control_admit_model_update (GstNvModelMux * self, const ModelMuxModelPa
   to_b = pl->batch_size ? pl->batch_size
       : modelmux_config_version_batch (&self->config, name, ver);
   if (live_b && to_b && to_b != live_b) {
-    ADMIT_REJECT (self, res, "UPDATE_BATCH_MISMATCH",
-        "model/load the to-version as a NEW version and stream/route to it",
+    ADMIT_REJECT (self, res, 409, "UPDATE_BATCH_MISMATCH",
+        "model/load the to-version as a NEW version and model/routing to it",
         "model/update '%s' -> '%s' rejected: version batch %u differs from the live "
         "instance's %u (an in-place swap keeps the element and cannot resize it)",
         key, ver, to_b, live_b);
@@ -4260,7 +4336,7 @@ modelmux_control_query_probe (GstPad * pad, GstPadProbeInfo * info, gpointer uda
   is_load = (op && g_strcmp0 (op, "model/load") == 0);
   is_unload = (op && g_strcmp0 (op, "model/unload") == 0);
   is_update = (op && g_strcmp0 (op, "model/update") == 0);
-  is_route = (op && g_strcmp0 (op, "stream/route") == 0);
+  is_route = (op && g_strcmp0 (op, "model/routing") == 0);
 
   if (!self || !(is_load || is_unload || is_update || is_route)) {
     gst_nvquery_control_set_response (q, 501, "NOT_IMPLEMENTED",
@@ -4268,24 +4344,33 @@ modelmux_control_query_probe (GstPad * pad, GstPadProbeInfo * info, gpointer uda
     return GST_PAD_PROBE_HANDLED;
   }
 
-  /* stream/route: run the handler's ADMISSION PASS only (admit_only) and capture
+  /* model/routing: run the handler's ADMISSION PASS only (admit_only) and capture
    * the reason it logs on reject. Route has its own payload (not a model payload),
    * so it is handled before the model-plane decode. */
   if (is_route) {
     const gchar *captured;
     modelmux_control_err_capture_arm ();
-    modelmux_control_handle_stream_route (self, json, TRUE /* admit_only */);
+    modelmux_control_err_class_clear ();
+    modelmux_control_handle_model_routing (self, json, TRUE /* admit_only */);
     captured = modelmux_control_err_capture_get ();
     if (captured && *captured) {                    /* rejected -- specific reason */
-      gst_nvquery_control_set_response (q, 400, "STREAM_ROUTE_REJECTED", captured,
+      /* Carry the CAUSE, not just the prose. A reject that classified itself
+       * (an unloaded target, a stale revision) reports the code and status the
+       * API contract names for it; anything unclassified keeps the generic
+       * bucket and 400, which is the correct reading of "the request was bad". */
+      const ModelMuxRejectClass *cls = modelmux_control_err_class_get ();
+      gst_nvquery_control_set_response (q,
+          cls ? cls->http : 400,
+          cls ? cls->err_code : "MODEL_ROUTING_REJECTED", captured,
           "re-check the referenced models/streams and if_revision, then retry");
     } else {                                        /* admitted -> apply async */
-      modelmux_control_post_ctrl_json (self, MODELMUX_CONTROL_STREAM_ROUTE, json);
+      modelmux_control_post_ctrl_json (self, MODELMUX_CONTROL_MODEL_ROUTING, json);
       gst_nvquery_control_set_response (q, 202, NULL,
-          "stream/route accepted; applying -> 'streams routed' when done",
+          "model/routing accepted; applying -> 'streams routed' when done",
           "or GET /api/v1/model/status");
     }
     modelmux_control_err_capture_disarm ();
+    modelmux_control_err_class_clear ();
     return GST_PAD_PROBE_HANDLED;
   }
 
@@ -4406,7 +4491,7 @@ modelmux_control_sink_event_probe (GstPad * pad, GstPadProbeInfo * info, gpointe
   } else if (event_type == (GstEventType) GST_NVEVENT_MODEL_LOAD ||
       event_type == (GstEventType) GST_NVEVENT_MODEL_UNLOAD ||
       event_type == (GstEventType) GST_NVEVENT_MODEL_UPDATE ||
-      event_type == (GstEventType) GST_NVEVENT_STREAM_ROUTE) {
+      event_type == (GstEventType) GST_NVEVENT_MODEL_ROUTING) {
     /* v1 REST control delivered IN-BAND on the data plane (by the upstream
      * nvmultiurisrcbin) instead of on the bus -- so it reaches us in ANY host
      * app, even one that owns the bus sync handler (deepstream-app/test5).
@@ -4424,8 +4509,8 @@ modelmux_control_sink_event_probe (GstPad * pad, GstPadProbeInfo * info, gpointe
       gst_nvevent_parse_model_update (event, &json);
       modelmux_control_post_ctrl_json (self, MODELMUX_CONTROL_MODEL_UPDATE, json);
     } else {
-      gst_nvevent_parse_stream_route (event, &json);
-      modelmux_control_post_ctrl_json (self, MODELMUX_CONTROL_STREAM_ROUTE, json);
+      gst_nvevent_parse_model_routing (event, &json);
+      modelmux_control_post_ctrl_json (self, MODELMUX_CONTROL_MODEL_ROUTING, json);
     }
     g_free (json);
     return GST_PAD_PROBE_DROP;

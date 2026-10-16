@@ -18,13 +18,13 @@ limitations under the License.
 #  MaskTracker in DeepStream
 
 ## Introduction
-This sample application demonstrates using MaskTracker with DeepStream SDK. MaskTracker simultaneously performs multi-object tracking and segmentation using advanced vision foundation models such as Segment Anything Model 2 (SAM2). It uses SAM2 to visually track and segment targets across frames, while automatically adding and removing targets as needed. It stores visual features in previous frames in a memory bank and use them to localize targets in a new frame.  For algorithm and setup details, please refer to [DeepStream MaskTracker Documentation](https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_plugin_gst-nvtracker.html#masktracker-developer-preview).
+This sample application demonstrates using MaskTracker with DeepStream SDK. MaskTracker simultaneously performs multi-object tracking and segmentation using advanced vision foundation models such as Segment Anything Model 2 (SAM2). It uses SAM2 to visually track and segment targets across frames, while automatically adding and removing targets as needed. It stores visual features in previous frames in a memory bank and use them to localize targets in a new frame.  For algorithm and setup details, please refer to [DeepStream MaskTracker Documentation](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_plugin_gst-nvtracker#masktracker-developer-preview).
 
 ## Prerequisites
-Users need to use an x86 system with dGPUs supported by DeepStream. Jetson devices may not support running the entire SAM2 network due to resource limitation. Check [here](https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_docker_containers.html#prerequisites) for DeepStream container setup.
-1. Download the latest DeepStream container image from NGC (e.g., DS 9.1 in the example below)
+Users need to use an x86 system with dGPUs supported by DeepStream. Jetson devices may not support running the entire SAM2 network due to resource limitation. Check [here](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_docker_containers#prerequisites) for DeepStream container setup.
+1. Download the latest DeepStream container image from NGC (e.g., DS 9.2 in the example below)
     ```bash
-    export DS_IMG_NAME="nvcr.io/nvidia/deepstream:9.1-triton-multiarch"
+    export DS_IMG_NAME="ghcr.io/nvidia/deepstream:9.2-triton-multiarch"
     docker pull $DS_IMG_NAME
     ```
 
@@ -59,7 +59,7 @@ Users need to use an x86 system with dGPUs supported by DeepStream. Jetson devic
     ```
 ## Running the Application
 
-Launch the container from current directory, and execute the MaskTracker pipeline inside the container. The current [config](configs/deepstream_app_source1.txt) requires users to run with a display because it uses EGL sink to visualize the overlay results. To run through ssh without display, please change `type=2` to `1` in group `[sink0]` in that file. Users can check [DeepStream sink group](https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_ref_app_deepstream.html#sink-group) for the usage of each sink.
+Launch the container from current directory, and execute the MaskTracker pipeline inside the container. The current [config](configs/deepstream_app_source1.txt) requires users to run with a display because it uses EGL sink to visualize the overlay results. To run through ssh without display, please change `type=2` to `1` in group `[sink0]` in that file. Users can check [DeepStream sink group](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_ref_app_deepstream#sink-group) for the usage of each sink.
 
 
 ```bash

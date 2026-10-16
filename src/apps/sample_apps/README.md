@@ -25,13 +25,13 @@ For build and installation instructions, see [build/BUILD.md](../../../build/BUI
 
 ## Running Apps
 
-After `build/build.sh`, binaries are installed to `/opt/nvidia/deepstream/deepstream-9.1/bin/`.
+After `build/build.sh`, binaries are installed to `/opt/nvidia/deepstream/deepstream-9.2/bin/`.
 
 Apps must be run from their **source directory** so relative config and model paths resolve correctly:
 
 ```bash
 cd src/apps/sample_apps/<app-name>
-/opt/nvidia/deepstream/deepstream-9.1/bin/<app-binary> [options]
+/opt/nvidia/deepstream/deepstream-9.2/bin/<app-binary> [options]
 ```
 
 Clear the GStreamer plugin cache after a fresh install:

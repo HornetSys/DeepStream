@@ -104,7 +104,7 @@ For x86 platforms, This app must run inside deepstream-triton containers.
 Follow tags in  https://catalog.ngc.nvidia.com/orgs/nvidia/containers/deepstream to get
 latest version.
 
-$ export DS_TRITON_IMG=nvcr.io/nvidia/deepstream:9.1-triton
+$ export DS_TRITON_IMG=ghcr.io/nvidia/deepstream:9.2-triton-multiarch
 $ docker pull ${DS_TRITON_IMG}
 Note: for other latest version, switch to deepstream:x.x.x-triton. [x.x.x] stands for
 the version numbers.

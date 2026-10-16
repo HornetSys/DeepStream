@@ -1,0 +1,488 @@
+# SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# SBSA (ARM server with discrete GPU) DeepStream Triton devel image. The same
+# image runs on GB200 / Grace and on DGX Spark.
+#
+# Unlike Jetson, an SBSA host carries no Jetson BSP and the container runtime
+# does not inject Tegra libraries at run time, so the Tegra multimedia stack is
+# baked into the image from the public Jetson Linux Driver Package (BSP). See
+# the SBSA section of ../README.md for the required build setup.
+
+# NGC container release used for both the Triton runtime and SDK images.
+ARG TRITON_NGC_VERSION=26.04
+ARG TRITON_SDK_IMAGE=nvcr.io/nvidia/tritonserver:${TRITON_NGC_VERSION}-py3-sdk
+ARG TRITON_RUNTIME_IMAGE=nvcr.io/nvidia/tritonserver:${TRITON_NGC_VERSION}-py3
+
+# This Dockerfile is SBSA-only; Docker uses linux/arm64 for aarch64 images.
+FROM --platform=linux/arm64 ${TRITON_SDK_IMAGE} AS triton_client_sdk
+
+FROM --platform=linux/arm64 ${TRITON_RUNTIME_IMAGE}
+
+# BuildKit populates TARGETARCH from docker build --platform.
+ARG TARGETARCH
+
+# Jetson Linux release that supplies the Tegra BSP and the GStreamer plugins.
+# Keep this in step with the BSP tarball staged by setup_sbsa_build.sh.
+ARG L4T_RELEASE=r39.2
+
+# VPI 4 built for discrete GPUs on SBSA, publicly rehosted by Isaac ROS. The
+# Jetson builds of the same packages link the Tegra multimedia stack and fail
+# to load on a dGPU.
+ARG VPI_VERSION=4.1.3
+ARG VPI_BASE_URL=https://isaac.download.nvidia.com/isaac-ros/release-4.6/pool/main
+ARG VPI_LIB_SHA256=a4cdf30f91c6c2a46e736c5dab69fc4e85cbe97c1bd4ec3965811d22482a1d95
+ARG VPI_DEV_SHA256=f4c6513aec46e0bd7d88b6f48582bbe0c1d90b9f2e198049b213f589fb27c502
+
+ARG OPENTELEMETRY_CPP_VERSION=v1.23.0
+ARG OPENTELEMETRY_BUILD_JOBS
+
+ENV DS_VERSION=9.2
+
+# =============================================================================
+# INITIAL SETUP AND PACKAGE EXTRACTION
+# =============================================================================
+
+# /root/tmp is used to copy scripts into while creating docker
+RUN mkdir -p /tmp/scripts && \
+    mkdir -p /root/tmp && \
+    ls -lah /tmp
+
+# Unpack the Tegra multimedia stack out of the staged Jetson Linux BSP. Bind
+# mounting keeps the multi-GB BSP tarball out of the image layers.
+RUN --mount=type=bind,src=sbsa_dockerfiles,target=/tmp/docker \
+    set -eu; \
+    ls -lah /tmp/docker; \
+    bsp_count=$(ls -1 /tmp/docker/Jetson_Linux_R*_aarch64.tbz2 2>/dev/null | wc -l); \
+    if [ "$bsp_count" -eq 0 ]; then \
+        echo "error: no Jetson_Linux_R*_aarch64.tbz2 in the build context." >&2; \
+        echo "       Stage the Jetson Linux Driver Package (BSP) with setup_sbsa_build.sh." >&2; \
+        exit 1; \
+    elif [ "$bsp_count" -gt 1 ]; then \
+        echo "error: multiple Jetson_Linux_R*_aarch64.tbz2 in the build context; keep only one." >&2; \
+        ls -1 /tmp/docker/Jetson_Linux_R*_aarch64.tbz2 >&2; \
+        exit 1; \
+    fi; \
+    /tmp/docker/extract_packages.sh "$(ls -1 /tmp/docker/Jetson_Linux_R*_aarch64.tbz2)"
+
+# =============================================================================
+# SYSTEM PACKAGES INSTALLATION
+# =============================================================================
+
+# add libc-bin for CVE fix 3/22/2024
+RUN --mount=type=bind,src=sbsa_dockerfiles,target=/tmp/docker \
+    mkdir -p /tmp99 && \
+    apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        linux-libc-dev \
+        libglew2.2 libssl3 libjpeg8 libjson-glib-1.0-0 \
+        libglfw3 \
+        gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-tools \
+        gstreamer1.0-alsa \
+        libglib2.0-0t64 \
+        libcurl4 \
+        libuuid1 \
+        libjansson4 \
+        libjansson-dev \
+        librabbitmq4 \
+        libgstrtspserver-1.0-0 \
+        libv4l-dev \
+        gdb bash-completion libboost-dev \
+        libpango1.0-dev \
+        uuid-dev libgstrtspserver-1.0-0 libgstrtspserver-1.0-dev \
+        libgstreamer1.0-dev \
+        libgstreamer-plugins-base1.0-dev \
+        libglew-dev \
+        libssl-dev \
+        freeglut3-dev \
+        libjpeg-dev \
+        libcurl4-gnutls-dev \
+        libjson-glib-dev \
+        libboost-dev \
+        librabbitmq-dev \
+        libgles2-mesa-dev \
+        pkg-config \
+        libxau-dev \
+        libxdmcp-dev \
+        libxcb1-dev \
+        libxext-dev \
+        libx11-dev \
+        libnss3 \
+        linux-libc-dev \
+        libxml2 \
+        openssl \
+        git \
+        wget \
+        kmod \
+        gnutls-bin \
+        sshfs \
+        python3-apt \
+        python3-full \
+        python3-pip \
+        libssh-4 \
+        libbinutils \
+        binutils \
+        file \
+        gpgv \
+        libsqlite3-0 \
+        libarchive13t64 \
+        xz-utils \
+        perl \
+        libkrb5-3 \
+        libpam0g \
+        libexpat1 \
+        libtasn1-6 \
+        openssh-client \
+        keyboxd \
+        libjq1 \
+        jq \
+        rsyslog \
+        libjsoncpp-dev \
+        vim rsync \
+        gstreamer1.0-rtsp \
+        libcairo2 \
+        libpangocairo-1.0-0 \
+        libx11-6 \
+        libyaml-cpp-dev \
+        libc-dev-bin \
+        libc6 \
+        libcurl3-gnutls \
+        libc-bin \
+        libpmi2-0 \
+        apparmor-utils \
+        libhiredis-dev \
+        librdkafka1 \
+        curl \
+        software-properties-common && \
+    cp /tmp/docker/libgstrtpmanager.so /tmp99/libgstrtpmanager.so && \
+    cp /tmp/docker/libgstrtsp.so /tmp99/libgstrtsp.so && \
+    cp /tmp/docker/libgstvideoparsersbad.so /tmp99/libgstvideoparsersbad.so && \
+    cp /tmp/docker/rsyslog /etc/init.d/ && \
+    chmod +x /etc/init.d/rsyslog && \
+    rm -rf /var/lib/apt/lists/* && \
+    apt autoremove
+
+# copy rsyslog into /etc/init.d/ (service can run) above
+
+RUN apt-get update && \
+    apt-get install -y mosquitto && \
+    rm -rf /var/lib/apt/lists/* && \
+    apt autoremove
+
+# =============================================================================
+# PYTHON PACKAGE INSTALLATION
+# =============================================================================
+
+# Fix CVE for h11 - CVE-2025-43859
+# Fix CVE-2025-47273
+# Fix CVE-2025-62727 starlette
+RUN pip3 install httpcore==1.0.9 && \
+    pip3 install setuptools==78.1.1 && \
+    pip3 install starlette==0.49.3 fastapi==0.120.1
+
+# =============================================================================
+# VPI AND L4T GSTREAMER INSTALLATION
+# =============================================================================
+
+# VPI 4 comes from the SBSA packages rehosted by Isaac ROS (see VPI_BASE_URL).
+# They are pinned by checksum and installed with apt; their only dependency is
+# libc6, and the maintainer script registers /opt/nvidia/vpi4 with the loader.
+# Any VPI the base image already carries is purged and its files removed first,
+# so apt does not trip over another package's files and no older libnvvpi stays
+# on the loader path. The tracker dlopen()s its library with RTLD_NOW, so a VPI
+# build that links Tegra libraries breaks every tracker pipeline -- the build
+# fails below if libnvvpi.so.4 links anything beyond libc.
+#
+# The NVIDIA GStreamer plugins (nvidia-l4t-gstreamer) come from the public
+# Jetson apt repository, the same source the Jetson dockerfiles use; the public
+# BSP does not ship the package. It is downloaded and unpacked rather than
+# installed: apt would try to satisfy its nvidia-l4t-* dependencies, which pull
+# in the Tegra platform stack that an SBSA container has no use for. It is
+# pinned to the version extract_packages.sh read from the BSP, so the plugins
+# match the Tegra libraries they load, and is unpacked next to the BSP output
+# for the library setup step below. The Jetson apt list is removed afterwards
+# so it cannot shadow Ubuntu packages in any later layer.
+RUN set -eux; \
+    mkdir -p /tmp/temp_vpi /tmp/temp_l4t_gst; \
+    cd /tmp/temp_vpi; \
+    wget -nv "${VPI_BASE_URL}/libn/libnvvpi4/libnvvpi4_${VPI_VERSION}_arm64.deb"; \
+    wget -nv "${VPI_BASE_URL}/v/vpi4-dev/vpi4-dev_${VPI_VERSION}_arm64.deb"; \
+    printf '%s  %s\n' \
+        "${VPI_LIB_SHA256}" "libnvvpi4_${VPI_VERSION}_arm64.deb" \
+        "${VPI_DEV_SHA256}" "vpi4-dev_${VPI_VERSION}_arm64.deb" | sha256sum -c -; \
+    old_vpi_pkgs="$(dpkg-query -W -f '${Package} ${Provides}\n' 2>/dev/null | awk '$1 ~ /^(libnvvpi[0-9]+|vpi[0-9]*-(lib|dev))/ || /libnvvpi\.so/ {print $1}')"; \
+    if [ -n "${old_vpi_pkgs}" ]; then apt-get purge -y ${old_vpi_pkgs}; fi; \
+    rm -rf /opt/nvidia/vpi4 /etc/ld.so.conf.d/nvidia-vpi.conf /etc/ld.so.conf.d/vpi4.conf; \
+    apt-get install -y --no-install-recommends \
+        "./libnvvpi4_${VPI_VERSION}_arm64.deb" "./vpi4-dev_${VPI_VERSION}_arm64.deb"; \
+    l4t_deb_version="$(cat /tmp/output_extract/l4t_deb_version)"; \
+    apt-key adv --fetch-keys https://repo.download.nvidia.com/jetson/jetson-ota-public.asc; \
+    echo "deb https://repo.download.nvidia.com/jetson/common ${L4T_RELEASE} main" > /etc/apt/sources.list.d/nvidia-l4t.list; \
+    apt-get update; \
+    cd /tmp/temp_l4t_gst; \
+    apt-get download "nvidia-l4t-gstreamer=${l4t_deb_version}"; \
+    dpkg-deb -x nvidia-l4t-gstreamer_*_arm64.deb /tmp/output_extract/loc/; \
+    cd /tmp; \
+    rm -rf /tmp/temp_l4t_gst; \
+    rm -f /etc/apt/sources.list.d/nvidia-l4t.list; \
+    rm -rf /var/lib/apt/lists/*; \
+    rm -rf /tmp/temp_vpi; \
+    ldconfig; \
+    vpi_so="$(ldconfig -p | awk '/libnvvpi\.so\.4 /{print $NF; exit}')"; \
+    test -n "${vpi_so}"; \
+    vpi_needed="$(readelf -d "${vpi_so}" | sed -n 's/.*(NEEDED).*\[\(.*\)\]/\1/p' | grep -vxE 'libc\.so\.6|libm\.so\.6|ld-linux-aarch64\.so\.1' || true)"; \
+    if [ -n "${vpi_needed}" ]; then \
+        echo "error: ${vpi_so} links non-system libraries, so it is not the SBSA build:" >&2; \
+        echo "${vpi_needed}" >&2; \
+        exit 1; \
+    fi
+
+# =============================================================================
+# LIBRARY FILE SETUP AND SYMLINKS
+# =============================================================================
+
+# Copy files from /tmp/output_extract/loc to /usr/lib/aarch64-linux-gnu/
+WORKDIR /tmp/output_extract/loc
+RUN mkdir -p /usr/lib/aarch64-linux-gnu/tegra/ && \
+    mkdir -p /usr/lib/aarch64-linux-gnu/gstreamer-1.0/ && \
+    ls && \
+    echo "/usr/lib/aarch64-linux-gnu/tegra" > /etc/ld.so.conf.d/tegra.conf && \
+    ldconfig && \
+    cp ./usr/lib/aarch64-linux-gnu/tegra/* /usr/lib/aarch64-linux-gnu/tegra/ && \
+    cp ./usr/lib/aarch64-linux-gnu/nvidia/libv4l2_nvcuvidvideocodec.so /usr/lib/aarch64-linux-gnu/tegra/ && \
+    cp ./usr/lib/aarch64-linux-gnu/gstreamer-1.0/* /usr/lib/aarch64-linux-gnu/gstreamer-1.0/ && \
+    cp ./usr/lib/aarch64-linux-gnu/libgstnv* /usr/lib/aarch64-linux-gnu/
+
+# Create required symlinks
+RUN ln -s /usr/lib/aarch64-linux-gnu/libnvidia-encode.so.1 /usr/lib/aarch64-linux-gnu/libnvidia-encode.so && \
+    ln -s /usr/lib/aarch64-linux-gnu/tegra/libnvv4l2.so /usr/lib/aarch64-linux-gnu/libv4l2.so.0.0.999999 && \
+    mkdir -p /usr/lib/aarch64-linux-gnu/libv4l/plugins/nv && \
+    ln -s /usr/lib/aarch64-linux-gnu/tegra/libv4l2_nvargus.so /usr/lib/aarch64-linux-gnu/libv4l/plugins/nv/libv4l2_nvargus.so && \
+    ln -s /usr/lib/aarch64-linux-gnu/tegra/libv4l2_nvcuvidvideocodec.so /usr/lib/aarch64-linux-gnu/libv4l/plugins/nv/libv4l2_nvcuvidvideocodec.so && \
+    ln -s /usr/lib/aarch64-linux-gnu/tegra/libv4l2_nvvideocodec.so /usr/lib/aarch64-linux-gnu/libv4l/plugins/nv/libv4l2_nvvideocodec.so
+
+# =============================================================================
+# DEEPSTREAM INSTALLATION
+# =============================================================================
+
+# Install DeepStream here to make sure libnvrm_**.so stubs are used from DS SBSA package
+#
+# Fixing: libnvscibuf.so to be present in /usr/lib/aarch64-linux-gnu
+# The BSP copies of libnvbufsurface, libnvbufsurftransform and libnvcuvidv4l2
+# do not understand SBSA context. The DS SBSA
+# package ships SBSA-aware builds in its lib/ directory, and they replace the
+# BSP copies in tegra/ before install.sh runs: install.sh overwrites
+# lib/libnvbufsurface.so and lib/libnvbufsurftransform.so with symlinks into
+# the Tegra library directory, which would otherwise discard the SBSA builds.
+# The symlinks are then pinned to tegra/ (install.sh picks nvidia/ instead
+# whenever that directory exists) and checked, so a wrong resolution fails the
+# build instead of shipping the BSP libraries.
+RUN --mount=type=bind,src=sbsa_dockerfiles,target=/tmp/docker \
+    set -eux; \
+    ls -ltr /tmp/docker/; \
+    tar -xf /tmp/docker/deepstream_sdk_v*_sbsa.tbz2 -C /; \
+    ds_lib=/opt/nvidia/deepstream/deepstream/lib; \
+    tegra_lib=/usr/lib/aarch64-linux-gnu/tegra; \
+    for lib in libnvbufsurface libnvbufsurftransform; do \
+        rm -f "${tegra_lib}/${lib}.so" "${tegra_lib}/${lib}.so.1.0.0"; \
+        cp "${ds_lib}/${lib}.so" "${tegra_lib}/${lib}.so.1.0.0"; \
+        ln -s "${lib}.so.1.0.0" "${tegra_lib}/${lib}.so"; \
+    done; \
+    cp --remove-destination "${ds_lib}/libnvcuvidv4l2.so" "${tegra_lib}/libnvcuvidv4l2.so"; \
+    /opt/nvidia/deepstream/deepstream/install.sh; \
+    for lib in libnvbufsurface.so libnvbufsurftransform.so libnvdsbufferpool.so libgstnvcustomhelper.so; do \
+        test -e "${tegra_lib}/${lib}"; \
+        ln -sf "${tegra_lib}/${lib}" "${ds_lib}/${lib}"; \
+    done; \
+    for lib in libnvbufsurface libnvbufsurftransform; do \
+        test "$(readlink -f "${ds_lib}/${lib}.so")" = "${tegra_lib}/${lib}.so.1.0.0"; \
+    done; \
+    ln -s "${tegra_lib}/libnvscibuf.so" /usr/lib/aarch64-linux-gnu/libnvscibuf.so; \
+    ldconfig
+
+# =============================================================================
+# TRITON CLIENT, PROTOBUF AND HALF
+# =============================================================================
+
+# Install Triton client SDK (aarch64), protobuf and half libs.
+# Copy client headers and libraries from the target-platform SDK image so SBSA
+# builds cannot accidentally receive host-architecture client binaries.
+RUN set -eux; \
+    if [ "${TARGETARCH:-}" != "arm64" ]; then \
+        echo "This Dockerfile path expects SBSA/arm64 Triton client libraries; got TARGETARCH=${TARGETARCH:-unset}" >&2; \
+        exit 1; \
+    fi; \
+    rm -rf /opt/tritonclient; \
+    mkdir -p /opt/tritonclient/lib /opt/tritonclient/include
+
+COPY --from=triton_client_sdk /workspace/install/lib/. /opt/tritonclient/lib/
+COPY --from=triton_client_sdk /workspace/install/include/. /opt/tritonclient/include/
+
+# Validate the SDK copy has the expected SBSA layout and AArch64 shared libraries.
+RUN set -eux; \
+    test -d /opt/tritonclient/include; \
+    test -d /opt/tritonclient/lib; \
+    find /opt/tritonclient/include -type f -print -quit | grep -q .; \
+    first_so="$(find /opt/tritonclient/lib -type f -name '*.so*' -print -quit)"; \
+    test -n "${first_so}"; \
+    file "${first_so}"; \
+    readelf -h "${first_so}" | grep -E 'Machine:.*AArch64'; \
+    test ! -d /opt/tritonclient/lib/lib64; \
+    test ! -d /opt/tritonclient/lib/lib; \
+    echo /opt/tritonclient/lib > /etc/ld.so.conf.d/tritonclient.conf; \
+    ldconfig
+
+RUN set -eux; \
+    mkdir -p /opt/proto && \
+    mkdir -p /opt/half && \
+    mkdir -p /tmp/half99 && \
+    apt-get update && \
+    apt-get install --reinstall -y --allow-downgrades libprotobuf32t64=3.21.12-8.2ubuntu0.3 libprotoc32t64=3.21.12-8.2ubuntu0.3 && \
+    apt-get install -y --no-install-recommends protobuf-compiler libprotobuf-dev=3.21.12-8.2ubuntu0.3 && \
+    mkdir -p /opt/proto/bin && \
+    ln -sf /usr/bin/protoc /opt/proto/bin/protoc && \
+    rm -rf /var/lib/apt/lists/* && \
+    cd /tmp/half99 && \
+    wget https://sourceforge.net/projects/half/files/half/2.1.0/half-2.1.0.zip -nv && \
+    /usr/bin/unzip -o /tmp/half99/half-2.1.0.zip -d /opt/half && \
+    cd / && \
+    rm -rf /tmp/half99
+
+# =============================================================================
+# OPEN TELEMETRY
+# =============================================================================
+
+# Built from source instead of prebuilt .deb packages: the Debian/Ubuntu archives
+# rotate opentelemetry-cpp binaries out of the pool, which breaks the docker build.
+# Runs after the protobuf step so the OTLP exporters link against the same protobuf
+# the image ships. Default OTELCPP_VERSIONED_LIBS=OFF and WITH_STL=OFF are required:
+# prebuilt DeepStream libraries expect unversioned SONAMEs
+# (libopentelemetry_metrics.so) and the nostd ABI used by includes/opentelemetry.
+# Do not add libcurl4-openssl-dev here: it conflicts with the libcurl4-gnutls-dev
+# installed above, which already satisfies the exporter's CURL dependency.
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+      cmake \
+      libgrpc++-dev \
+      make \
+      nlohmann-json3-dev \
+      protobuf-compiler-grpc && \
+    git clone --depth 1 --branch ${OPENTELEMETRY_CPP_VERSION} \
+      https://github.com/open-telemetry/opentelemetry-cpp.git /tmp/opentelemetry-cpp && \
+    git -C /tmp/opentelemetry-cpp submodule update --init --depth 1 third_party/opentelemetry-proto && \
+    cmake -S /tmp/opentelemetry-cpp -B /tmp/opentelemetry-cpp/build \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_INSTALL_PREFIX=/usr \
+      -DCMAKE_INSTALL_LIBDIR=lib/aarch64-linux-gnu \
+      -DCMAKE_CXX_STANDARD=17 \
+      -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+      -DBUILD_SHARED_LIBS=ON \
+      -DOPENTELEMETRY_INSTALL=ON \
+      -DWITH_OTLP_HTTP=ON \
+      -DWITH_OTLP_GRPC=ON \
+      -DWITH_EXAMPLES=OFF \
+      -DWITH_FUNC_TESTS=OFF \
+      -DWITH_BENCHMARK=OFF \
+      -DBUILD_TESTING=OFF && \
+    cmake --build /tmp/opentelemetry-cpp/build \
+      --parallel "${OPENTELEMETRY_BUILD_JOBS:-$(nproc)}" && \
+    cmake --install /tmp/opentelemetry-cpp/build && \
+    rm -rf /tmp/opentelemetry-cpp && \
+    rm -rf /var/lib/apt/lists/* && \
+    ldconfig
+
+# =============================================================================
+# LIBRARY CLEANUP AND REMOVAL
+# =============================================================================
+
+# Remove unnecessary BSP libs
+RUN rm /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstnvarguscamerasrc.so
+
+# Remove plugins that require unavailable runtimes in images.
+# - libnvdsgst_udp.so depends on Rivermax (librivermax.so.1)
+# - libgstnvsiplsrc.so pulls in Tegra SIPL/capture dependencies not usable in SBSA dGPU containers
+RUN rm -f /usr/lib/aarch64-linux-gnu/gstreamer-1.0/deepstream/libnvdsgst_udp.so && \
+    rm -f /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstnvsiplsrc.so
+
+# IP requirement for removal
+RUN rm -f /usr/lib/aarch64-linux-gnu/libavresample* /usr/lib/aarch64-linux-gnu/libavutil* \
+    /usr/lib/aarch64-linux-gnu/libavcodec* /usr/lib/aarch64-linux-gnu/libavformat* \
+    /usr/lib/aarch64-linux-gnu/libavfilter* && \
+    rm -f /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstaudioparsers.so \
+    /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstfaad.so \
+    /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstvoaacenc.so /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstmpegpsmux.so \
+    /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstx264.so /usr/lib/aarch64-linux-gnu/libx264.so* \
+    /usr/lib/aarch64-linux-gnu/libmpeg2.so* /usr/lib/aarch64-linux-gnu/libmpeg2convert.so* /usr/lib/aarch64-linux-gnu/libmpeg2encpp-2.1.so* && \
+    rm -f /usr/lib/aarch64-linux-gnu/libmpg123.so* /usr/lib/aarch64-linux-gnu/libvpx.so* /usr/lib/aarch64-linux-gnu/libx265.so* \
+    /usr/lib/aarch64-linux-gnu/libde265.so* /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstx265.so* \
+    /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstde265.so* /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstvpx.so \
+    /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstopenh264.so /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstnvcodec.so \
+    /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstuvch264.so /usr/lib/aarch64-linux-gnu/libopenh264.so.* \
+    /usr/lib/aarch64-linux-gnu/libvo-aacenc.so.0 /usr/lib/aarch64-linux-gnu/libvo-aacenc.so.* /usr/lib/aarch64-linux-gnu/libmp3lame.so.* \
+    /usr/lib/aarch64-linux-gnu/libmp3lame.so.0 /usr/lib/aarch64-linux-gnu/libfaad* /usr/lib/aarch64-linux-gnu/libFLAC.so* \
+    /usr/lib/aarch64-linux-gnu/libmjpegutils-2.1.so.0* /usr/lib/aarch64-linux-gnu/libxvidcore.so* /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstflac.so \
+    /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstmpeg2enc.so /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstmpeg2dec.so \
+    /usr/lib/aarch64-linux-gnu/libdca.so* /usr/lib/aarch64-linux-gnu/libdvdnav.so* /usr/lib/aarch64-linux-gnu/libdvdread.so* \
+    /opt/tritonserver/backends/dali/wheel/dali/nvidia/dali/.libs/libFLAC-*.so* \
+    /usr/lib/aarch64-linux-gnu/libjbig.so* /usr/lib/aarch64-linux-gnu/libmplex2-2.1.so* \
+    /opt/tritonserver/backends/dali/wheel/dali/nvidia/dali/.libs/libavformat-*.so* \
+    /opt/tritonserver/backends/dali/wheel/dali/nvidia/dali/.libs/libavcodec-*.so* \
+    /opt/tritonserver/backends/dali/wheel/dali/nvidia/dali/.libs/libavutil-*.so* \
+    /opt/tritonserver/backends/dali/wheel/dali/nvidia/dali/.libs/libavfilter-*.so* \
+    /opt/tritonserver/backends/dali/wheel/dali/nvidia/dali/.libs/libswscale-*.so*
+
+# =============================================================================
+# ENVIRONMENT SETUP AND FINAL CONFIGURATION
+# =============================================================================
+
+# Change CWD to DS ROOT
+WORKDIR /opt/nvidia/deepstream/deepstream/
+
+ENV LD_LIBRARY_PATH /opt/tritonserver/lib/:/opt/tritonclient/lib/:$LD_LIBRARY_PATH
+ENV AARCH64_DGPU 1
+ENV LD_PRELOAD /usr/lib/aarch64-linux-gnu/libgomp.so.1:/lib/aarch64-linux-gnu/libGLdispatch.so:$LD_PRELOAD
+
+# gRPC_installation.sh runs as root and builds shared libraries into
+# /root/.local, so the loader and pkg-config need that prefix on their search
+# paths. It is spelled out because ENV cannot expand $HOME: the base image does
+# not define it, so ${HOME} would resolve to an empty string.
+ENV PATH="/opt/proto/bin:${PATH}:/root/.local/bin"
+ENV LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/root/.local/lib"
+ENV PKG_CONFIG_PATH="${PKG_CONFIG_PATH}:/root/.local/lib/pkgconfig"
+
+# Delete packages and cleanup
+RUN cd /tmp && rm -rf packages/ && \
+    cd /tmp && rm -rf output_extract/ && \
+    ldconfig
+
+# =============================================================================
+# FINAL SETUP AND ENTRYPOINT CONFIGURATION
+# =============================================================================
+
+# Copy, run and cleanup necessary setup scripts
+RUN --mount=type=bind,src=sbsa_dockerfiles,target=/tmp/docker \
+    cd /tmp/docker && \
+    ls -lah && \
+    cp user_additional_install_devel.sh /opt/nvidia/deepstream/deepstream/user_additional_install.sh && \
+    cp user_deepstream_python_apps_install.sh /opt/nvidia/deepstream/deepstream/ && \
+    cp LicenseAgreement.pdf LicenseAgreementContainer.pdf /opt/nvidia/deepstream/deepstream/ && \
+    cp gRPC_installation.sh /root/tmp/ && \
+    /root/tmp/gRPC_installation.sh && \
+    rm -rf /root/tmp && \
+    cp entrypoint.sh /opt/nvidia/deepstream/deepstream/ && \
+    chmod +x /opt/nvidia/deepstream/deepstream/entrypoint.sh
+
+# Set SBSA docker entrypoint. This prints DeepStream LICENSE and calls TritonServer Docker entrypoint afterwards
+ENTRYPOINT ["/opt/nvidia/deepstream/deepstream/entrypoint.sh"]

@@ -16,7 +16,7 @@
 # limitations under the License.
 
 """
-Convert a GFM-style Markdown benchmark report to a styled HTML file and then
+Convert a GFM-style DeepStream report to a styled HTML file and then
 to PDF via wkhtmltopdf.
 
 Images referenced as ![alt](file.png) are resolved relative to the markdown
@@ -24,14 +24,15 @@ file's directory and embedded as base64 data URIs so the HTML is self-contained.
 
 Usage:
     python3 md-to-html-pdf.py <report.md> <style.css> <output_dir> [model_name]
+        [--report-kind benchmark|validation|status]
 
     model_name (optional): if provided, PDF is named benchmark_report_{model_name}.pdf
                            if omitted, derived from output_dir parent folder name
 
-Produces:
-    <output_dir>/benchmark_report.html
-    <output_dir>/benchmark_report_{model_name}.pdf
+The default report kind is benchmark to preserve existing Step 8 callers.
 """
+import argparse
+import html as html_module
 import sys
 import os
 import re
@@ -40,30 +41,9 @@ import shutil
 import subprocess
 import markdown
 
-def ensure_wkhtmltopdf():
-    """wkhtmltopdf is installed by setup.sh via apt, but that runs in an ephemeral
-    --rm container so the binary does NOT persist to later per-phase containers
-    (only the /work-mounted venv does). If it is missing, install it here so the
-    PDF step works on a fresh run without a manual reinstall."""
-    if shutil.which('wkhtmltopdf'):
-        return True
-    apt = shutil.which('apt-get')
-    if not apt:
-        return False
-    sudo = [] if os.geteuid() == 0 else (['sudo'] if shutil.which('sudo') else [])
-    # Minimal environment rather than a copy of os.environ: apt-get needs only PATH and
-    # HOME, and forwarding the full environment into a (possibly sudo-elevated) child
-    # would carry loader hooks and apt overrides such as LD_PRELOAD or APT_CONFIG.
-    env = {
-        'PATH': os.environ.get('PATH', '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'),
-        'HOME': os.environ.get('HOME', '/root'),
-        'DEBIAN_FRONTEND': 'noninteractive',
-    }
-    print("  wkhtmltopdf missing — installing (in-container, one-time per container)...")
-    for cmd in ([apt, 'update', '-qq'], [apt, 'install', '-y', '-qq', 'wkhtmltopdf']):
-        subprocess.run(sudo + cmd, env=env,
-                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=600)
-    return shutil.which('wkhtmltopdf') is not None
+def find_wkhtmltopdf():
+    """Return the configured renderer without mutating system package state."""
+    return shutil.which('wkhtmltopdf')
 
 def embed_images(html: str, base_dir: str) -> str:
     """Replace <img src="file.png"> with base64-embedded data URIs."""
@@ -90,23 +70,30 @@ def embed_images(html: str, base_dir: str) -> str:
         return match.group(0)
     return re.sub(r'(<img\s[^>]*src=["\'])([^"\']+)(["\'])', replacer, html)
 
-def main():
-    if len(sys.argv) not in (4, 5):
-        print(f"Usage: {sys.argv[0]} <report.md> <style.css> <output_dir> [model_name]")
-        sys.exit(1)
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('report_md')
+    parser.add_argument('style_css')
+    parser.add_argument('output_dir')
+    parser.add_argument('model_name', nargs='?')
+    parser.add_argument('--report-kind', choices=('benchmark', 'validation', 'status'),
+                        default='benchmark')
+    args = parser.parse_args(argv)
 
-    md_path = sys.argv[1]
-    css_path = sys.argv[2]
-    out_dir = sys.argv[3]
+    md_path = args.report_md
+    css_path = args.style_css
+    out_dir = args.output_dir
     os.makedirs(out_dir, exist_ok=True)
 
     # Derive model name: explicit arg > parent-of-output_dir > "model"
-    if len(sys.argv) == 5:
-        model_name = sys.argv[4]
+    if args.model_name:
+        model_name = args.model_name
     else:
         # output_dir is typically models/{model_name}/reports/ — walk up two levels
         abs_out = os.path.abspath(out_dir)
         model_name = os.path.basename(os.path.dirname(abs_out)) or "model"
+    if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]*', model_name):
+        parser.error('model_name must be a safe single path component')
 
     base_dir = os.path.dirname(os.path.abspath(md_path))
 
@@ -127,7 +114,7 @@ def main():
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>DeepStream Benchmark Report — {model_name}</title>
+<title>DeepStream {args.report_kind.title()} Report — {html_module.escape(model_name)}</title>
 <style>
 {css}
 @media print {{
@@ -146,17 +133,19 @@ def main():
     # Embed images as base64
     html = embed_images(html, base_dir)
 
-    html_out = os.path.join(out_dir, 'benchmark_report.html')
-    pdf_out = os.path.join(out_dir, f'benchmark_report_{model_name}.pdf')
+    html_out = os.path.join(out_dir, f'{args.report_kind}_report.html')
+    pdf_out = os.path.join(out_dir, f'{args.report_kind}_report_{model_name}.pdf')
 
     with open(html_out, 'w', encoding='utf-8') as f:
         f.write(html)
     print(f"  HTML: {html_out}")
 
-    # Ensure the PDF renderer is available (self-heal on fresh containers).
-    if not ensure_wkhtmltopdf():
-        print("  PDF generation skipped: wkhtmltopdf unavailable and could not be installed. "
-              "HTML report is complete.", file=sys.stderr)
+    # setup.sh owns package installation. Report generation never invokes apt or sudo.
+    wkhtmltopdf = find_wkhtmltopdf()
+    if not wkhtmltopdf:
+        print("  PDF generation blocked: wkhtmltopdf is unavailable. Run setup.sh in "
+              "the execution container, rerun preflight once, then retry the report.",
+              file=sys.stderr)
         sys.exit(1)
 
     # Convert to PDF.
@@ -167,7 +156,7 @@ def main():
     # untrusted content (e.g. an HF model card).
     result = subprocess.run(
         [
-            'wkhtmltopdf',
+            wkhtmltopdf,
             '--page-size', 'A4',
             '--margin-top', '15mm',
             '--margin-bottom', '15mm',
@@ -184,7 +173,7 @@ def main():
         timeout=300,
     )
 
-    if result.returncode == 0:
+    if result.returncode == 0 and os.path.isfile(pdf_out) and os.path.getsize(pdf_out) > 0:
         print(f"  PDF:  {pdf_out}")
     else:
         print(f"  PDF generation failed: {result.stderr[:500]}", file=sys.stderr)

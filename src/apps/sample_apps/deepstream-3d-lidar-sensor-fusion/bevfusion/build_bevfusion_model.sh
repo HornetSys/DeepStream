@@ -47,7 +47,7 @@ pip3 install onnx --break-system-packages
 
 cd ${MODEL_ROOT}
 if ! unzip -o model.zip; then
-    echo "Can not find bevfusion/model_root/model.zip, meet error while downloading models."
+    echo "Can not find bevfusion/model_root/model.zip, meet error while downloading models." >&2
     exit 1
 fi
 
@@ -100,7 +100,7 @@ function compile_trt_model(){
     ${TensorRT_Bin} $cmd > ${result_save_directory}/$name.log 2>&1
     if [[ $? != 0 ]]; then
         echo Failed to build model ${result_save_directory}/$name.plan.
-        echo You can check the error message by ${result_save_directory}/$name.log
+        echo You can check the error message by ${result_save_directory}/$name.log >&2
         exit 1
     fi
     return 0

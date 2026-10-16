@@ -1,0 +1,13 @@
+# USB / V4L2 camera source.
+# camera-v4l2-dev-node=N maps to /dev/videoN.
+
+[source0]
+enable=1
+type=1
+camera-width=1920
+camera-height=1080
+camera-fps-n=30
+camera-fps-d=1
+camera-v4l2-dev-node=0
+num-sources=1
+gpu-id=0

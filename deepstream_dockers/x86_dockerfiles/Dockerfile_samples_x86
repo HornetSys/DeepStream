@@ -21,7 +21,7 @@ ARG OPENTELEMETRY_BUILD_JOBS
 # ARG CUDNN_VERSION
 
 
-ENV DS_VERSION=9.1
+ENV DS_VERSION=9.2
 
 # Add open GL libraries and other required components. Added new gstreamer components and additional components including CVE patches
 # IP removal is included here
@@ -243,6 +243,9 @@ RUN ln -s /usr/lib/x86_64-linux-gnu/libcudnn.so.9 /usr/lib/x86_64-linux-gnu/libc
 
 # workaround for deepstream --version-all cuda driver
 RUN ln -s /usr/local/cuda/lib64/libcudart.so.13  /usr/local/cuda/lib64/libcudart.so
+
+# for reference apps
+RUN ln -sfn "/opt/nvidia/deepstream/deepstream-9.2/includes" "/opt/nvidia/deepstream/deepstream-9.2/sources/includes"
 
 # ENV NVIDIA_DRIVER_CAPABILITIES $NVIDIA_DRIVER_CAPABILITIES,video
 ENV NVIDIA_DRIVER_CAPABILITIES $NVIDIA_DRIVER_CAPABILITIES,video,compute,graphics,utility

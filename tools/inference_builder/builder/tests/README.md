@@ -313,7 +313,6 @@ Options:
   --output PATH         Output file for test report
   --log-dir DIR         Directory to save container logs (default: logs)
   --no-cleanup          Don't cleanup images after testing
-  --gitlab-token TOKEN  GitLab token for authentication (can also use GITLAB_TOKEN env var)
   --test-case NAME      Run only test cases matching this name (partial match). Use '*' for all.
   --gpus DEVICES        GPU devices to use (default: 'all'). Examples: 'all', 'device=0', 'device=0,1'
 ```
@@ -469,7 +468,7 @@ fi
 
 2. **Permission issues**: Run with appropriate permissions or use `sudo`
 
-3. **Build failures**: Check if GitLab token has proper access to repositories
+3. **Build failures**: Check that the base image registry (`ghcr.io`) is reachable from the build host
 
 4. **Test timeouts**: Increase timeout in the script if needed
 
@@ -497,7 +496,7 @@ docker images | grep test-inference_builder | awk '{print $3}' | xargs docker rm
 
 ## Security Notes
 
-- **Never commit GitLab tokens to version control**
+- **Never commit registry or API tokens (for example `HF_TOKEN` or NGC keys) to version control**
 - Use environment variables or CI/CD secrets for token storage
 - Rotate tokens regularly
 - Use tokens with minimal required permissions

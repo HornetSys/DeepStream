@@ -1,5 +1,5 @@
 ## Description: <br>
-Use this skill to bring a supported object-detection vision model from HuggingFace or NVIDIA NGC into an NVIDIA DeepStream pipeline with end-to-end automation: ONNX download, SafeTensors export, TRT engine build, custom nvinfer bbox parser, multi-stream benchmark, and PDF report. <br>
+Import detection, classification, segmentation, pose, and depth models into DeepStream with task routing and evidence-gated validation. <br>
 
 This skill is ready for commercial/non-commercial use. <br>
 
@@ -9,14 +9,14 @@ NVIDIA <br>
 ### License/Terms of Use: <br>
 CC-BY-4.0 AND Apache-2.0 <br>
 ## Use Case: <br>
-Developers and engineers use this skill to import supported object-detection vision models from HuggingFace or NVIDIA NGC into NVIDIA DeepStream inference pipelines, automating the full workflow from model acquisition through TensorRT engine build, multi-stream benchmarking, and PDF report generation. <br>
+Developers and engineers use this skill to import supported visual models into NVIDIA DeepStream and validate their outputs through task routing, engine build, pipeline execution, and evidence-gated promotion. Detection has the established end-to-end path; classification, semantic segmentation, 2D pose, and monocular depth require model-and-fixture-specific runtime, semantic, and rendered-output evidence before claiming readiness. <br>
 
 ### Deployment Geography for Use: <br>
 Global <br>
 
 ## Requirements / Dependencies: <br>
-**Requires API Key or External Credential:** [Not Specified] <br>
-**Credential Type(s):** [None identified] <br>
+**Requires API Key or External Credential:** [Optional] <br>
+**Credential Type(s):** [API key] <br>
 
 Do not include secrets in prompts/logs/output; use least-privilege credentials; rotate keys as appropriate. <br>
 
@@ -25,18 +25,30 @@ Risk: Review before execution as proposals could introduce incorrect or misleadi
 Mitigation: Review and scan skill before deployment. <br>
 
 ## Reference(s): <br>
-- [Model Acquire](references/model-acquire.md) <br>
-- [Engine Build](references/engine-build.md) <br>
-- [Pipeline Run](references/pipeline-run.md) <br>
-- [Report Generation](references/report-generation.md) <br>
-- [Windows Support](references/windows.md) <br>
+- [NVIDIA DeepStream SDK](https://developer.nvidia.com/deepstream-sdk) <br>
+- [references/model-choice.md](references/model-choice.md) <br>
+- [references/model-acquire.md](references/model-acquire.md) <br>
+- [references/runtime-environment.md](references/runtime-environment.md) <br>
+- [references/engine-approval.md](references/engine-approval.md) <br>
+- [references/engine-build.md](references/engine-build.md) <br>
+- [references/pipeline-run.md](references/pipeline-run.md) <br>
+- [references/multitask/task-registry.md](references/multitask/task-registry.md) <br>
+- [references/multitask/pipeline-graph.md](references/multitask/pipeline-graph.md) <br>
+- [references/multitask/validation.md](references/multitask/validation.md) <br>
+- [references/adapter-development.md](references/adapter-development.md) <br>
+- [references/adapter-readiness.md](references/adapter-readiness.md) <br>
+- [references/semantic-oracles.md](references/semantic-oracles.md) <br>
+- [references/benchmark-evidence.md](references/benchmark-evidence.md) <br>
+- [references/report-generation.md](references/report-generation.md) <br>
+- [references/artifact-layout.md](references/artifact-layout.md) <br>
+- [references/script-index.md](references/script-index.md) <br>
 
 
 ## Skill Output: <br>
-**Output Type(s):** [Shell commands, Code, Files, Analysis] <br>
-**Output Format:** [TensorRT engines, ONNX models, C++ parser source, nvinfer configs, benchmark logs, PDF/HTML/Markdown reports] <br>
+**Output Type(s):** [Analysis, Shell commands, Configuration instructions, Files] <br>
+**Output Format:** [JSON result object with Markdown/HTML/PDF reports] <br>
 **Output Parameters:** [1D] <br>
-**Other Properties Related to Output:** [Outputs organized in a mandatory directory structure under models/{model_name}/] <br>
+**Other Properties Related to Output:** [KITTI detections for detection runs, category-specific structured outputs, rendered frames/video, and hashed evidence bundles] <br>
 
 ## Evaluation Agents Used: <br>
 - Claude Code (`aws/anthropic/bedrock-claude-opus-4-8`) <br>
@@ -45,38 +57,39 @@ Mitigation: Review and scan skill before deployment. <br>
 
 
 ## Evaluation Tasks: <br>
-13 evaluation tasks (13 positive), each run in isolated sandbox pods. <br>
+19 evaluation tasks (13 positive, 6 negative), 1 attempt per task, each run in an isolated sandbox pod. <br>
 
 ## Evaluation Metrics Used: <br>
 Reported benchmark dimensions: <br>
-- Security: Checks whether the skill is safe to use — detects unsafe operations, secret leakage, and unauthorized access. <br>
-- Correctness: Checks whether the final answer is correct against the reference answer. <br>
-- Discoverability: Checks whether the right skill was found and executed when needed. <br>
-- Effectiveness: Checks whether the skill helped complete the user's goal (goal completion and expected workflow adherence). <br>
-- Efficiency: Checks routing quality, workspace-aware skill reads, and productive tool use. <br>
+- Security: Is it safe to use? Scored from the `security` signal. <br>
+- Correctness: Is the answer correct? Scored from the `accuracy` signal. <br>
+- Discoverability: Was the right skill loaded when needed? Scored from the `skill_execution` signal. <br>
+- Effectiveness: Did the skill help complete the task? Equal-weight mean of `goal_accuracy` and `behavior_check`. <br>
+- Efficiency: Did it avoid wasted tool calls and token usage? Equal-weight mean of `skill_efficiency` and `token_efficiency`. <br>
 
 Underlying evaluation signals used in this run: <br>
-- `security`: Detects unsafe operations, secret leakage, and unauthorized access. <br>
-- `skill_execution`: Verifies whether the expected skill was found and executed. <br>
-- `skill_efficiency`: Evaluates routing quality, workspace-aware skill reads, and productive tool use. <br>
-- `accuracy`: Measures final-answer correctness against the reference answer. <br>
-- `goal_accuracy`: Measures whether the user's goal was achieved. <br>
-- `behavior_check`: Verifies whether the expected workflow behavior was followed. <br>
+- `security`: Unsafe operations, secret leakage, and unauthorized access. <br>
+- `skill_execution`: Whether the expected skill was selected, decoys were avoided, and the workflow executed. <br>
+- `skill_efficiency`: Tool-call productivity (legacy wire id; routing is scored under Discoverability). <br>
+- `accuracy`: Final-answer correctness against the reference answer. <br>
+- `goal_accuracy`: Whether the user's goal was achieved. <br>
+- `behavior_check`: Whether the expected workflow behavior was followed. <br>
+- `token_efficiency`: Actual uncached prompt plus completion usage. <br>
 
 
 
 ## Evaluation Results: <br>
 | Measure | Claude Code (Baseline → Skill Uplift) | Codex (Baseline → Skill Uplift) |
 |---|---:|---:|
-| Overall | 44% → 72% (+27 points) | 46% → 61% (+15 points) |
-| Security | 58% → 54% (-4 points) | 35% → 42% (+8 points) |
-| Correctness | 42% → 86% (+45 points) | 65% → 72% (+8 points) |
-| Discoverability | 51% → 88% (+37 points) | 50% → 72% (+22 points) |
-| Effectiveness | 24% → 43% (+19 points) | 28% → 34% (+6 points) |
-| Efficiency | 48% → 86% (+38 points) | 54% → 84% (+30 points) |
+| Overall | Not available | 83.8% — baseline ran, but no comparable score was available; uplift unavailable |
+| Security | Not available | 81.6% → 100.0% (+18.4 points) |
+| Correctness | Not available | 79.0% → 99.0% (+20.0 points) |
+| Discoverability | Not available | 27.7% — baseline ran, but no comparable score was available; uplift unavailable |
+| Effectiveness | Not available | 75.7% → 94.0% (+18.3 points) |
+| Efficiency | Not available | 98.1% — baseline ran, but no comparable score was available; uplift unavailable |
 
 ## Skill Version(s): <br>
-1.5.2 (source: frontmatter) <br>
+1.6.0 (source: frontmatter, changelog, released 2026-09-16) <br>
 
 ## Ethical Considerations: <br>
 NVIDIA believes Trustworthy AI is a shared responsibility and we have established policies and practices to enable development for a wide array of AI applications. When downloaded or used in accordance with our terms of service, developers should work with their internal team to ensure this skill meets requirements for the relevant industry and use case and addresses unforeseen product misuse. <br>

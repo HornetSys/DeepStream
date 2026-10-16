@@ -19,20 +19,22 @@
 # Safer replacement for the inline `curl -fsSL ... -o ...` snippet.
 #
 # Usage:
-#   bash hf-download-config.sh <HF_ORG> <MODEL_NAME> <DEST_PATH>
+#   bash hf-download-config.sh <HF_ORG> <MODEL_NAME> <DEST_PATH> <commit-sha>
 #
 # Example:
-#   bash hf-download-config.sh onnx-community yolov8n models/yolov8n/config/config.json
+#   bash hf-download-config.sh onnx-community yolov8n models/yolov8n/config/config.json "$HF_REVISION"
 #
 # Honors $HF_TOKEN if set.
 set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/hf-curl.sh"
 
 HF_ORG="${1:-}"
 MODEL_NAME="${2:-}"
 DEST="${3:-}"
+REVISION="${4:-${HF_REVISION:-}}"
 
 if [[ -z "$HF_ORG" || -z "$MODEL_NAME" || -z "$DEST" ]]; then
-    echo "Usage: $0 <HF_ORG> <MODEL_NAME> <DEST_PATH>" >&2
+    echo "Usage: $0 <HF_ORG> <MODEL_NAME> <DEST_PATH> <commit-sha>" >&2
     exit 1
 fi
 
@@ -57,16 +59,17 @@ case "$DEST" in
         ;;
 esac
 
-URL="https://huggingface.co/${HF_ORG}/${MODEL_NAME}/resolve/main/config.json"
+if ! [[ "$REVISION" =~ ^[0-9a-fA-F]{40}$ ]]; then
+    echo "ERROR: REVISION must be an immutable 40-character commit SHA" >&2
+    exit 1
+fi
+URL="https://huggingface.co/${HF_ORG}/${MODEL_NAME}/resolve/${REVISION}/config.json"
 
 CURL_OPTS=(-fsSL --proto '=https' --tlsv1.2 --max-time 60 -o "$DEST")
-if [[ -n "${HF_TOKEN:-}" ]]; then
-    CURL_OPTS+=(-H "Authorization: Bearer ${HF_TOKEN}")
-fi
 
 mkdir -p "$(dirname "$DEST")"
 
-if ! curl "${CURL_OPTS[@]}" "$URL"; then
+if ! hf_curl "${CURL_OPTS[@]}" "$URL"; then
     echo "ERROR: config.json not found at ${HF_ORG}/${MODEL_NAME} — cannot extract labels" >&2
     exit 1
 fi

@@ -18,7 +18,7 @@
 /*
  * Request-body parsing + transport-level admission for the MODEL plane
  * (/api/v1/model/load|unload|update) and the STREAM-ROUTING plane
- * (/api/v1/stream/route).
+ * (/api/v1/model/routing).
  *
  * Layering: this file enforces every constraint that is checkable from the
  * REQUEST ALONE (shapes, required fields, charset/format rules, intra-document
@@ -91,7 +91,7 @@ is_valid_model_name (const std::string & n)
 static void
 model_fail (NvDsServerModelInfo * info, NvDsServerModelStatus status,
     const std::string & code, const std::string & message,
-    const std::string & hint)
+    const std::string & hint, const std::string & field = "")
 {
   info->status = status;
   info->model_log = code + ", " + message;
@@ -99,23 +99,26 @@ model_fail (NvDsServerModelInfo * info, NvDsServerModelStatus status,
   info->err_info.err_code = code;
   info->err_info.err_log = { 400, message };
   info->err_info.hint = hint;
+  info->err_info.field = field;
 }
 
 static void
 route_fail (NvDsServerRouteInfo * info, const std::string & code,
-    const std::string & message, const std::string & hint)
+    const std::string & message, const std::string & hint,
+    const std::string & field = "")
 {
-  info->status = STREAM_ROUTE_FAIL;
+  info->status = MODEL_ROUTING_FAIL;
   info->route_log = code + ", " + message;
   info->err_info.code = StatusBadRequest;
   info->err_info.err_code = code;
   info->err_info.err_log = { 400, message };
   info->err_info.hint = hint;
+  info->err_info.field = field;
 }
 
 /* ---------------------------------------------------------------------------
  * Response tail for this plane's async POSTs (model/load|unload, model/update,
- * stream/route).
+ * model/routing).
  *
  * These sit HERE, beside model_fail / route_fail, and NOT in nvds_rest_server.cpp.
  * They are this endpoint group's error vocabulary, not HTTP transport: the core
@@ -143,10 +146,10 @@ nvds_rest_ctl_fail_no_handler (NvDsServerErrorInfo & err, std::string & log,
     const char *what)
 {
   err.code = NvDsServerStatusCode::StatusInternalServerError;
-  err.err_code = "REQUEST_FAILED";
+  err.err_code = "MODEL_OPERATION_FAILED";
   err.err_log = { 500, std::string ("no handler attached for ") + what };
   err.hint = "the hosting element did not register this control callback";
-  log = std::string ("REQUEST_FAILED, no handler attached for ") + what;
+  log = std::string ("MODEL_OPERATION_FAILED, no handler attached for ") + what;
 }
 
 /* Machine-readable error envelope: on failure the response carries
@@ -160,8 +163,10 @@ ctl_emit_error_envelope (Json::Value & response,
   if (err.code == StatusOk || err.code == StatusAccepted)
     return;
   Json::Value e;
-  e["code"] = err.err_code.empty () ? "REQUEST_FAILED" : err.err_code;
+  e["code"] = err.err_code.empty () ? "MODEL_OPERATION_FAILED" : err.err_code;
   e["message"] = message;
+  if (!err.field.empty ())
+    e["field"] = err.field;
   if (!err.hint.empty ())
     e["hint"] = err.hint;
   response["error"] = e;
@@ -174,7 +179,8 @@ ctl_emit_error_envelope (Json::Value & response,
  * helper so the three tails cannot drift. */
 NvDsServerStatusCode
 nvds_rest_ctl_finish_async_response (Json::Value & response,
-    const NvDsServerErrorInfo & err_info, const std::string & log)
+    const NvDsServerErrorInfo & err_info, const std::string & log,
+    const char *model_name, const char *model_version, const char *state)
 {
   NvDsServerStatusCode ret = NvDsServerStatusCode::StatusOk;
   std::pair < int, std::string > http_err_code =
@@ -183,6 +189,22 @@ nvds_rest_ctl_finish_async_response (Json::Value & response,
   response["status"] = std::string ("HTTP/1.1 ") +
       std::to_string (http_err_code.first) + " " + http_err_code.second;
   response["reason"] = log;
+  /* model{} + state: the caller learns WHAT the request resolved to and WHERE it
+   * landed without a follow-up model/status poll. Emitted only on success -- on a
+   * reject the error envelope is the answer, and naming a model the request did
+   * not act on would read as though something had happened to it. */
+  if (err_info.code == NvDsServerStatusCode::StatusOk ||
+      err_info.code == NvDsServerStatusCode::StatusAccepted) {
+    if (model_name && *model_name) {
+      Json::Value m;
+      m["name"] = model_name;
+      if (model_version && *model_version)
+        m["version"] = model_version;
+      response["model"] = m;
+    }
+    if (state && *state)
+      response["state"] = state;
+  }
   ctl_emit_error_envelope (response, err_info, log);
   if (err_info.code == NvDsServerStatusCode::StatusAccepted)
     ret = NvDsServerStatusCode::StatusAccepted;
@@ -207,7 +229,7 @@ model_reject_foreign_fields (const Json::Value & v, NvDsServerModelInfo * info,
       model_fail (info, fail_status, "FIELD_WRONG_PLANE",
           std::string ("field '") + routing_fields[i] +
           "' does not belong to the model plane",
-          "stream routing (targets, defaults) is POST /api/v1/stream/route");
+          "model routing (targets, defaults) is POST /api/v1/model/routing");
       return false;
     }
   }
@@ -271,6 +293,14 @@ static const char *const ROUTE_DOC_FIELDS[] =
 static const char *const ROUTE_ENTRY_FIELDS[] =
     { "streams", "model", "shadow", NULL };
 static const char *const ROUTE_DEFAULT_FIELDS[] = { "model", "shadow", NULL };
+/* Fields the UNIFIED contract defines for this operation but that this profile
+ * does not implement. They are NOT unknown -- a client reading the shared spec
+ * is right to think they exist -- so they get their own code: FIELD_UNKNOWN
+ * means "no such field anywhere", FIELD_UNSUPPORTED means "real field, wrong
+ * implementation". Collapsing the two sends an integrator hunting a typo that
+ * is not there. Canary routing is aoi-inference only. */
+static const char *const ROUTE_DEFAULT_UNSUPPORTED[] =
+    { "canary", "canary_percent", NULL };
 static const char *const REF_FIELDS[] = { "name", "version", "gpu", NULL };
 
 /* the shared {"key", "value"} request envelope: body must be a JSON object
@@ -278,7 +308,8 @@ static const char *const REF_FIELDS[] = { "name", "version", "gpu", NULL };
  * null) is rejected with a precise reason instead of a jsoncpp exception. */
 static bool
 check_request_envelope (const Json::Value & in, std::string * key,
-    std::string * err, std::string * err_code)
+    std::string * err, std::string * err_code, const char *expect_key,
+    std::string * field)
 {
   if (!in.isObject () || in.isNull ()) {
     *err_code = "MALFORMED_JSON";
@@ -293,6 +324,16 @@ check_request_envelope (const Json::Value & in, std::string * key,
   }
   if (!get_string_field (in, "key", key, err)) {
     *err_code = "FIELD_TYPE_INVALID";
+    return false;
+  }
+  /* Endpoints that declare a single legal discriminator pass expect_key and are
+   * checked here; the rest store the value and pass it through. */
+  if (expect_key && *key != expect_key) {
+    *err_code = "FIELD_UNSUPPORTED";
+    *err = "'key' must be \"" + std::string (expect_key) + "\" for this endpoint (got \"" +
+        *key + "\")";
+    if (field)
+      *field = "key";
     return false;
   }
   if (!in.isMember ("value") || !in["value"].isObject () ||
@@ -382,7 +423,7 @@ nvds_rest_model_parse (const Json::Value & in, NvDsServerModelInfo * model_info)
 
   try {
     std::string terr, tcode;
-    if (!check_request_envelope (in, &model_info->key, &terr, &tcode)) {
+    if (!check_request_envelope (in, &model_info->key, &terr, &tcode, nullptr, nullptr)) {
       model_fail (model_info, fail, tcode, terr,
           "see the API design doc for the model/load|unload body");
       return false;
@@ -399,7 +440,8 @@ nvds_rest_model_parse (const Json::Value & in, NvDsServerModelInfo * model_info)
           std::string ("unknown field '") + unknown + "'",
           is_load ? "model/load accepts: name, version, config_file, "
           "engine_file, engine_files, gpus, batch_size"
-          : "model/unload accepts: name, version, gpus");
+          : "model/unload accepts: name, version, gpus",
+          "value." + unknown);
       return false;
     }
 
@@ -587,7 +629,7 @@ nvds_rest_model_parse (const Json::Value & in, NvDsServerModelInfo * model_info)
 /*                                                                     */
 /* Same network, new weights; identity moves from_version -> version   */
 /* atomically on group confirm. Streams/roles/placement are NEVER      */
-/* touched (that is the stream plane's job).                           */
+/* touched (that is the routing plane's job).                           */
 /* ------------------------------------------------------------------ */
 bool
 nvds_rest_model_update_parse (const Json::Value & in,
@@ -600,7 +642,7 @@ nvds_rest_model_update_parse (const Json::Value & in,
 
   try {
     std::string terr, tcode;
-    if (!check_request_envelope (in, &model_info->key, &terr, &tcode)) {
+    if (!check_request_envelope (in, &model_info->key, &terr, &tcode, nullptr, nullptr)) {
       model_fail (model_info, MODEL_UPDATE_FAIL, tcode, terr,
           "model/update body: name, from_version, version, engine_file | engine_files");
       return false;
@@ -614,7 +656,8 @@ nvds_rest_model_update_parse (const Json::Value & in,
       model_fail (model_info, MODEL_UPDATE_FAIL, "FIELD_UNKNOWN",
           std::string ("unknown field '") + unknown + "'",
           "model/update accepts: name, from_version, version, "
-          "engine_file | engine_files, batch_size");
+          "engine_file | engine_files, batch_size",
+          "value." + unknown);
       return false;
     }
 
@@ -716,9 +759,9 @@ nvds_rest_model_update_parse (const Json::Value & in,
 }
 
 /* ------------------------------------------------------------------ */
-/* /api/v1/stream/route -- the declarative routing plane                */
+/* /api/v1/model/routing -- the declarative routing plane                */
 /*                                                                     */
-/*   { "key":"stream", "value": {                                      */
+/*   { "key":"routing", "value": {                                      */
 /*       "if_revision": N?,                                            */
 /*       "routes": [ { "streams": ["cam-1", ...] | "all",              */
 /*                     "model":  {"name","version"[,"gpu"]} | null,    */
@@ -729,7 +772,7 @@ nvds_rest_model_update_parse (const Json::Value & in,
 /* ADMISSION IS ATOMIC: any violation rejects the WHOLE request.       */
 /* ------------------------------------------------------------------ */
 bool
-nvds_rest_stream_route_parse (const Json::Value & in,
+nvds_rest_model_routing_parse (const Json::Value & in,
     NvDsServerRouteInfo * route_info)
 {
   if (route_info->uri.find ("/api/v1/") == std::string::npos) {
@@ -739,9 +782,12 @@ nvds_rest_stream_route_parse (const Json::Value & in,
 
   try {
     std::string terr, tcode;
-    if (!check_request_envelope (in, &route_info->key, &terr, &tcode)) {
+    std::string tfield;
+    if (!check_request_envelope (in, &route_info->key, &terr, &tcode, "routing",
+            &tfield)) {
       route_fail (route_info, tcode, terr,
-          "stream/route body: routes[] and/or default{}, optional if_revision");
+          "model/routing body: routes[] and/or default{}, optional if_revision",
+          tfield);
       return false;
     }
     route_info->if_revision = -1;
@@ -756,7 +802,8 @@ nvds_rest_stream_route_parse (const Json::Value & in,
     if (find_unknown_field (v, ROUTE_DOC_FIELDS, &unknown)) {
       route_fail (route_info, "FIELD_UNKNOWN",
           "unknown field '" + unknown + "'",
-          "stream/route accepts: if_revision, routes, default");
+          "model/routing accepts: if_revision, routes, default",
+          "value." + unknown);
       return false;
     }
 
@@ -764,7 +811,7 @@ nvds_rest_stream_route_parse (const Json::Value & in,
       if (!v["if_revision"].isIntegral () || v["if_revision"].asInt64 () < 0) {
         route_fail (route_info, "FIELD_TYPE_INVALID",
             "'if_revision' must be a non-negative integer",
-            "read routing_revision from GET /api/v1/stream/route");
+            "read routing_revision from GET /api/v1/model/routing");
         return false;
       }
       route_info->if_revision = v["if_revision"].asInt64 ();
@@ -800,7 +847,7 @@ nvds_rest_stream_route_parse (const Json::Value & in,
 
         if (!r.isObject ()) {
           route_fail (route_info, "PARSE_ERROR",
-              "each route must be an object", "see the stream/route body shape");
+              "each route must be an object", "see the model/routing body shape");
           return false;
         }
         if (find_unknown_field (r, ROUTE_ENTRY_FIELDS, &unknown)) {
@@ -845,8 +892,9 @@ nvds_rest_stream_route_parse (const Json::Value & in,
             }
             std::string cam = streams[s].asString ();
             if (cam.empty ()) {
-              route_fail (route_info, "STREAM_UNKNOWN",
-                  "empty camera_id in route[" + std::to_string (i) + "]",
+              route_fail (route_info, "FIELD_TYPE_INVALID",
+                  "route[" + std::to_string (i) +
+                  "] 'streams' entries must be non-empty camera_ids",
                   "'streams' entries are the stable camera_ids from stream/add");
               return false;
             }
@@ -937,10 +985,22 @@ nvds_rest_stream_route_parse (const Json::Value & in,
             "default body: {\"model\": {...}?, \"shadow\": {...}|null?}");
         return false;
       }
+      for (int u = 0; ROUTE_DEFAULT_UNSUPPORTED[u]; u++) {
+        if (d.isMember (ROUTE_DEFAULT_UNSUPPORTED[u])) {
+          route_fail (route_info, "FIELD_UNSUPPORTED",
+              std::string ("default: '") + ROUTE_DEFAULT_UNSUPPORTED[u] +
+              "' is not supported by this implementation",
+              "canary routing is an aoi-inference capability; this profile "
+              "serves single and shadow policies",
+              std::string ("value.default.") + ROUTE_DEFAULT_UNSUPPORTED[u]);
+          return false;
+        }
+      }
       if (find_unknown_field (d, ROUTE_DEFAULT_FIELDS, &unknown)) {
         route_fail (route_info, "FIELD_UNKNOWN",
             "default: unknown field '" + unknown + "'",
-            "'default' accepts: model, shadow");
+            "'default' accepts: model, shadow",
+            "value.default." + unknown);
         return false;
       }
       if (d.isMember ("model")) {
@@ -991,7 +1051,7 @@ nvds_rest_stream_route_parse (const Json::Value & in,
   } catch (const std::exception & e) {
     route_fail (route_info, "PARSE_ERROR",
         std::string ("malformed request: ") + e.what (),
-        "see the API design doc for the stream/route body shape");
+        "see the API design doc for the model/routing body shape");
     return false;
   }
   return true;

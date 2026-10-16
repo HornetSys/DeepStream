@@ -43,10 +43,12 @@ Outputs (fixed names — do not rename):
   chart_trt_vs_ds.png              — grouped bar: trtexec vs DS Run1 vs DS Run2 total imgs/s
   chart_efficiency.png             — bar: DS Run1 and Run2 pipeline efficiency %
 """
-import sys
 import json
 import os
+import sys
+
 import matplotlib
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
@@ -99,7 +101,7 @@ def chart_trtexec_bs1_vs_bsmax(data, output_dir):
     out = os.path.join(output_dir, 'chart_trtexec_bs1_vs_bsmax.png')
     fig.savefig(out, dpi=150)
     plt.close(fig)
-    print(f'  chart_trtexec_bs1_vs_bsmax.png')
+    print('  chart_trtexec_bs1_vs_bsmax.png')
 
 
 def chart_trtexec_throughput(data, output_dir):
@@ -107,6 +109,7 @@ def chart_trtexec_throughput(data, output_dir):
     max_bs          = data['max_bs']
     imgs_per_sec    = data['trtexec']['bsmax']['imgs_per_sec']
     peak_streams    = data['peak_gpu_streams']
+    roi = data.get('input_unit') == 'roi'
     realtime_imgs   = peak_streams * 30  # the throughput that satisfies peak_streams at 30fps
 
     fig, ax = plt.subplots(figsize=(10, 6))
@@ -116,24 +119,26 @@ def chart_trtexec_throughput(data, output_dir):
             f'{imgs_per_sec:.0f}', ha='center', va='bottom', fontweight='bold', fontsize=13)
 
     # Annotation line at PEAK_GPU_STREAMS × 30fps threshold
-    ax.axhline(y=realtime_imgs, color=COLORS['red'], linestyle='--', linewidth=2,
-               label=f'PEAK_GPU_STREAMS={peak_streams} × 30fps = {realtime_imgs:.0f} imgs/s')
-    ax.text(0.98, realtime_imgs + imgs_per_sec * 0.01,
+    if not roi:
+        ax.axhline(y=realtime_imgs, color=COLORS['red'], linestyle='--', linewidth=2,
+                   label=f'PEAK_GPU_STREAMS={peak_streams} × 30fps = {realtime_imgs:.0f} imgs/s')
+        ax.text(0.98, realtime_imgs + imgs_per_sec * 0.01,
             f'PEAK={peak_streams} streams',
             ha='right', va='bottom', color=COLORS['red'], fontsize=10, fontweight='bold',
-            transform=ax.get_yaxis_transform())
+                transform=ax.get_yaxis_transform())
 
-    ax.set_ylabel('Images / sec', fontsize=13)
+    ax.set_ylabel('ROIs / sec' if roi else 'Images / sec', fontsize=13)
     ax.set_ylim(0, imgs_per_sec * 1.25)
     ax.grid(axis='y', alpha=0.3)
-    ax.legend(loc='upper left', fontsize=10)
+    if not roi:
+        ax.legend(loc='upper left', fontsize=10)
     ax.set_title(two_line_title(data['model_name'],
-                                f'GPU Throughput at BS={max_bs} (PEAK_GPU_STREAMS={peak_streams})'))
+                                f'GPU Throughput at BS={max_bs} ' + ('(not camera capacity)' if roi else f'(PEAK_GPU_STREAMS={peak_streams})')))
     plt.tight_layout()
     out = os.path.join(output_dir, 'chart_trtexec_throughput.png')
     fig.savefig(out, dpi=150)
     plt.close(fig)
-    print(f'  chart_trtexec_throughput.png')
+    print('  chart_trtexec_throughput.png')
 
 
 def chart_ds_streams_vs_fps(data, output_dir):
@@ -162,24 +167,29 @@ def chart_ds_streams_vs_fps(data, output_dir):
     ax.set_xlabel('Stream Count', fontsize=13)
     ax.set_ylabel('FPS / Stream', fontsize=13)
     lower = -max(fps_vals) * 0.15
-    ax.set_ylim(lower, max(fps_vals) * 1.3)
+    ax.set_ylim(lower, max(max(fps_vals), 30) * 1.3)
     ax.set_xticks(stream_counts)
     ax.grid(axis='y', alpha=0.3)
     ax.legend(loc='upper right', fontsize=10)
 
     # Label each point
-    run_labels = {run1['streams']: 'Run 1\n(PEAK_GPU_STREAMS)',
-                  run2['streams']: 'Run 2\n(RT_STREAMS)'}
-    for sc in stream_counts:
-        ax.annotate(run_labels.get(sc, ''), xy=(sc, 0), xytext=(sc, -max(fps_vals) * 0.12),
-                    ha='center', fontsize=9, color='#555555')
+    if data.get('runner') == 'task-capacity':
+        run_labels = ('Run 1\n(Calibration)', 'Run 2\n(Validation)')
+    else:
+        run_labels = ('Run 1\n(PEAK_GPU_STREAMS)', 'Run 2\n(RT_STREAMS)')
+    same_count = run1['streams'] == run2['streams']
+    for index, (run, label) in enumerate(zip((run1, run2), run_labels)):
+        offset = (-8 if index == 0 else 8) if same_count else 0
+        alignment = ('right' if index == 0 else 'left') if same_count else 'center'
+        ax.annotate(label, xy=(run['streams'], 0), xytext=(offset, -12),
+                    textcoords='offset points', ha=alignment, fontsize=9, color='#555555')
 
     ax.set_title(two_line_title(data['model_name'], 'DeepStream: FPS/Stream vs Stream Count'))
     plt.tight_layout()
     out = os.path.join(output_dir, 'chart_ds_streams_vs_fps.png')
     fig.savefig(out, dpi=150)
     plt.close(fig)
-    print(f'  chart_ds_streams_vs_fps.png')
+    print('  chart_ds_streams_vs_fps.png')
 
 
 def chart_trt_vs_ds(data, output_dir):
@@ -190,6 +200,17 @@ def chart_trt_vs_ds(data, output_dir):
     ds2_imgs     = data['deepstream']['run2']['total_fps']
     n1           = data['deepstream']['run1']['streams']
     n2           = data['deepstream']['run2']['streams']
+    if data.get('input_unit') == 'roi':
+        fig, axes = plt.subplots(1, 2, figsize=(10, 6))
+        axes[0].bar([f'TensorRT BS={max_bs}'], [trt_imgs], color=COLORS['pink'])
+        axes[0].set_ylabel('ROIs / sec')
+        axes[1].bar([f'DS Run 1 ({n1})', f'DS Run 2 ({n2})'], [ds1_imgs, ds2_imgs], color=[COLORS['blue'], COLORS['green']])
+        axes[1].set_ylabel('Application frames / sec')
+        fig.suptitle(two_line_title(data['model_name'], 'Different units: ROI inference vs complete application'))
+        fig.tight_layout()
+        fig.savefig(os.path.join(output_dir, 'chart_trt_vs_ds.png'), dpi=150)
+        plt.close(fig)
+        return
 
     labels = [f'trtexec\nBS={max_bs}', f'DS Run 1\n({n1} streams)', f'DS Run 2\n({n2} streams)']
     values = [trt_imgs, ds1_imgs, ds2_imgs]
@@ -208,7 +229,7 @@ def chart_trt_vs_ds(data, output_dir):
     out = os.path.join(output_dir, 'chart_trt_vs_ds.png')
     fig.savefig(out, dpi=150)
     plt.close(fig)
-    print(f'  chart_trt_vs_ds.png')
+    print('  chart_trt_vs_ds.png')
 
 
 def chart_efficiency(data, output_dir):
@@ -218,6 +239,17 @@ def chart_efficiency(data, output_dir):
     ds2_imgs  = data['deepstream']['run2']['total_fps']
     n1        = data['deepstream']['run1']['streams']
     n2        = data['deepstream']['run2']['streams']
+    if data.get('input_unit') == 'roi':
+        fig, ax = plt.subplots(figsize=(10, 6))
+        ax.axis('off')
+        ax.text(0.5, 0.5, 'N/A: ROI/s cannot be divided into application frames/s.\n'
+                'Complete upstream stages are included in DeepStream.',
+                ha='center', va='center', fontsize=15, transform=ax.transAxes)
+        ax.set_title(two_line_title(data['model_name'], 'Efficiency: non-comparable units'))
+        fig.tight_layout()
+        fig.savefig(os.path.join(output_dir, 'chart_efficiency.png'), dpi=150)
+        plt.close(fig)
+        return
 
     if trt_imgs <= 0:
         print("ERROR: trtexec imgs_per_sec is zero or negative — cannot compute efficiency", file=sys.stderr)
@@ -245,7 +277,7 @@ def chart_efficiency(data, output_dir):
     out = os.path.join(output_dir, 'chart_efficiency.png')
     fig.savefig(out, dpi=150)
     plt.close(fig)
-    print(f'  chart_efficiency.png')
+    print('  chart_efficiency.png')
 
 
 def main():

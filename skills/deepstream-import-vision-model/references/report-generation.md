@@ -1,524 +1,326 @@
+<!--
+SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-License-Identifier: Apache-2.0
+-->
 
-# NV Import Vision Model Report -- Step 8
+# Evidence-backed report — Step 8
 
-Generate benchmark report with charts, HTML, and PDF from completed benchmarks.
+For shared capacity and comparison tables, read
+[benchmark-evidence.md](benchmark-evidence.md). Keep batched stream capacity
+separate from rendered/encoded diagnostics; neither substitutes for the other.
 
-The model directory is: `$ARGUMENTS`
+For a successful case, this phase runs after Step 7 validation and any adapter
+promotion. For an early stop, it documents the partial evidence and first
+causal blocker without running skipped phases. It is not a substitute for a
+DeepStream run. Keep all reports in `models/$MODEL_NAME/reports/` in the
+caller's mounted work root, as in the original detection skill.
 
-> ## ⛔ STRICT HTML+PDF RULE — NO EXCEPTIONS, NO DEVIATIONS
->
-> **HTML and PDF MUST be generated via the canonical pipeline script. Do NOT write your own HTML generator.**
->
-> **The ONLY permitted way to generate the HTML + PDF:**
-> ```bash
-> python3 .claude/skills/deepstream-import-vision-model/scripts/report/md-to-html-pdf.py \
->   models/$MODEL_NAME/reports/benchmark_report.md \
->   .claude/skills/deepstream-import-vision-model/scripts/report/report-style.css \
->   models/$MODEL_NAME/reports/ \
->   $MODEL_NAME
-> ```
-> This produces:
-> - `models/$MODEL_NAME/reports/benchmark_report.html` — styled with report_style.css, charts embedded as base64
-> - `models/$MODEL_NAME/reports/benchmark_report_${MODEL_NAME}.pdf` — via wkhtmltopdf
->
-> **FORBIDDEN — never do any of these:**
-> - Write your own `generate_html.py` or any custom markdown-to-HTML converter script
-> - Call `wkhtmltopdf` directly — use `md-to-html-pdf.py` which already calls it correctly
-> - Use `md-to-pdf.sh` — GFM+Mermaid design doc tool only, wrong CSS
-> - Use `pandoc`, `pdflatex`, or any other converter
->
-> The `report_style.css` provides the ONLY correct CSS (dark navy headers #283593, alternating rows #e8eaf6, dark code blocks #263238). Any other CSS produces wrong-looking reports.
+## Thirteen-application campaign
 
-## 8a: Report Structure — 12 Mandatory Sections
+Use [`../assets/vision13-cases.json`](../assets/vision13-cases.json) as the exact
+case/task registry: TrafficCamNet, PeopleNet, YOLOv8n, RT-DETR, LPD-US,
+VehicleMakeNet, VehicleTypeNet, CitySemSegFormer, SegFormer, BodyPose2D,
+Depth Anything V2, FoundationStereo, and **one complete Bi3D application**.
+Bi3D FeatNet and SegNet are components of one case, not separate passes.
+`vision13` is a test suite, not a new public task category: stereo cases stay
+experimental and the five-category router remains unchanged. The source and
+media map is in [model-zoo-media.md](model-zoo-media.md).
+`vision14` adds one pinned primary ImageNet classifier,
+`mobilenetv2-imagenet`, to those 13 cases; it does not replace either
+vehicle-ROI classifier. Its source is
+[`onnx-community/mobilenet_v2_0.35_96` at commit `f37d9b91354e5a43dae384840f46119c67a76d58`](https://huggingface.co/onnx-community/mobilenet_v2_0.35_96/tree/f37d9b91354e5a43dae384840f46119c67a76d58),
+with `onnx/model.onnx`, `config.json`, and `preprocessor_config.json`. Validate
+its 1,001-way output and center-crop/normalization contract from those pinned
+files before runtime. The generated dog image may be used as a synthetic
+diagnostic fixture; it does not automatically supply a reviewed ImageNet oracle.
+For 96×96 media, pass `--mux-width 96 --mux-height 96` to the classifier
+reference runner. Its default remains 1280×720. If hardware H.264 encoder
+initialization fails, retain the first failure and make at most one fresh-output
+retry with `--encoder theora`; this changes only the output sink. A larger
+square presentation fixture may preserve the same central crop while allowing
+the class label overlay to remain legible. A reviewed label on one generated
+dog image proves only that fixture, not ImageNet or real-world accuracy. Keep
+an FP16 parity failure visible if FP32/no-TF32 repair is used.
 
-The report must contain exactly these 12 sections in order:
+1. Prepare an input JSON with `schema_version=1`, `suite="vision13"` (or
+   `"vision14"` when the extra ImageNet classifier is requested),
+   `campaign_id`, and exactly the registered `cases`. Each case supplies
+   `case_id`, `task`, exact local `source`, required `components`, media
+   `inputs` with roles, `oracle`, `upstream_stages`, and stereo `calibration`
+   where applicable. Run `prepare-campaign.py INPUT_JSON models/` only into a
+   fresh empty `models/` directory. It validates suite membership and hashes
+   available files; it does **not** run tests or mark a gate PASS.
+2. Route each case through Step 0 first. The suite registry is not permission
+   to execute unsupported tasks. FoundationStereo and Bi3D are stereo and
+   therefore `BLOCKED`/unsupported by the public five-category router: stop
+   without conversion, engine build, DeepStream, or an adapter promotion
+   attempt, then produce only a status report. For a supported case whose
+   prerequisites pass, continue the same skill's applicable Steps 1–7 on a
+   single selected GPU: inspect the tensor/preprocess/postprocess contract,
+   build or validate its engine, run its task-specific DeepStream graph, and
+   gate backend parity, structured output, semantic oracle, and the **rendered
+   frame**. Required upstream stages must produce evidence bound to the case
+   input: vehicle ROIs for LPD-US and secondary classifiers and person ROIs
+   for pose where required. Stereo would additionally need real synchronized
+   calibrated pairs and an implemented paired-input runner before any future
+   scope expansion. A generated adapter must pass the bounded development and
+   readiness gates before functional PASS. Preserve the legacy detector
+   parser, KITTI, one-stream, and two-run benchmark checks.
+3. Record executed commands, input/output hashes, first causal failure, all
+   four gates, and capacity separately in each `case-evidence.json`. If the
+   model, stage, media, adapter, or oracle is missing, record the correct
+   `BLOCKED`, `ADAPTER_REQUIRED`, or `UNTESTED` gate; do not substitute another
+   model, shifted mono video for stereo, or an unrelated SDK clip. A generated
+   plate scene may demonstrate LPD-US pipeline/visual behavior, but cannot
+   certify accuracy on real traffic.
+4. Run `generate-model-report.py` for **every registered case**, including
+   blocked cases. Then run `generate-campaign-index.py models/campaign.json`.
+   With a named suite, the index rejects missing/extra case IDs, wrong
+   task mappings, missing PDFs, or digest mismatches and shows separate
+   pipeline+visual, functional, and capacity statuses. A report or index does
+   not run inference, fill missing evidence, or convert a diagnostic result
+   into a functional PASS.
 
-1. **Model Configuration** — model name, source (HF repo / NGC), architecture, ONNX source, input/output shapes, classes, custom parser name, cluster mode, precision, engine profile
-2. **System Configuration** — GPU (name + VRAM), Driver, CUDA, TensorRT, DeepStream, OS, Python, PyTorch, ONNX versions
-3. **Preprocessing** — net-scale-factor, offsets, color format, normalization details (with reference to the preprocessing table in deepstream-import-vision-model/SKILL.md)
-4. **Engine Build Summary** — source format, conversion path, engine filename (with max_bs postfix), engine size (MB), FP16 flag, builder_optimization_level if non-default, timing cache path
-5. **trtexec Results** — two runs (BS=1 and BS=MAX_BS) with: QPS, Images/s, GPU Compute mean/P99 (ms). Do NOT include H2D/D2H latency or Host Latency. Show PEAK_GPU_STREAMS derivation:
-   ```
-   PEAK_GPU_STREAMS = floor(QPS_at_MAX_BS × MAX_BS / 30)
-                    = floor(imgs_per_sec_at_MAX_BS / 30)
-   ```
-6. **PEAK_GPU_STREAMS Derivation** — explicit calculation block showing formula, inputs, and result. If a second engine was built, show both PEAK_GPU_STREAMS computations.
-7. **Single-Stream Validation** — KITTI frame count, frames with detections, top-10 detected classes (from KITTI dump), validation result (PASS/FAIL)
-8. **DeepStream Benchmark Results** — two runs:
-   - **DS Run 1 (Calibration at PEAK_GPU_STREAMS)**: streams, batch, FPS/stream, total img/s, real-time (YES/NO)
-   - **DS Run 2 (Validation at RT_STREAMS)**: streams, batch, FPS/stream, total img/s, real-time (YES)
-9. **trtexec vs DeepStream Comparison** — 3-column table: trtexec | DS Run 1 | DS Run 2, rows: engine, batch/streams, total imgs/s, FPS/stream, real-time ≥30fps, DS Efficiency %
-10. **Efficiency Analysis** — efficiency formula, Run 1 and Run 2 percentages, breakdown of the gap (NVDEC + mux + GStreamer overhead), GPU-bound vs pipeline-bound verdict
-11. **Pipeline Timing** — per-step wall-clock duration and total:
-    | Step | Description | Duration |
-    |------|-------------|----------|
-    | 1-3  | HF Model Acquire (download + inspect ONNX) | {time}s |
-    | 4    | Engine build | {time}s |
-    | 5    | trtexec BS=1 + BS=MAX_BS | {time}s |
-    | 6    | Parser + config + visual validation + KITTI | {time}s |
-    | 7 Run 1 | DS Calibration (PEAK_GPU_STREAMS streams) | {time}s |
-    | 7 Run 2 | DS Validation (RT_STREAMS streams) | {time}s |
-    | 8    | Report generation | {time}s |
-    | **Total** | **End-to-end** | **{total}s** |
-12. **Reference Commands** — exact reproducible commands:
-    - trtexec engine build (full command with all flags and paths)
-    - trtexec benchmark BS=1 and BS=MAX_BS
-    - DeepStream single-stream validation (`gst-launch-1.0` with filesink + OSD)
-    - DeepStream multi-stream benchmark (`deepstream-app` with `enable-perf-measurement=1` via `ds-perf-run.sh`, PEAK_GPU_STREAMS and RT_STREAMS variants)
-    - nvinfer config key fields (as an ini code block)
-    - Custom parser build command (`make` with DEEPSTREAM_DIR and CUDA_VER)
-    - Use actual absolute paths from the model directory, never placeholders
+Keep the original detection benchmark/report path below. Do not replace its
+12-section/five-chart contract with a generic 13-row summary. The campaign
+index is an additional summary of the thirteen independent application runs.
 
-## Pre-flight: Extract Variables from Benchmark Logs
+For every case, write `models/$MODEL_NAME/case-evidence.json` with
+`schema_version=1`, `case_id` matching the model directory, `task`, pinned
+`revision`, `source` (`path` and SHA-256), `inputs` (`role`, `path`, and
+SHA-256), optional application `components`, `oracle`, the validator-produced
+`oracle_validation` record and `oracle_status`,
+`upstream_stages`, `commands` (`phase`, `exit_code`, `log` with path and
+SHA-256), `gates` (`backend`,
+`pipeline`, `semantic`, `visual`, each with a recorded status), `evidence`,
+`capacity`, and `first_failure` when applicable. The reporter computes actual
+file digests and validates declared digests; caller/Devtest matching against
+an expected model or fixture checksum stays in the test case, not in this skill.
+Stereo cases require exactly one distinct `left` and `right` input plus a
+nonempty calibration file recorded by path and observed SHA-256; naming a
+missing calibration path or reusing one image twice does not pass intake.
+Every declared upstream stage must have `evidence.upstream_{stage}` pointing to
+a SHA-256-pinned JSON record with `schema_version=1`, the matching `stage`,
+`status=PASS`, `kind=inference|transform`, a nonempty `producer`, ordered
+`input_fixture_sha256s` matching the case inputs, and a nonempty `output`
+artifact with its SHA-256. Inference records must bind `model_sha256` to a
+declared source/component artifact; transforms must not claim a model. A stage
+name or an unbound file alone cannot satisfy a cascade prerequisite.
 
-Before generating any output, derive all variables by reading completed benchmark files. These variables are used by every section below.
+Use `scripts/report/prepare-campaign.py` to create fresh manifests from the
+caller's input list. It only records file identity and may decode source frames;
+it never invokes a model or sets a gate to `PASS`. Do not run it over a nonempty
+campaign directory. It separates `input_blockers` (missing model, component,
+media, or required stereo calibration) from `certification_limitations`
+(such as an unreviewed oracle); neither list asserts a pipeline ran.
+
+Select model artifacts and task-appropriate SDK/caller media using
+[model-zoo-media.md](model-zoo-media.md). NGC model files and DeepStream sample
+streams are separate sources. The case manifest must name actual local files,
+not catalog pages or repository directories. A missing reviewed oracle limits
+semantic certification; if source/media and required stages are available,
+continue a **diagnostic** backend/DeepStream/visual attempt and retain semantic
+`UNTESTED`. Do not convert that diagnostic result into a functional `PASS`.
+
+Only a complete functional, semantic, and model-derived visual pass may create
+a successful benchmark/validation report. Non-detection PASS also requires a
+tested `adapter-status.json` from `validate_adapter_readiness.py`, including
+all eight verified producer records. Detection PASS additionally requires the
+legacy benchmark Markdown, data JSON, five charts, KITTI output, and embedded
+runtime input/output frames. Its `backend_parity`, `deepstream_runtime`,
+`semantic_validation`, and `visual_validation` JSON records must bind the same
+campaign, model digest, and fixture digest. Runtime must show startup, buffers,
+EOS, and exit 0; the oracle must be reviewed PASS; visual evidence must show a
+model-derived overlay PASS, and the visual record's source/rendered-frame and
+structured-output digests must match the files in the report. Every successful
+case must provide valid PNG/JPEG source and rendered frames with declared
+SHA-256 digests; the PDF embeds those exact bytes. Non-detection PASS also binds
+the overlay's input-frame digest and the rendered frame to the adapter's
+validated output. Missing
+inputs, an incomplete adapter, a failed gate, or a PDF conversion failure
+never become PASS.
+
+Run the common reporter after recording the first causal failure even when a
+case cannot proceed. A status report may use partial evidence without complete
+model/media/oracle intake; record missing prerequisites and leave unexecuted
+gates `UNTESTED`. It cannot claim functional or semantic PASS. A visual PASS
+is recorded only when an actual model-derived overlay passed its visual gate
+on available media; a report cannot manufacture one. If the reporter or PDF
+dependencies are unavailable, record that as an additional
+blocker rather than claiming that a PDF exists. Exit `4` means it wrote a
+truthful non-PASS status report;
+use `report-result.json` to distinguish that result from a conversion failure:
 
 ```bash
-STEP8_START=$(date +%s.%N)
-
-MODEL_DIR="${ARGUMENTS%/}"
-MODEL_NAME=$(basename "$MODEL_DIR")
-
-# Engine + MAX_BS + MODEL_FILENAME from the shared resolver (scripts/model/resolve-engine.sh).
-eval "$(bash .claude/skills/deepstream-import-vision-model/scripts/model/resolve-engine.sh "$MODEL_NAME")" || exit 1
-
-# Extract input name and spatial dims from ONNX (needed for reference commands in the report)
-ONNX_FILE=$(ls models/$MODEL_NAME/model/*.onnx 2>/dev/null | grep -v '_dynamic' | head -1)
-if [ -n "$ONNX_FILE" ]; then
-  INSPECT_OUT=$(python3 .claude/skills/deepstream-import-vision-model/scripts/model/inspect-onnx.py "$ONNX_FILE" 2>/dev/null)
-  INPUT_NAME=$(echo "$INSPECT_OUT" | grep -oP 'input_name:\s*\K\S+')
-  H=$(echo "$INSPECT_OUT" | grep -oP 'height:\s*\K[0-9]+')
-  W=$(echo "$INSPECT_OUT" | grep -oP 'width:\s*\K[0-9]+')
-fi
-INPUT_NAME=${INPUT_NAME:-"images"}  # fallback
-H=${H:-"640"}; W=${W:-"640"}       # fallback — update if model uses different resolution
-
-# Parse trtexec BS=1 log — fixed filename trtexec_b1.log (no timestamp, no wildcard needed)
-TRTEXEC_LOG_BS1="models/$MODEL_NAME/benchmarks/b1/trtexec_b1.log"
-[ -f "$TRTEXEC_LOG_BS1" ] || { echo "ERROR: $TRTEXEC_LOG_BS1 not found — run Steps 4-5 first (references/engine-build.md)"; exit 1; }
-QPS_BS1=$(grep -oP 'Throughput:\s*\K[0-9.]+' "$TRTEXEC_LOG_BS1" | tail -1)
-GPU_MEAN_BS1=$(grep -oP 'GPU Compute Time:.*mean = \K[0-9.]+' "$TRTEXEC_LOG_BS1" | tail -1)
-
-# Parse trtexec BS=MAX_BS log — fixed filename trtexec_b${MAX_BS}.log
-TRTEXEC_LOG_BSMAX="models/$MODEL_NAME/benchmarks/b${MAX_BS}/trtexec_b${MAX_BS}.log"
-[ -f "$TRTEXEC_LOG_BSMAX" ] || { echo "ERROR: $TRTEXEC_LOG_BSMAX not found — run Steps 4-5 first (references/engine-build.md)"; exit 1; }
-QPS_BS_MAX=$(grep -oP 'Throughput:\s*\K[0-9.]+' "$TRTEXEC_LOG_BSMAX" | tail -1)
-GPU_MEAN_BS_MAX=$(grep -oP 'GPU Compute Time:.*mean = \K[0-9.]+' "$TRTEXEC_LOG_BSMAX" | tail -1)
-GPU_P99_BS_MAX=$(grep -oP 'GPU Compute Time:.*percentile\(99%\) = \K[0-9.]+' "$TRTEXEC_LOG_BSMAX" | tail -1)
-[ -z "$QPS_BS_MAX" ] && { echo "ERROR: Could not parse Throughput from $TRTEXEC_LOG_BSMAX — log may be empty or malformed"; exit 1; }
-[ -z "$MAX_BS" ] && { echo "ERROR: Could not parse batch size from engine filename: $ENGINE"; exit 1; }
-
-read IMGS_PER_SEC PEAK_GPU_STREAMS < <(python3 -c "
-import math
-imgs = float('$QPS_BS_MAX') * $MAX_BS
-print(round(imgs, 2), int(math.floor(imgs / 30)))
-")
-
-# Parse DeepStream Run 1 and Run 2 FPS from logs written by pipeline-run
-# Fixed filename pattern: benchmarks/ds/ds_s{N}_run1.log and ds_s{N}_run2.log
-# Use glob to find them (N varies per model) then extract N from filename
-DS_LOG_RUN1=$(ls models/$MODEL_NAME/benchmarks/ds/ds_s*_run1.log 2>/dev/null | head -1)
-# Step 7's convergence loop can leave SEVERAL run2 logs (e.g. s17 -> s11 failed -> s9 passed).
-# Lexicographic `head -1` picks ds_s11 over ds_s9, reporting the NON-real-time run as the
-# validated result. Convergence steps downward, so the converged log is the newest — pick by mtime.
-# (`sort -V | tail -1` is NOT correct here: it re-selects the highest N, i.e. the failing run.)
-DS_LOG_RUN2=$(ls -t models/$MODEL_NAME/benchmarks/ds/ds_s*_run2.log 2>/dev/null | head -1)
-[ -z "$DS_LOG_RUN1" ] && { echo "ERROR: No DS Run 1 log found at benchmarks/ds/ds_s*_run1.log — run Steps 6-7 first (references/pipeline-run.md)"; exit 1; }
-[ -z "$DS_LOG_RUN2" ] && { echo "ERROR: No DS Run 2 log found at benchmarks/ds/ds_s*_run2.log — run Steps 6-7 first (references/pipeline-run.md)"; exit 1; }
-
-N_RUN1=$(basename "$DS_LOG_RUN1" | grep -oP 'ds_s\K[0-9]+(?=_run1)')
-N_RUN2=$(basename "$DS_LOG_RUN2" | grep -oP 'ds_s\K[0-9]+(?=_run2)')
-[[ "$N_RUN1" =~ ^[0-9]+$ ]] || { echo "ERROR: Could not parse stream count from $(basename "$DS_LOG_RUN1") — expected filename pattern ds_s<N>_run1.log"; exit 1; }
-[[ "$N_RUN2" =~ ^[0-9]+$ ]] || { echo "ERROR: Could not parse stream count from $(basename "$DS_LOG_RUN2") — expected filename pattern ds_s<N>_run2.log"; exit 1; }
-RT_STREAMS=$N_RUN2
-
-# deepstream-app **PERF: format is `**PERF: fps_run0 (fps_avg0)  fps_run1 (fps_avg1)  ...`
-# Capture stream-0 instantaneous FPS (\K after `**PERF:`) — 1 value per line — so
-# tail -10 always covers exactly 10 measurement windows regardless of stream count.
-# Multiply by stream count for total throughput.
-FPS_RAW_RUN1=$(grep -oP '\*\*PERF:\s*\K[0-9.]+' "$DS_LOG_RUN1" | tail -10 | python3 -c "
-import sys; vals=[float(l) for l in sys.stdin if l.strip()]; print(round(sum(vals)/len(vals),2) if vals else 0)")
-FPS_RAW_RUN2=$(grep -oP '\*\*PERF:\s*\K[0-9.]+' "$DS_LOG_RUN2" | tail -10 | python3 -c "
-import sys; vals=[float(l) for l in sys.stdin if l.strip()]; print(round(sum(vals)/len(vals),2) if vals else 0)")
-
-TOTAL_FPS_RUN1=$(python3 -c "print(round(float('$FPS_RAW_RUN1') * $N_RUN1, 2))")
-TOTAL_FPS_RUN2=$(python3 -c "print(round(float('$FPS_RAW_RUN2') * $N_RUN2, 2))")
-
-echo "=== Report Variables ==="
-echo "MODEL_NAME=$MODEL_NAME  MAX_BS=$MAX_BS"
-echo "BS=1:       QPS=$QPS_BS1  GPU mean=${GPU_MEAN_BS1}ms"
-echo "BS=$MAX_BS: QPS=$QPS_BS_MAX  imgs/s=$IMGS_PER_SEC  PEAK_GPU_STREAMS=$PEAK_GPU_STREAMS"
-echo "DS Run 1:   FPS/stream=$FPS_RAW_RUN1  streams=$N_RUN1  total=$TOTAL_FPS_RUN1 img/s"
-echo "DS Run 2:   FPS/stream=$FPS_RAW_RUN2  streams=$N_RUN2  total=$TOTAL_FPS_RUN2 img/s  RT_STREAMS=$RT_STREAMS"
+build/.venv_optimum/bin/python \
+  .claude/skills/deepstream-import-vision-model/scripts/report/generate-model-report.py \
+  "models/$MODEL_NAME/case-evidence.json"
 ```
 
-Then immediately write `benchmark_data.json` before generating charts (so charts can load it if needed):
+It writes `report-result.json` and one of these families under `reports/`:
+
+| Outcome | Markdown / HTML / PDF |
+|---|---|
+| Detection functional PASS | `benchmark_report.md`, `benchmark_report.html`, `benchmark_report_${MODEL_NAME}.pdf` |
+| Other supported category functional PASS | `validation_report.md`, `validation_report.html`, `validation_report_${MODEL_NAME}.pdf` |
+| FAIL, BLOCKED, ADAPTER_REQUIRED, or experimental stereo | `status_report.md`, `status_report.html`, `status_report_${MODEL_NAME}.pdf` |
+
+Store a campaign's case IDs in `models/campaign.json` as a unique `cases`
+array with `schema_version=1`; after all cases have a report, run
+`scripts/report/generate-campaign-index.py models/campaign.json`. The index
+refuses missing or digest-mismatched PDFs. A status PDF documents what was
+actually attempted and the next repair; it is never a successful model report.
+If a report was generated in a container, its recorded PDF path may start at a
+container mount such as `/work/models/`. The index may resolve that path only
+to the exact registered case's report filename under the local campaign root,
+then rechecks the recorded SHA-256; it never trusts a same-named PDF elsewhere.
+
+Capacity is separate from functional readiness. Set `capacity.status=PASS`
+only with a task-compatible runner, at least two measured logical streams,
+`fps_per_stream >= target_fps`, and a real log with a matching SHA-256. For
+stereo, one synchronized left/right pair is one logical stream. Otherwise use
+`FAIL` or `UNTESTED` as observed; never extrapolate the old detector ceiling to
+another task.
+
+## Detection benchmark contract
+
+Generate a fail-closed benchmark report only after engine, KITTI, visual, and
+two-run DeepStream gates pass. The model directory is `$ARGUMENTS`.
+
+## Required evidence
+
+Stop `BLOCKED` if any required item is absent, empty, or unparsable:
+
+- final engine selected by `scripts/model/resolve-engine.sh`;
+- fixed trtexec logs `trtexec_b1.log` and `trtexec_b{MAX_BS}.log`;
+- newest converged `ds_s{N}_run2.log` plus calibration `ds_s{N}_run1.log`;
+- KITTI frame count, frames with detections, detection rate, and top classes;
+- model-derived rendered output and encoder mode;
+- model, preprocessing, environment, source revision/version, and timing data.
+
+Do not use placeholders, guessed values, or a failed run as the final run.
+Select Run 2 by modification time because convergence steps downward. Pair it
+with the newest Run 1 that is not newer than that Run 2; Run 1 and Run 2 may
+intentionally use different stream counts.
+
+## Collect benchmark data
+
+Use the helpers extracted on main, now hardened to propagate errors and read
+all sources rather than extrapolating source 0:
 
 ```bash
-mkdir -p models/$MODEL_NAME/reports
-python3 << 'EOF'
-import json, os
-
-def to_num(v, cast=float):
-    """Return cast(v) or None if v is empty/invalid — prevents malformed JSON."""
-    try:
-        return cast(v) if v and str(v).strip() else None
-    except (ValueError, TypeError):
-        return None
-
-data = {
-    "model_name":       os.environ.get("MODEL_NAME", ""),
-    "engine":           os.environ.get("ENGINE", ""),
-    "max_bs":           to_num(os.environ.get("MAX_BS"), int),
-    "trtexec": {
-        "bs1":   {
-            "qps":         to_num(os.environ.get("QPS_BS1")),
-            "gpu_mean_ms": to_num(os.environ.get("GPU_MEAN_BS1"))
-        },
-        "bsmax": {
-            "qps":         to_num(os.environ.get("QPS_BS_MAX")),
-            "gpu_mean_ms": to_num(os.environ.get("GPU_MEAN_BS_MAX")),
-            "p99_ms":      to_num(os.environ.get("GPU_P99_BS_MAX")),
-            "imgs_per_sec": to_num(os.environ.get("IMGS_PER_SEC"))
-        }
-    },
-    "peak_gpu_streams": to_num(os.environ.get("PEAK_GPU_STREAMS"), int),
-    "deepstream": {
-        "run1": {
-            "streams":        to_num(os.environ.get("N_RUN1"), int),
-            "total_fps":      to_num(os.environ.get("TOTAL_FPS_RUN1")),
-            "fps_per_stream": to_num(os.environ.get("FPS_RAW_RUN1"))
-        },
-        "run2": {
-            "streams":        to_num(os.environ.get("N_RUN2"), int),
-            "total_fps":      to_num(os.environ.get("TOTAL_FPS_RUN2")),
-            "fps_per_stream": to_num(os.environ.get("FPS_RAW_RUN2"))
-        }
-    }
-}
-out_path = os.path.join("models", os.environ.get("MODEL_NAME", "unknown"),
-                        "reports", "benchmark_data.json")
-with open(out_path, "w") as f:
-    json.dump(data, f, indent=2)
-print("benchmark_data.json written")
-EOF
-```
-> `<< 'EOF'` (quoted) prevents bash expansion — Python reads all variables via `os.environ.get()`, applies `to_num()` for safe numeric conversion (returns `None` instead of producing malformed JSON when a variable is unset), then uses `json.dump` to guarantee valid output.
-
-## 8c-1: Chart Generation (MANDATORY)
-
-All Python scripts in this step run inside the **shared venv** at `build/.venv_optimum` (which holds `matplotlib`, `numpy`, `markdown`, and `onnxruntime`). Activate it once before running any report scripts:
-
-```bash
-source build/.venv_optimum/bin/activate
+source .claude/skills/deepstream-import-vision-model/scripts/report/collect-report-vars.sh "$ARGUMENTS" || exit 4
+build/.venv_optimum/bin/python .claude/skills/deepstream-import-vision-model/scripts/report/write-benchmark-data.py
 ```
 
-Generate exactly **5 charts** using `matplotlib` in `models/{model_name}/reports/charts/`. Use the script at `.claude/skills/deepstream-import-vision-model/scripts/report/generate-benchmark-charts.py` or generate manually. Chart names are fixed — do not rename them.
+Require at least five complete `**PERF:` windows. Sum all sources' measured
+average FPS; test every source's minimum over the final five windows. A high
+average cannot conceal a slow source. Preserve failed calibration/retry logs
+and pair the newest converged Run 2 with the newest Run 1 not newer than it.
 
-| Filename | Content | Chart type |
-|----------|---------|------------|
-| `chart_trtexec_bs1_vs_bsmax.png` | Bar chart: QPS at BS=1 vs BS=MAX_BS (side by side) | Grouped bar |
-| `chart_trtexec_throughput.png` | GPU-only images/sec at MAX_BS, with PEAK_GPU_STREAMS annotation (dashed line at y=PEAK_GPU_STREAMS×30) | Single bar or line |
-| `chart_ds_streams_vs_fps.png` | Line chart: X=stream count (PEAK_GPU_STREAMS, RT_STREAMS), Y=FPS/stream. Red dashed line at 30fps threshold. | Line + markers |
-| `chart_trt_vs_ds.png` | Grouped bars: trtexec total imgs/s \| DS Run 1 total imgs/s \| DS Run 2 total imgs/s | Grouped bar |
-| `chart_efficiency.png` | DS efficiency %: 2 bars (Run 1 efficiency, Run 2 efficiency), dashed line at 100% | Bar |
+Compute GPU images/s as QPS × batch, GPU upper-bound streams as
+`floor(images/s / 30)`, and comparable-scope DS efficiency as measured DS
+aggregate FPS ÷ GPU images/s × 100. Reject non-finite or missing measurements.
+Bind the engine and logs with their real paths and hashes in the case evidence
+manifest. The JSON helper refuses to replace an existing output; start a fresh
+campaign or preserve the earlier report before writing a new one.
 
-Do NOT generate H2D/D2H transfer overhead charts.
+## Generate exactly five charts
 
-Chart style requirements:
-- Figure size: `figsize=(10, 6)`, DPI: 150
-- Title: two-line format via `two_line_title(model_name, subtitle)` — model name on line 1, chart description on line 2 (prevents long titles from clipping outside figure bounds)
-- Axis labels: 13px; Bar value labels: bold, 12-13px, positioned above bars
-- Grid: `axis='y', alpha=0.3`; `plt.tight_layout()` before save
-- Use `matplotlib.use('Agg')` (no display needed)
-
-## 8c-1b: Markdown Report (MANDATORY)
-
-Generate `benchmark_report.md` before the HTML. This file must contain all 12 sections filled with actual values — no placeholders allowed.
-
-First, gather system info not already captured in pre-flight:
+Run the canonical chart generator in the shared environment:
 
 ```bash
-GPU_INFO=$(nvidia-smi --query-gpu=name,memory.total --format=csv,noheader | head -1)
-GPU_NAME=$(echo "$GPU_INFO" | cut -d, -f1 | xargs)
-GPU_VRAM=$(echo "$GPU_INFO" | cut -d, -f2 | xargs)
-DRIVER_VER=$(nvidia-smi --query-gpu=driver_version --format=csv,noheader | head -1 | xargs)
-CUDA_VER=$(nvcc --version 2>/dev/null | grep -oP 'release \K[0-9.]+' || echo "N/A")
-TRT_VER=$(trtexec 2>&1 | head -3 | grep -oP 'TensorRT v\K[0-9.]+' || echo "N/A")
-DS_VER=$(deepstream-app --version-all 2>/dev/null | grep -oP 'DeepStreamSDK \K[0-9.]+' || echo "N/A")
-ENGINE_SIZE_MB=$(du -m "$ENGINE" | cut -f1)
-IMGS_PER_SEC_BS1=$(python3 -c "print(round(float('$QPS_BS1') * 1, 2))")
-GPU_P99_BS1=$(grep -oP 'GPU Compute Time:.*percentile\(99%\) = \K[0-9.]+' "$TRTEXEC_LOG_BS1" | tail -1)
-GPU_P99_BS1=${GPU_P99_BS1:-"N/A"}  # fallback if log too short to have P99
-EFFICIENCY_RUN1=$(python3 -c "print(round(float('$TOTAL_FPS_RUN1') / float('$IMGS_PER_SEC') * 100, 1))")
-EFFICIENCY_RUN2=$(python3 -c "print(round(float('$TOTAL_FPS_RUN2') / float('$IMGS_PER_SEC') * 100, 1))")
-RT_LABEL_RUN1=$(python3 -c "print('YES' if float('$FPS_RAW_RUN1') >= 30 else 'NO')")
-RT_LABEL_RUN2=$(python3 -c "print('YES' if float('$FPS_RAW_RUN2') >= 30 else 'NO')")
+build/.venv_optimum/bin/python \
+  .claude/skills/deepstream-import-vision-model/scripts/report/generate-benchmark-charts.py \
+  "models/$MODEL_NAME/reports/charts" \
+  "models/$MODEL_NAME/reports/benchmark_data.json"
 ```
 
-Then write the markdown (use unquoted `<< MDEOF` so bash expands variables):
+Require exactly these nonempty files:
+
+1. `chart_trtexec_bs1_vs_bsmax.png`
+2. `chart_trtexec_throughput.png`
+3. `chart_ds_streams_vs_fps.png`
+4. `chart_trt_vs_ds.png`
+5. `chart_efficiency.png`
+
+Do not generate host-transfer charts. Use 30 FPS as the real-time threshold.
+
+## Write the Markdown report
+
+Create `benchmark_report.md` with exactly these numbered sections:
+
+1. **Model Configuration** — source and immutable revision/version, architecture,
+   ONNX path/hash, tensors, labels, parser, cluster mode, precision, profile.
+2. **System Configuration** — GPU/VRAM, driver, CUDA, TensorRT, DeepStream, OS,
+   Python, PyTorch, ONNX, and pinned container image.
+3. **Preprocessing** — scale, offsets, color, layout, normalization, resolution.
+4. **Engine Build Summary** — conversion path, engine path/hash/size, precision,
+   MAX_BS, workspace, timing cache, and build log.
+5. **trtexec Results** — BS=1 and MAX_BS QPS, images/s, GPU mean/P99.
+6. **PEAK_GPU_STREAMS Derivation** — formula, inputs, result, and rebuild history.
+7. **Single-Stream Validation** — media, KITTI totals/rate/classes, rendered
+   artifact, encoder mode, and PASS/FAIL. Copy verified source/rendered frames
+   to `reports/assets/source_frame.*` and `rendered_frame.*`; embed both images
+   with relative Markdown image links in this section. Their bytes must match
+   the `case-evidence.json` frame paths.
+8. **DeepStream Benchmark Results** — Run 1 calibration and converged Run 2,
+   streams, batch, FPS/stream, total images/s, and real-time result.
+9. **trtexec vs DeepStream Comparison** — engine, batch/streams, total images/s,
+   FPS/stream, real-time result, and efficiency.
+10. **Efficiency Analysis** — both efficiency calculations and an evidence-based
+    GPU/pipeline bottleneck verdict.
+11. **Pipeline Timing** — Steps 1–8 and total wall time.
+12. **Reference Commands** — exact executed acquisition, export/build, trtexec,
+    parser, single-stream, KITTI, and benchmark commands; no placeholders.
+
+Embed all five charts with relative `charts/...png` paths. Report
+`nvv4l2h264enc MP4`, `theoraenc OGV (NVENC unavailable)`, or
+`skipped (no encoder available)` exactly. A skipped capture cannot pass the
+visual gate: report `visual_status=UNTESTED`,
+`pipeline_visual_result=UNTESTED`, and strict `overall_result=UNTESTED` or
+`BLOCKED` when rendered evidence is mandatory.
+
+## Generate HTML and PDF
+
+Use only the canonical converter and stylesheet:
 
 ```bash
-cat > models/$MODEL_NAME/reports/benchmark_report.md << MDEOF
-# ${MODEL_NAME} Benchmark Report
-
-Generated: $(date '+%Y-%m-%d %H:%M:%S')
-
----
-
-## 1. Model Configuration
-
-| Parameter | Value |
-|-----------|-------|
-| **Model Name** | ${MODEL_NAME} |
-| **Source** | (fill from Steps 1-3 log) |
-| **Architecture** | (fill from config.json model_type) |
-| **ONNX Source** | models/${MODEL_NAME}/model/ |
-| **Precision** | FP16 |
-| **Engine File** | $(basename $ENGINE) |
-| **Engine Profile** | min=1x3x640x640  opt=${MAX_BS}x3x640x640  max=${MAX_BS}x3x640x640 |
-| **Custom Parser** | libnvdsinfer_${MODEL_NAME}_parser.so |
-| **Cluster Mode** | (fill from nvinfer config) |
-
-## 2. System Configuration
-
-| Parameter | Value |
-|-----------|-------|
-| **GPU** | ${GPU_NAME} |
-| **VRAM** | ${GPU_VRAM} |
-| **Driver** | ${DRIVER_VER} |
-| **CUDA** | ${CUDA_VER} |
-| **TensorRT** | ${TRT_VER} |
-| **DeepStream** | ${DS_VER} |
-
-## 3. Preprocessing
-
-| Parameter | Value |
-|-----------|-------|
-| **net-scale-factor** | (fill from nvinfer config) |
-| **offsets** | (fill from nvinfer config) |
-| **Color Format** | (fill from nvinfer config) |
-| **Input Resolution** | 640×640 |
-
-## 4. Engine Build Summary
-
-| Parameter | Value |
-|-----------|-------|
-| **Source Format** | ONNX |
-| **Engine File** | $(basename $ENGINE) |
-| **Engine Size** | ${ENGINE_SIZE_MB} MB |
-| **FP16** | Enabled |
-| **MAX Batch Size** | ${MAX_BS} |
-| **Workspace** | 32768 MiB |
-| **Timing Cache** | models/${MODEL_NAME}/benchmarks/engines/timing.cache |
-
-## 5. trtexec Results
-
-| Metric | BS=1 | BS=${MAX_BS} |
-|--------|------|------|
-| **QPS (queries/s)** | ${QPS_BS1} | ${QPS_BS_MAX} |
-| **Images/s** | ${IMGS_PER_SEC_BS1} | ${IMGS_PER_SEC} |
-| **GPU Compute Mean (ms)** | ${GPU_MEAN_BS1} | ${GPU_MEAN_BS_MAX} |
-| **GPU Compute P99 (ms)** | ${GPU_P99_BS1} | ${GPU_P99_BS_MAX} |
-
-> Note: H2D/D2H latency excluded — trtexec run with \`--noDataTransfers\` to match DeepStream (GPU-to-GPU data flow, no host transfers).
-
-![trtexec BS=1 vs BS=${MAX_BS}](charts/chart_trtexec_bs1_vs_bsmax.png)
-
-## 6. PEAK_GPU_STREAMS Derivation
-
-\`\`\`
-PEAK_GPU_STREAMS = floor(imgs_per_sec_at_MAX_BS / 30)
-                = floor(${IMGS_PER_SEC} / 30)
-                = ${PEAK_GPU_STREAMS} streams
-\`\`\`
-
-![trtexec throughput at BS=${MAX_BS}](charts/chart_trtexec_throughput.png)
-
-## 7. Single-Stream Validation
-
-| Parameter | Value |
-|-----------|-------|
-| **Video Source** | sample_720p.mp4 (1280×720) |
-| **KITTI Output Dir** | models/${MODEL_NAME}/samples/kitti_output/ |
-| **Total Frames** | (fill from kitti dump) |
-| **Frames with Detections** | (fill from kitti dump) |
-| **Detection Rate** | (fill — must be ≥ 90%) |
-| **Visual Capture Mode** | (fill: `nvv4l2h264enc MP4` OR `theoraenc OGV (NVENC unavailable)` OR `skipped (no encoder available)`) |
-| **Visual Capture Artifact** | (fill: `samples/${MODEL_NAME}_output.mp4` for NVENC path; `samples/${MODEL_NAME}_output.ogv` for theoraenc fallback; `N/A` if skipped) |
-| **Validation Result** | PASS |
-
-> **Encoder reporting rule (MANDATORY):** The Visual Capture Mode field MUST be exactly one of:
-> - `nvv4l2h264enc MP4` — NVENC succeeded; artifact is `.mp4`
-> - `theoraenc OGV (NVENC unavailable)` — if `DS_SINGLE_STREAM_MODE=theoraenc-fallback`; use `.ogv` path from `DS_SINGLE_STREAM_OUTPUT=`
-> - `skipped (no encoder available)` — if `DS_SINGLE_STREAM_MODE=skipped`; no artifact file
-> `x264enc` and `openh264enc` are prohibited and must never appear in this field.
-
-## 8. DeepStream Benchmark Results
-
-### DS Run 1 — Calibration at PEAK_GPU_STREAMS (${N_RUN1} streams)
-
-| Metric | Value |
-|--------|-------|
-| **Streams** | ${N_RUN1} |
-| **Batch Size** | ${N_RUN1} |
-| **FPS / Stream** | ${FPS_RAW_RUN1} |
-| **Total Images/s** | ${TOTAL_FPS_RUN1} |
-| **Real-Time (≥30 fps/stream)** | ${RT_LABEL_RUN1} |
-
-### DS Run 2 — Validation at RT_STREAMS (${N_RUN2} streams)
-
-| Metric | Value |
-|--------|-------|
-| **Streams** | ${N_RUN2} |
-| **Batch Size** | ${N_RUN2} |
-| **FPS / Stream** | ${FPS_RAW_RUN2} |
-| **Total Images/s** | ${TOTAL_FPS_RUN2} |
-| **Real-Time (≥30 fps/stream)** | ${RT_LABEL_RUN2} |
-
-![DeepStream FPS/stream vs stream count](charts/chart_ds_streams_vs_fps.png)
-
-## 9. trtexec vs DeepStream Comparison
-
-| Metric | trtexec BS=${MAX_BS} | DS Run 1 (${N_RUN1} streams) | DS Run 2 (${N_RUN2} streams) |
-|--------|---------------------|------------------------------|------------------------------|
-| **Engine** | $(basename $ENGINE) | $(basename $ENGINE) | $(basename $ENGINE) |
-| **Batch / Streams** | BS=${MAX_BS} | ${N_RUN1} streams | ${N_RUN2} streams |
-| **Total imgs/s** | ${IMGS_PER_SEC} | ${TOTAL_FPS_RUN1} | ${TOTAL_FPS_RUN2} |
-| **FPS / stream** | $(python3 -c "print(round(float('$IMGS_PER_SEC')/${MAX_BS},1))") | ${FPS_RAW_RUN1} | ${FPS_RAW_RUN2} |
-| **Real-Time ≥30fps** | YES | ${RT_LABEL_RUN1} | ${RT_LABEL_RUN2} |
-| **DS Efficiency %** | — | ${EFFICIENCY_RUN1}% | ${EFFICIENCY_RUN2}% |
-
-![trtexec vs DeepStream total throughput](charts/chart_trt_vs_ds.png)
-
-## 10. Efficiency Analysis
-
-\`\`\`
-DS Efficiency = DS_total_imgs_per_sec / trtexec_imgs_per_sec × 100
-Run 1: ${TOTAL_FPS_RUN1} / ${IMGS_PER_SEC} × 100 = ${EFFICIENCY_RUN1}%
-Run 2: ${TOTAL_FPS_RUN2} / ${IMGS_PER_SEC} × 100 = ${EFFICIENCY_RUN2}%
-\`\`\`
-
-Efficiency gap breakdown: NVDEC decode overhead (~5-10%), GStreamer mux/queue overhead (~5-10%), CPU scheduler jitter (~2-5%).
-
-Interpretation notes for the numbers above:
-
-- **Well-balanced pipeline**: GPU=99-100%, NVDEC=99-100%, CPU=30-40% with no single core pinned. The ~50% DS/trtexec gap at this utilization is physically irreducible — it's the cost of real decode + memory transfers that trtexec skips with \`--noDataTransfers\`.
-- **DS efficiency above 100% is expected for ViT / transformer models**: the TRT compiler backend (opt-level 4) often produces bimodal GPU latency with two alternating execution paths (e.g., 1.5ms and 4.0ms modes for OWL-ViT). trtexec reports high variance and a conservative median; DeepStream's pipelined scheduling smooths the bimodal pattern and can achieve 100-110% of the trtexec baseline. This is not a measurement error.
-- **1080p tends to saturate NVDEC** while GPU has headroom. The pipeline is pinned to 720p (\`sample_720p.mp4\`) specifically to keep benchmarks comparable across models.
-
-![DeepStream efficiency vs trtexec baseline](charts/chart_efficiency.png)
-
-## 11. Pipeline Timing
-
-| Step | Description | Duration |
-|------|-------------|----------|
-| 1-3 | HF Model Acquire (download + inspect ONNX) | (fill from step timing) |
-| 4 | Engine build | (fill from step timing) |
-| 5 | trtexec BS=1 + BS=${MAX_BS} | (fill from step timing) |
-| 6 | Parser + config + visual validation + KITTI | (fill from step timing) |
-| 7 Run 1 | DS Calibration (${N_RUN1} streams) | (fill from step timing) |
-| 7 Run 2 | DS Validation (${N_RUN2} streams) | (fill from step timing) |
-| 8 | Report generation | (fill) |
-| **Total** | **End-to-end** | **(fill)** |
-
-## 12. Reference Commands
-
-### Engine Build
-\`\`\`bash
-trtexec --onnx=models/${MODEL_NAME}/model/${MODEL_FILENAME}.onnx \\
-  --saveEngine=models/${MODEL_NAME}/benchmarks/engines/${MODEL_FILENAME}_dynamic_b${MAX_BS}.engine \\
-  --minShapes=${INPUT_NAME}:1x3x${H}x${W} \\
-  --optShapes=${INPUT_NAME}:${MAX_BS}x3x${H}x${W} \\
-  --maxShapes=${INPUT_NAME}:${MAX_BS}x3x${H}x${W} \\
-  --fp16 --memPoolSize=workspace:32768M \\
-  --timingCacheFile=models/${MODEL_NAME}/benchmarks/engines/timing.cache
-\`\`\`
-
-### trtexec Benchmark
-\`\`\`bash
-# BS=1
-trtexec --loadEngine=$(basename $ENGINE) --shapes=${INPUT_NAME}:1x3x${H}x${W} \\
-  --noDataTransfers --warmUp=1000 --duration=10
-
-# BS=${MAX_BS}
-trtexec --loadEngine=$(basename $ENGINE) --shapes=${INPUT_NAME}:${MAX_BS}x3x${H}x${W} \\
-  --noDataTransfers --warmUp=1000 --duration=10
-\`\`\`
-
-### DeepStream Single-Stream Validation
-\`\`\`bash
-# See models/${MODEL_NAME}/scripts/ for full gst-launch-1.0 command
-\`\`\`
-
-### DeepStream Multi-Stream Benchmark
-\`\`\`bash
-# DS Run 1: ${N_RUN1} streams — see models/${MODEL_NAME}/scripts/
-# DS Run 2: ${N_RUN2} streams — see models/${MODEL_NAME}/scripts/
-\`\`\`
-
-### Custom Parser Build
-\`\`\`bash
-cd models/${MODEL_NAME}/parser && make DEEPSTREAM_DIR=/opt/nvidia/deepstream/deepstream CUDA_VER=13.2
-\`\`\`
-MDEOF
-echo "benchmark_report.md written: $(wc -l < models/$MODEL_NAME/reports/benchmark_report.md) lines"
-```
-
-> **Note on "fill" fields**: Fields marked `(fill from ...)` must be replaced with actual values from the step logs before finalizing. Search the step output logs for the exact values and substitute them. Do not leave any `(fill ...)` placeholder in the final report.
-
-## 8c-2 + 8c-3: HTML + PDF Report (MANDATORY — ONE COMMAND)
-
-Before generating HTML+PDF, verify all 5 charts exist:
-
-```bash
-CHART_DIR="models/$MODEL_NAME/reports/charts"
-MISSING_CHARTS=0
-for CHART in chart_trtexec_bs1_vs_bsmax.png chart_trtexec_throughput.png \
-             chart_ds_streams_vs_fps.png chart_trt_vs_ds.png chart_efficiency.png; do
-  [ ! -f "$CHART_DIR/$CHART" ] && { echo "ERROR: Missing $CHART_DIR/$CHART"; MISSING_CHARTS=$((MISSING_CHARTS+1)); }
-done
-[ "$MISSING_CHARTS" -gt 0 ] && { echo "ERROR: $MISSING_CHARTS chart(s) missing — re-run 8c-1"; exit 1; }
-echo "All 5 charts verified OK"
-```
-
-Then run the canonical pipeline script — this generates BOTH the HTML and PDF correctly:
-
-```bash
-# setup.sh apt-installs wkhtmltopdf INSIDE the container, so it does NOT survive the ephemeral
-# `--rm` bootstrap container. Every later `docker run --rm` starts without it and the PDF step
-# silently degrades to HTML-only. Ensure it is present in THIS invocation before rendering.
-command -v wkhtmltopdf >/dev/null 2>&1 || { apt-get update -qq && apt-get install -y -qq wkhtmltopdf; }
-
-python3 .claude/skills/deepstream-import-vision-model/scripts/report/md-to-html-pdf.py \
-  models/$MODEL_NAME/reports/benchmark_report.md \
+build/.venv_optimum/bin/python \
+  .claude/skills/deepstream-import-vision-model/scripts/report/md-to-html-pdf.py \
+  "models/$MODEL_NAME/reports/benchmark_report.md" \
   .claude/skills/deepstream-import-vision-model/scripts/report/report-style.css \
-  models/$MODEL_NAME/reports/ \
-  $MODEL_NAME
+  "models/$MODEL_NAME/reports/" "$MODEL_NAME"
 ```
 
-This script uses `report_style.css` (navy `#283593` headers, `#e8eaf6` rows, `#263238` code blocks), embeds charts as base64 data URIs, calls `wkhtmltopdf` internally, and outputs `benchmark_report.html` + `benchmark_report_{model_name}.pdf`.
+It must produce nonempty `benchmark_report.html` and
+`benchmark_report_${MODEL_NAME}.pdf`. Do not call pandoc, pdflatex,
+`wkhtmltopdf`, or a custom HTML generator directly.
 
-> **NAMING RULES:**
-> - HTML: always `benchmark_report.html` (no model name suffix)
-> - PDF: always `benchmark_report_{model_name}.pdf` (model name postfix required)
+## Final gate
 
-Verify PDF size is >500 KB (confirms charts embedded). Run all python commands with the shared venv active (`source build/.venv_optimum/bin/activate`); `markdown` and `matplotlib` are already installed there.
+Before PASS, verify all 12 headings, five chart files, HTML, PDF, evidence JSON,
+source/log hashes, KITTI rate >=90%, and rendered model output. A measured Run 2
+at or above 30 FPS per stream is required for **capacity** PASS, not for a
+separate functional PASS. Preserve failed logs and report the first causal
+failure as `FAIL`, `BLOCKED`, or `UNTESTED`; never downgrade it to a warning.
 
-## 8c-4: Final Report Checklist and Timing
+## Troubleshooting
 
-After generating markdown, HTML, and PDF, record step timing:
+- Missing fixed log: rerun the producing phase; do not search arbitrary logs.
+- Wrong Run 2: select newest by modification time, not highest stream count.
+- Missing chart: repair `benchmark_data.json`, then rerun the chart generator.
+- HTML/PDF failure: run the canonical converter and inspect its stderr.
+- Missing encoder: install the documented in-container GStreamer fallback or
+  run on an NVENC-capable system; visual status remains blocked until rerun.
 
-```bash
-STEP8_END=$(date +%s.%N)
-STEP8_DURATION=$(python3 -c "print(round($STEP8_END - $STEP8_START, 2))")   # bc is not in the container; python3 always is
-echo "[Step 8] Report generation completed in ${STEP8_DURATION}s"
-```
+## Final visual inspection
 
-Before marking the report as complete, verify ALL of these exist:
-- [ ] `reports/benchmark_report.md` — markdown source (12 sections)
-- [ ] `reports/benchmark_report.html` — styled HTML (charts/ alongside)
-- [ ] `reports/benchmark_report_{model_name}.pdf` — PDF >500 KB (confirms charts embedded)
-- [ ] `reports/benchmark_data.json` — raw benchmark numbers
-- [ ] `reports/charts/` — all 5 PNGs: `chart_trtexec_bs1_vs_bsmax.png`, `chart_trtexec_throughput.png`, `chart_ds_streams_vs_fps.png`, `chart_trt_vs_ds.png`, `chart_efficiency.png`
-- **Charts**: fixed filenames above — never rename or add model name suffix to charts
+The detection sections and chart names above retain the original benchmark
+contract. Inspect a rendered PDF page: file size alone does not prove the five
+charts and actual input/output frames are visible. Keep failed conversion logs
+and a non-PASS status. For non-detection cases, use task-specific structured
+metrics and rendered evidence only after their gates pass; do not copy detector
+capacity data into them. One-stream EOS leaves multi-stream capacity
+`UNTESTED`. Bi3D remains one application with two components, and stereo
+needs real calibrated paired inputs before any future readiness claim.

@@ -4904,6 +4904,19 @@ DAMAGE.
 
 lib-v4l
 ================================================================================
+Sources: src/3rdparty/v4l2/ (libv4l2 and libv4lconvert from v4l-utils)
+License: LGPL-2.1-or-later
+Upstream: https://linuxtv.org/downloads/v4l-utils/
+
+Bundled in libv4lconvert (libnvv4lconvert.so), with their own notices below:
+  src/3rdparty/v4l2/libv4lconvert/tinyjpeg.c, tinyjpeg.h, tinyjpeg-internal.h
+      TinyJPEG small JPEG decoder (software JPEG/MJPEG decode) - BSD-3-Clause
+  src/3rdparty/v4l2/libv4lconvert/jidctflt.c
+      Floating-point IDCT from the Independent JPEG Group (IJG) - IJG License
+These notices apply whenever the bundled decoder and IDCT are compiled in,
+including builds where the external libjpeg is disabled. They are in addition
+to, and do not replace, the LGPL-2.1-or-later terms for libv4lconvert.
+
                   GNU LESSER GENERAL PUBLIC LICENSE
                        Version 2.1, February 1999
 
@@ -5436,13 +5449,117 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
+
+--------------------------------------------------------------------------------
+TinyJPEG
+--------------------------------------------------------------------------------
+Small jpeg decoder library
+
+Copyright (c) 2006, Luc Saillard <luc@saillard.org>
+All rights reserved.
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+- Redistributions of source code must retain the above copyright notice,
+ this list of conditions and the following disclaimer.
+
+- Redistributions in binary form must reproduce the above copyright notice,
+ this list of conditions and the following disclaimer in the documentation
+ and/or other materials provided with the distribution.
+
+- Neither the name of the author nor the names of its contributors may be
+ used to endorse or promote products derived from this software without
+ specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+
+--------------------------------------------------------------------------------
+Independent JPEG Group (IDCT: jidctflt.c)
+--------------------------------------------------------------------------------
+
+Copyright (C) 1994-1998, Thomas G. Lane.
+This file is part of the Independent JPEG Group's software.
+
+The authors make NO WARRANTY or representation, either express or implied,
+with respect to this software, its quality, accuracy, merchantability, or
+fitness for a particular purpose.  This software is provided "AS IS", and you,
+its user, assume the entire risk as to its quality and accuracy.
+
+This software is copyright (C) 1991-1998, Thomas G. Lane.
+All Rights Reserved except as specified below.
+
+Permission is hereby granted to use, copy, modify, and distribute this
+software (or portions thereof) for any purpose, without fee, subject to these
+conditions:
+(1) If any part of the source code for this software is distributed, then this
+README file must be included, with this copyright and no-warranty notice
+unaltered; and any additions, deletions, or changes to the original files
+must be clearly indicated in accompanying documentation.
+(2) If only executable code is distributed, then the accompanying
+documentation must state that "this software is based in part on the work of
+the Independent JPEG Group".
+(3) Permission for use of this software is granted only if the user accepts
+full responsibility for any undesirable consequences; the authors accept
+NO LIABILITY for damages of any kind.
+
+These conditions apply to any software derived from or based on the IJG code,
+not just to the unmodified library.  If you use our work, you ought to
+acknowledge us.
+
+Permission is NOT granted for the use of any IJG author's name or company name
+in advertising or publicity relating to this software or products derived from
+it.  This software may be referred to only as "the Independent JPEG Group's
+software".
+
+We specifically permit and encourage the use of this software as the basis of
+commercial products, provided that all warranty or liability claims are
+assumed by the product vendor.
+
+This software is based in part on the work of the Independent JPEG Group.
 ================================================================================
 
 Gst-V4L2
 ================================================================================
+Sources: src/3rdparty/gst-v4l2/
+         LICENSE.gst-nvvideo4linux2
+License: LGPL-2.0 (GNU Library GPL v2) for the vendored GStreamer V4L2 plugin
+         (libgstnvvideo4linux2.so). NVIDIA-authored files in that tree
+         (Makefile, README.txt, nvhelper_dyn.*, wsl_utils.*) are Apache-2.0.
+Upstream: https://gitlab.freedesktop.org/gstreamer/gstreamer
+          (gst-plugins-good / sys/v4l2)
+          nalutils.[ch] and gstv4l2h26xparser.[ch] are derived from
+          gst-plugins-bad gst-libs/gst/codecparsers/ (nalutils.[ch],
+          gsth264parser.[ch], gsth265parser.[ch]), modified by NVIDIA, and
+          remain under LGPL-2.0-or-later.
+
 Copyright (C) 2014 Collabora Ltd.
     Author: Nicolas Dufresne <nicolas.dufresne@collabora.com>
-Copyright (c) 2018-2019, NVIDIA CORPORATION. All rights reserved.
+Copyright (c) 2018-2026, NVIDIA CORPORATION. All rights reserved.
+
+Copyright for the codecparsers-derived files (nalutils.[ch],
+gstv4l2h26xparser.[ch]):
+Copyright (C) 2011 Intel Corporation
+Copyright (C) 2011 Collabora Ltd.
+Copyright (C) 2011 Thibault Saunier <thibault.saunier@collabora.com>
+Copyright (C) 2010 Mark Nauwelaerts <mark.nauwelaerts@collabora.co.uk>
+Copyright (C) 2010 Collabora Multimedia
+Copyright (C) 2010 Nokia Corporation
+(C) 2005 Michal Benes <michal.benes@itonis.tv>
+(C) 2008 Wim Taymans <wim.taymans@gmail.com>
+Copyright (C) 2012-2013 Intel Corporation (H.265 parser)
+Copyright (C) 2013 Sreerenj Balachandran <sreerenj.balachandran@intel.com>
+    (H.265 parser)
+Copyright (c) 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Library General Public
@@ -5455,6 +5572,35 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 Library General Public License for more details.
 
 You should have received a copy of the GNU Library General Public
+License along with this library; if not, write to the
+Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
+Boston, MA 02110-1301, USA.
+================================================================================
+
+gst-nvunixfd
+================================================================================
+Sources: src/3rdparty/gst-nvunixfd/
+         LICENSE
+License: LGPL-2.1-only for the vendored GStreamer unixfd plugin
+         (libgstnvunixfd.so). NVIDIA-authored files in that tree
+         (Makefile, gstnvipcbufferpool.c, gstnvipcbufferpool.h) are Apache-2.0.
+Upstream: https://gitlab.freedesktop.org/gstreamer/gstreamer
+          (gst-plugins-bad / sys/unixfd)
+
+Copyright (C) 2023 Netflix Inc.
+  Author: Xavier Claessens <xavier.claessens@collabora.com>
+Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License, version 2.1, as published by the Free Software Foundation.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
 License along with this library; if not, write to the
 Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
 Boston, MA 02110-1301, USA.
@@ -9706,6 +9852,96 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 
 ================================================================================
+libjpeg (Independent JPEG Group) / libjpeg-turbo headers
+================================================================================
+Sources: src/utils/nvll_batch_jpeg_encode/tegra/{jpeglib.h,jmorecfg.h,jconfig.h}
+             IJG libjpeg 9.x headers with NVIDIA Tegra hardware-acceleration
+             additions (TEGRA_ACCELERATE).
+         src/utils/nvll_batch_jpeg_encode/oss/{jpeglib.h,jmorecfg.h,jconfig.h}
+             libjpeg-turbo 1.5.2 headers.
+         src/utils/nvll_batch_jpeg_encode/README.ijg (IJG README, unaltered)
+License: IJG License (SPDX: IJG), reproduced below. libjpeg-turbo's
+         modifications to the libjpeg API code are covered by the same license.
+Upstream: https://www.ijg.org/ and https://github.com/libjpeg-turbo/libjpeg-turbo
+
+Copyright (C) 1991-2016, Thomas G. Lane, Guido Vollbeding.
+Copyright (C) 2009-2011, 2013-2016, D. R. Commander (libjpeg-turbo).
+Copyright (C) 2015, Google, Inc. (libjpeg-turbo).
+Copyright (c) 2026, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+(NVIDIA modifications: Tegra acceleration additions; build configuration.)
+
+Per IJG condition (1), changes to the original files are indicated here and in
+the file headers. This software is based in part on the work of the
+Independent JPEG Group.
+
+
+In plain English:
+
+1. We don't promise that this software works.  (But if you find any bugs,
+   please let us know!)
+2. You can use this software for whatever you want.  You don't have to pay us.
+3. You may not pretend that you wrote this software.  If you use it in a
+   program, you must acknowledge somewhere in your documentation that
+   you've used the IJG code.
+
+In legalese:
+
+The authors make NO WARRANTY or representation, either express or implied,
+with respect to this software, its quality, accuracy, merchantability, or
+fitness for a particular purpose.  This software is provided "AS IS", and you,
+its user, assume the entire risk as to its quality and accuracy.
+
+This software is copyright (C) 1991-2016, Thomas G. Lane, Guido Vollbeding.
+All Rights Reserved except as specified below.
+
+Permission is hereby granted to use, copy, modify, and distribute this
+software (or portions thereof) for any purpose, without fee, subject to these
+conditions:
+(1) If any part of the source code for this software is distributed, then this
+README file must be included, with this copyright and no-warranty notice
+unaltered; and any additions, deletions, or changes to the original files
+must be clearly indicated in accompanying documentation.
+(2) If only executable code is distributed, then the accompanying
+documentation must state that "this software is based in part on the work of
+the Independent JPEG Group".
+(3) Permission for use of this software is granted only if the user accepts
+full responsibility for any undesirable consequences; the authors accept
+NO LIABILITY for damages of any kind.
+
+These conditions apply to any software derived from or based on the IJG code,
+not just to the unmodified library.  If you use our work, you ought to
+acknowledge us.
+
+Permission is NOT granted for the use of any IJG author's name or company name
+in advertising or publicity relating to this software or products derived from
+it.  This software may be referred to only as "the Independent JPEG Group's
+software".
+
+We specifically permit and encourage the use of this software as the basis of
+commercial products, provided that all warranty or liability claims are
+assumed by the product vendor.
+
+
+The Unix configuration script "configure" was produced with GNU Autoconf.
+It is copyright by the Free Software Foundation but is freely distributable.
+The same holds for its supporting scripts (config.guess, config.sub,
+ltmain.sh).  Another support script, install-sh, is copyright by X Consortium
+but is also freely distributable.
+
+The IJG distribution formerly included code to read and write GIF files.
+To avoid entanglement with the Unisys LZW patent (now expired), GIF reading
+support has been removed altogether, and the GIF writer has been simplified
+to produce "uncompressed GIFs".  This technique does not use the LZW
+algorithm; the resulting GIF files are larger than usual, but are readable
+by all standard GIF decoders.
+
+We are required to state that
+    "The Graphics Interchange Format(c) is the Copyright property of
+    CompuServe Incorporated.  GIF(sm) is a Service Mark property of
+    CompuServe Incorporated."
+================================================================================
+
+================================================================================
 DeepStream Dockers third-party software
 ================================================================================
 
@@ -9719,3 +9955,34 @@ Upstream: Debian rsyslog package (https://packages.debian.org/source/stable/rsys
 Author: Michael Biebl <biebl@debian.org>
 License: Distributed under the same terms as the Debian rsyslog package
          (no license header carried in the script itself)
+
+================================================================================
+src/3rdparty vendored sources (x86)
+================================================================================
+
+The following sources are vendored under src/3rdparty/ and built by
+build/build.sh on x86. Full license texts appear earlier in this file
+(GStreamer / Gst-V4L2 / gst-nvunixfd / lib-v4l) and in the per-tree LICENSE
+files.
+
+Component: gst-nvunixfd (libgstnvunixfd.so)
+Location:  src/3rdparty/gst-nvunixfd/
+License:   LGPL-2.1-only (see src/3rdparty/gst-nvunixfd/LICENSE);
+           NVIDIA-authored Makefile and gstnvipcbufferpool.* are Apache-2.0
+
+Component: gst-v4l2 (libgstnvvideo4linux2.so)
+Location:  src/3rdparty/gst-v4l2/
+License:   LGPL-2.0 (see src/3rdparty/gst-v4l2/LICENSE.gst-nvvideo4linux2);
+           NVIDIA-authored Makefile, README.txt, nvhelper_dyn.*, wsl_utils.*
+           are Apache-2.0
+           nalutils.[ch] and gstv4l2h26xparser.[ch] are derived from GStreamer
+           gst-plugins-bad codecparsers and are LGPL-2.0-or-later
+
+Component: v4l2 (libnvv4l2.so, libnvv4lconvert.so)
+Location:  src/3rdparty/v4l2/
+License:   LGPL-2.1-or-later (v4l-utils libv4l2 / libv4lconvert)
+           libv4lconvert bundles TinyJPEG (BSD-3-Clause, Copyright (c) 2006
+           Luc Saillard) and an IDCT from the Independent JPEG Group (IJG).
+           This software is based in part on the work of the Independent JPEG
+           Group. Notices: see the lib-v4l section above.
+

@@ -4,18 +4,42 @@
     {
       "id": "1",
       "name": "hf-onnx-to-trt-deepstream-full-pipeline",
-      "prompt": "Use deepstream-import-vision-model to run this model: https://huggingface.co/onnx-community/yolov8n",
-      "expected_output": "Skill detects ONNX files in the HuggingFace repo, downloads the fp16 ONNX variant, builds a dynamic TensorRT engine with trtexec, runs DeepStream single-stream validation, enforces the KITTI detection-rate gate, executes multi-stream benchmarks, and generates the HTML/PDF report.",
+      "prompt": "Import this YOLOv8n model into DeepStream and benchmark it: https://huggingface.co/onnx-community/yolov8n Perform a bounded dry run only: do not browse, download, launch Docker, start subprocesses, build models, or write files. Return only a JSON plan with model_choice, source, task, steps_to_run, and estimated_outputs.",
+      "expected_output": "A bounded dry-run JSON plan that selects the fp16 ONNX variant, plans dynamic TensorRT build, DeepStream validation, KITTI gating, multi-stream benchmarking, and HTML/PDF reporting without executing any step.",
       "files": [],
       "should_trigger": true,
       "expected_behavior": [
-        "Reads SKILL.md before acting",
-        "Lists the HuggingFace repo files and selects the fp16 ONNX variant without prompting the user",
-        "Builds a dynamic-batch TensorRT engine with trtexec",
-        "Runs single-stream DeepStream validation and enforces the KITTI detection-rate gate before benchmarking",
-        "Runs the multi-stream benchmark and generates the report in all three formats"
+        "Activates deepstream-import-vision-model and identifies the requested source and task without performing discovery",
+        "Returns the required five-field bounded dry-run JSON plan",
+        "Includes the case-specific acquisition, conversion, pipeline, validation, and evidence gates as inert planned steps",
+        "Performs no browsing, download, Docker, subprocess, model-build, or file-write side effect"
       ],
       "assertions": [
+        {
+          "text": "Agent emits the model_choice JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"model_choice\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the source JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"source\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the task JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"task\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the steps_to_run JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"steps_to_run\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the estimated_outputs JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"estimated_outputs\\\"\\s*:"
+        },
         {
           "text": "Skill acknowledges the HuggingFace URL",
           "type": "contains_pattern",
@@ -56,18 +80,42 @@
     {
       "id": "2",
       "name": "safetensors-torch-onnx-auto-export",
-      "prompt": "Use deepstream-import-vision-model to run this model: https://huggingface.co/IDEA-Research/grounding-dino-base",
-      "expected_output": "Skill finds only SafeTensors files in the HuggingFace repo, automatically exports to ONNX using torch.onnx.export via safetensors-to-onnx.sh in the shared build/.venv_optimum environment (dynamo backend with TorchScript fallback), then proceeds with TensorRT engine build and DeepStream integration.",
+      "prompt": "Import this YOLOS-tiny model into DeepStream: https://huggingface.co/hustvl/yolos-tiny Perform a bounded dry run only: do not browse, download, launch Docker, start subprocesses, build models, or write files. Return only a JSON plan with model_choice, source, task, steps_to_run, and estimated_outputs.",
+      "expected_output": "A bounded dry-run JSON plan that identifies the SafeTensors export route, shared environment, dynamic-batch ONNX checks, TensorRT build, and DeepStream integration without executing any step.",
       "files": [],
       "should_trigger": true,
       "expected_behavior": [
-        "Reads SKILL.md and the model-acquire reference before acting",
-        "Determines the repo has no ONNX files and only SafeTensors weights",
-        "Exports to ONNX with torch.onnx.export inside the shared build/.venv_optimum environment",
-        "Falls back from the dynamo backend to TorchScript if the export specializes the batch dimension",
-        "Proceeds to the TensorRT engine build and DeepStream pipeline after a successful export"
+        "Activates deepstream-import-vision-model and identifies the requested source and task without performing discovery",
+        "Returns the required five-field bounded dry-run JSON plan",
+        "Includes the case-specific acquisition, conversion, pipeline, validation, and evidence gates as inert planned steps",
+        "Performs no browsing, download, Docker, subprocess, model-build, or file-write side effect"
       ],
       "assertions": [
+        {
+          "text": "Agent emits the model_choice JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"model_choice\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the source JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"source\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the task JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"task\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the steps_to_run JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"steps_to_run\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the estimated_outputs JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"estimated_outputs\\\"\\s*:"
+        },
         {
           "text": "Skill detects no ONNX files and finds SafeTensors",
           "type": "contains_pattern",
@@ -108,16 +156,42 @@
     {
       "id": "3",
       "name": "bring-your-own-vision-model-routing",
-      "prompt": "Bring my own vision model and benchmark this model on DeepStream: https://huggingface.co/onnx-community/yolov8n",
-      "expected_output": "Skill recognises the bring-your-own-model request and runs the full deepstream-import-vision-model pipeline — same behaviour as invoking deepstream-import-vision-model directly.",
+      "prompt": "Bring my own vision model and benchmark this model on DeepStream: https://huggingface.co/onnx-community/yolov8n Perform a bounded dry run only: do not browse, download, launch Docker, start subprocesses, build models, or write files. Return only a JSON plan with model_choice, source, task, steps_to_run, and estimated_outputs.",
+      "expected_output": "A bounded dry-run JSON plan for the bring-your-own-model workflow, including routing, immutable acquisition, TensorRT, DeepStream, validation, and reporting without executing any step.",
       "files": [],
       "should_trigger": true,
       "expected_behavior": [
-        "Discovers and activates deepstream-import-vision-model without the user naming it",
-        "Proceeds directly into the import pipeline instead of asking which skill or agent to use",
-        "Runs the ONNX download, TensorRT engine build, DeepStream pipeline, and benchmark report"
+        "Activates deepstream-import-vision-model and identifies the requested source and task without performing discovery",
+        "Returns the required five-field bounded dry-run JSON plan",
+        "Includes the case-specific acquisition, conversion, pipeline, validation, and evidence gates as inert planned steps",
+        "Performs no browsing, download, Docker, subprocess, model-build, or file-write side effect"
       ],
       "assertions": [
+        {
+          "text": "Agent emits the model_choice JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"model_choice\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the source JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"source\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the task JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"task\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the steps_to_run JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"steps_to_run\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the estimated_outputs JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"estimated_outputs\\\"\\s*:"
+        },
         {
           "text": "Skill activates and acknowledges the canonical workflow",
           "type": "contains_pattern",
@@ -137,24 +211,53 @@
           "text": "Skill does not ask the user which agent or skill to use",
           "type": "not_contains_pattern",
           "pattern": "\\b(which|what)\\s+(agent|skill)\\b[^.?\\n]{0,80}\\?"
+        },
+        {
+          "text": "Skill does not leak credentials or secrets",
+          "type": "not_contains_pattern",
+          "pattern": "((Bearer|Authorization:)\\s+\\S{12,}|sk-[A-Za-z0-9]{16,}|(hf_|nvapi-|ghp_|glpat-)[A-Za-z0-9_-]{16,}|(api[_.-]?key|password|secret|token)\\s*[:=]\\s*['\"]?[A-Za-z0-9_+/=-]{12,})"
         }
       ]
     },
     {
       "id": "4",
       "name": "ngc-tao-model-builtin-parser",
-      "prompt": "Use deepstream-import-vision-model to run the trafficcamnet model from NVIDIA NGC",
-      "expected_output": "Skill downloads the NGC TAO model using the NGC CLI or authenticated HTTPS fallback, uses the built-in DeepStream TAO parser (libnvds_infercustomparser.so with parse-bbox-func-name) instead of compiling a custom parser, reads preprocessing params from nvdsinfer_config.yaml, and runs the full benchmark pipeline.",
+      "prompt": "Import and benchmark the versioned TrafficCamNet model from NVIDIA NGC in DeepStream. Perform a bounded dry run only: do not browse, download, launch Docker, start subprocesses, build models, or write files. Return only a JSON plan with model_choice, source, task, steps_to_run, and estimated_outputs.",
+      "expected_output": "A bounded dry-run JSON plan for versioned NGC acquisition, the built-in TAO parser, pinned preprocessing, DeepStream validation, benchmarking, and reporting without executing any step.",
       "files": [],
       "should_trigger": true,
       "expected_behavior": [
-        "Reads SKILL.md and the pipeline-run reference before acting",
-        "Downloads the versioned NGC model with the NGC CLI or the authenticated HTTPS fallback",
-        "Routes to the built-in TAO parser library rather than generating and compiling parser source",
-        "Reads preprocessing parameters from the model's nvdsinfer config instead of guessing them",
-        "Runs the DeepStream benchmark pipeline and generates the report"
+        "Activates deepstream-import-vision-model and identifies the requested source and task without performing discovery",
+        "Returns the required five-field bounded dry-run JSON plan",
+        "Includes the case-specific acquisition, conversion, pipeline, validation, and evidence gates as inert planned steps",
+        "Performs no browsing, download, Docker, subprocess, model-build, or file-write side effect"
       ],
       "assertions": [
+        {
+          "text": "Agent emits the model_choice JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"model_choice\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the source JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"source\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the task JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"task\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the steps_to_run JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"steps_to_run\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the estimated_outputs JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"estimated_outputs\\\"\\s*:"
+        },
         {
           "text": "Skill downloads from NGC using a supported client",
           "type": "contains_pattern",
@@ -190,17 +293,42 @@
     {
       "id": "5",
       "name": "custom-local-onnx-model",
-      "prompt": "Use deepstream-import-vision-model to run my local ONNX model at /workspace/models/my_detector.onnx",
-      "expected_output": "Skill skips the HuggingFace download steps entirely, inspects the local ONNX file directly with inspect-onnx.py, builds a TensorRT engine, and proceeds with DeepStream integration and benchmarking.",
+      "prompt": "Import my local ONNX detector at /workspace/models/my_detector.onnx into DeepStream. Perform a bounded dry run only: do not browse, download, launch Docker, start subprocesses, build models, or write files. Return only a JSON plan with model_choice, source, task, steps_to_run, and estimated_outputs.",
+      "expected_output": "A bounded dry-run JSON plan that keeps the local artifact unverified and schedules source, media, and oracle preflight before any config, engine-build, or DeepStream execution.",
       "files": [],
       "should_trigger": true,
       "expected_behavior": [
-        "Recognises the input as an on-disk ONNX path and skips every download step",
-        "Inspects the local ONNX inputs, outputs, and opset before building",
-        "Builds the TensorRT engine directly from the local file",
-        "Runs the DeepStream pipeline and benchmark against the resulting engine"
+        "Activates deepstream-import-vision-model and identifies the requested source and task without performing discovery",
+        "Returns the required five-field bounded dry-run JSON plan",
+        "Includes the case-specific acquisition, conversion, pipeline, validation, and evidence gates as inert planned steps",
+        "Performs no browsing, download, Docker, subprocess, model-build, or file-write side effect"
       ],
       "assertions": [
+        {
+          "text": "Agent emits the model_choice JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"model_choice\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the source JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"source\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the task JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"task\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the steps_to_run JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"steps_to_run\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the estimated_outputs JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"estimated_outputs\\\"\\s*:"
+        },
         {
           "text": "Skill acknowledges the local ONNX path",
           "type": "contains_pattern",
@@ -212,36 +340,61 @@
           "pattern": "(^|\\n)\\s*(hf_hub_download\\(|huggingface-cli\\s+download|hf\\s+download\\b)"
         },
         {
-          "text": "Skill inspects the ONNX model",
-          "type": "contains_pattern",
-          "pattern": "(inspect-onnx|inspect|input.*shape|output.*shape|opset)"
+          "text": "Skill does not leak credentials or secrets",
+          "type": "not_contains_pattern",
+          "pattern": "((Bearer|Authorization:)\\s+\\S{12,}|sk-[A-Za-z0-9]{16,}|(hf_|nvapi-|ghp_|glpat-)[A-Za-z0-9_-]{16,}|(api[_.-]?key|password|secret|token)\\s*[:=]\\s*['\"]?[A-Za-z0-9_+/=-]{12,})"
         },
         {
-          "text": "Skill builds TensorRT engine from local model",
+          "text": "Skill keeps the local source unverified during the dry run",
           "type": "contains_pattern",
-          "pattern": "(trtexec|TensorRT engine)"
+          "pattern": "(unverified|not inspected|verification pending)"
         },
         {
-          "text": "Skill runs DeepStream pipeline",
+          "text": "Skill plans source, media, and oracle preflight",
           "type": "contains_pattern",
-          "pattern": "(deepstream-app|gst-launch|nvinfer)"
+          "pattern": "(preflight|verify[^\\n]{0,120}(source|artifact|media|oracle))"
         }
       ]
     },
     {
       "id": "6",
       "name": "multi-variant-onnx-fp16-auto-select",
-      "prompt": "Use deepstream-import-vision-model to run this model: https://huggingface.co/onnx-community/owlvit-base-patch32",
-      "expected_output": "Skill finds multiple ONNX variants (fp16, fp32, quantized) in the HuggingFace repo, automatically selects the fp16 variant without prompting the user, and applies OWL-ViT's exact preprocessing constants (net-scale-factor=0.01459, cluster-mode=2) in the nvinfer config.",
+      "prompt": "Import the best supported ONNX variant of OWL-ViT into DeepStream: https://huggingface.co/onnx-community/owlvit-base-patch32 Perform a bounded dry run only: do not browse, download, launch Docker, start subprocesses, build models, or write files. Return only a JSON plan with model_choice, source, task, steps_to_run, and estimated_outputs.",
+      "expected_output": "A bounded dry-run JSON plan that selects the fp16 OWL-ViT variant and records the exact preprocessing and nvinfer requirements without browsing or executing any step.",
       "files": [],
       "should_trigger": true,
       "expected_behavior": [
-        "Lists the repo and identifies more than one ONNX variant",
-        "Applies the deterministic fp16-first selection rule silently, without asking the user to choose",
-        "Supplies OWL-ViT's exact nvinfer preprocessing constants rather than generic defaults",
-        "Proceeds to the TensorRT engine build with the selected variant"
+        "Activates deepstream-import-vision-model and identifies the requested source and task without performing discovery",
+        "Returns the required five-field bounded dry-run JSON plan",
+        "Includes the case-specific acquisition, conversion, pipeline, validation, and evidence gates as inert planned steps",
+        "Performs no browsing, download, Docker, subprocess, model-build, or file-write side effect"
       ],
       "assertions": [
+        {
+          "text": "Agent emits the model_choice JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"model_choice\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the source JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"source\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the task JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"task\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the steps_to_run JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"steps_to_run\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the estimated_outputs JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"estimated_outputs\\\"\\s*:"
+        },
         {
           "text": "Skill detects multiple ONNX variants",
           "type": "contains_pattern",
@@ -271,27 +424,33 @@
           "text": "Skill proceeds with TensorRT engine build",
           "type": "contains_pattern",
           "pattern": "(trtexec|TensorRT engine)"
+        },
+        {
+          "text": "Skill does not leak credentials or secrets",
+          "type": "not_contains_pattern",
+          "pattern": "((Bearer|Authorization:)\\s+\\S{12,}|sk-[A-Za-z0-9]{16,}|(hf_|nvapi-|ghp_|glpat-)[A-Za-z0-9_-]{16,}|(api[_.-]?key|password|secret|token)\\s*[:=]\\s*['\"]?[A-Za-z0-9_+/=-]{12,})"
         }
       ]
     },
     {
       "id": "7",
       "name": "reject-unsupported-non-vision-model",
-      "prompt": "Use deepstream-import-vision-model to run this model: https://huggingface.co/openai-community/gpt2",
-      "expected_output": "Skill identifies that gpt2 is a language model, not an object-detection vision model, cites the config.json architecture gate (ForCausalLM), and rejects the request. Skill does not download weights, build a TensorRT engine, or start a DeepStream pipeline.",
+      "expected_skill": null,
+      "prompt": "Can this GPT-2 model be imported into a DeepStream vision pipeline? https://huggingface.co/openai-community/gpt2",
+      "expected_output": "Skill identifies GPT-2 as a causal language model outside the five supported visual categories, cites the config.json architecture gate, and performs no download, conversion, engine build, or DeepStream run.",
       "files": [],
       "should_trigger": false,
       "expected_behavior": [
         "Inspects or reasons about the model's config.json architecture before doing any work",
         "Identifies the architecture as a causal language model and therefore out of scope",
-        "Explains that the skill supports object-detection vision models only",
+        "Explains that the skill supports detection, classification, semantic segmentation, 2D pose, and monocular depth",
         "Does not execute any skill script, download weights, build an engine, or start a pipeline"
       ],
       "assertions": [
         {
-          "text": "Skill identifies the model is not an object-detection vision model",
+          "text": "Skill identifies the model is outside the supported visual categories",
           "type": "contains_pattern",
-          "pattern": "(language model|NLP|not a vision|unsupported|not compatible|text model|object detection only)"
+          "pattern": "(language model|NLP|not a vision|unsupported|not compatible|text model|outside.*visual)"
         },
         {
           "text": "Skill cites the config.json architecture gate",
@@ -313,17 +472,42 @@
     {
       "id": "disco-hf-onnx-no-skill-name",
       "name": "disco-hf-onnx-no-skill-name",
-      "prompt": "I have a YOLOv8 ONNX detector on HuggingFace — get it running on DeepStream and give me a throughput benchmark.",
-      "expected_output": "Without being told which skill to use, the agent discovers deepstream-import-vision-model from the intent, then runs the full ONNX download → TensorRT engine → DeepStream pipeline → benchmark report path.",
+      "prompt": "I have a YOLOv8 ONNX detector on HuggingFace — get it running on DeepStream and give me a throughput benchmark. Perform a bounded dry run only: do not browse, download, launch Docker, start subprocesses, build models, or write files. Return only a JSON plan with model_choice, source, task, steps_to_run, and estimated_outputs.",
+      "expected_output": "A bounded dry-run JSON plan that discovers the skill from intent and describes the ONNX acquisition, TensorRT, DeepStream, benchmark, and report path without executing it.",
       "files": [],
       "should_trigger": true,
       "expected_behavior": [
-        "Discovers deepstream-import-vision-model from the intent without the user naming it",
-        "Reads SKILL.md before acting",
-        "Runs the ONNX acquisition, TensorRT engine build, and DeepStream benchmark end to end",
-        "Produces the benchmark report"
+        "Activates deepstream-import-vision-model and identifies the requested source and task without performing discovery",
+        "Returns the required five-field bounded dry-run JSON plan",
+        "Includes the case-specific acquisition, conversion, pipeline, validation, and evidence gates as inert planned steps",
+        "Performs no browsing, download, Docker, subprocess, model-build, or file-write side effect"
       ],
       "assertions": [
+        {
+          "text": "Agent emits the model_choice JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"model_choice\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the source JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"source\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the task JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"task\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the steps_to_run JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"steps_to_run\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the estimated_outputs JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"estimated_outputs\\\"\\s*:"
+        },
         {
           "text": "Agent routes to the DeepStream vision-model import workflow",
           "type": "contains_pattern",
@@ -349,17 +533,42 @@
     {
       "id": "disco-ngc-trafficcamnet-no-skill-name",
       "name": "disco-ngc-trafficcamnet-no-skill-name",
-      "prompt": "Benchmark the NGC TrafficCamNet model in a DeepStream multi-stream pipeline.",
-      "expected_output": "Without being told which skill to use, the agent discovers deepstream-import-vision-model, downloads the versioned NGC TAO model, routes to the built-in TAO parser (libnvds_infercustomparser.so), and runs the multi-stream benchmark.",
+      "prompt": "Benchmark the NGC TrafficCamNet model in a DeepStream multi-stream pipeline. Perform a bounded dry run only: do not browse, download, launch Docker, start subprocesses, build models, or write files. Return only a JSON plan with model_choice, source, task, steps_to_run, and estimated_outputs.",
+      "expected_output": "A bounded dry-run JSON plan that discovers the skill from intent and describes versioned NGC acquisition, built-in TAO parsing, and multi-stream benchmarking without executing it.",
       "files": [],
       "should_trigger": true,
       "expected_behavior": [
-        "Discovers deepstream-import-vision-model from the intent without the user naming it",
-        "Downloads the versioned NGC TAO model",
-        "Routes to the built-in TAO parser rather than compiling parser source",
-        "Runs the multi-stream DeepStream benchmark and reports throughput"
+        "Activates deepstream-import-vision-model and identifies the requested source and task without performing discovery",
+        "Returns the required five-field bounded dry-run JSON plan",
+        "Includes the case-specific acquisition, conversion, pipeline, validation, and evidence gates as inert planned steps",
+        "Performs no browsing, download, Docker, subprocess, model-build, or file-write side effect"
       ],
       "assertions": [
+        {
+          "text": "Agent emits the model_choice JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"model_choice\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the source JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"source\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the task JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"task\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the steps_to_run JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"steps_to_run\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the estimated_outputs JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"estimated_outputs\\\"\\s*:"
+        },
         {
           "text": "Agent routes to the DeepStream vision-model import workflow",
           "type": "contains_pattern",
@@ -385,17 +594,42 @@
     {
       "id": "disco-safetensors-export-no-skill-name",
       "name": "disco-safetensors-export-no-skill-name",
-      "prompt": "Export this SafeTensors detection model to ONNX and benchmark it on DeepStream: https://huggingface.co/IDEA-Research/grounding-dino-base",
-      "expected_output": "Without being told which skill to use, the agent discovers deepstream-import-vision-model and commits to the shared build/.venv_optimum torch.onnx.export path rather than hunting for a community ONNX conversion.",
+      "prompt": "Export this SafeTensors detection model to ONNX and benchmark it on DeepStream: https://huggingface.co/hustvl/yolos-tiny Perform a bounded dry run only: do not browse, download, launch Docker, start subprocesses, build models, or write files. Return only a JSON plan with model_choice, source, task, steps_to_run, and estimated_outputs.",
+      "expected_output": "A bounded dry-run JSON plan that discovers the skill from intent and describes the shared-environment torch.onnx.export route without executing it.",
       "files": [],
       "should_trigger": true,
       "expected_behavior": [
-        "Discovers deepstream-import-vision-model from the intent without the user naming it",
-        "Commits to exporting the weights itself with torch.onnx.export in the shared environment",
-        "Does not defer the export by suggesting the user find a pre-converted community ONNX",
-        "Proceeds to the TensorRT engine build and DeepStream benchmark"
+        "Activates deepstream-import-vision-model and identifies the requested source and task without performing discovery",
+        "Returns the required five-field bounded dry-run JSON plan",
+        "Includes the case-specific acquisition, conversion, pipeline, validation, and evidence gates as inert planned steps",
+        "Performs no browsing, download, Docker, subprocess, model-build, or file-write side effect"
       ],
       "assertions": [
+        {
+          "text": "Agent emits the model_choice JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"model_choice\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the source JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"source\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the task JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"task\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the steps_to_run JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"steps_to_run\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the estimated_outputs JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"estimated_outputs\\\"\\s*:"
+        },
         {
           "text": "Agent commits to torch.onnx.export",
           "type": "contains_pattern",
@@ -419,27 +653,58 @@
       ]
     },
     {
-      "id": "reject-classification-resnet50",
-      "name": "reject-classification-resnet50",
-      "prompt": "Import a ResNet-50 image classifier into DeepStream.",
-      "expected_output": "Skill identifies image classification as out of scope (object detection only, Critical Rule #9) and declines before downloading weights or building an engine. Tests the architecture boundary rather than the modality boundary.",
+      "id": "import-classification-resnet50",
+      "name": "import-classification-resnet50",
+      "prompt": "Import a ResNet-50 image classifier into DeepStream. Perform a bounded dry run only: do not browse, download, launch Docker, start subprocesses, build models, or write files. Return only a JSON plan with model_choice, source, task, steps_to_run, and estimated_outputs.",
+      "expected_output": "A bounded dry-run JSON plan that routes image classification and names its artifact, contract, parity, DeepStream, structured-output, and label-overlay gates without executing them.",
       "files": [],
-      "should_trigger": false,
+      "should_trigger": true,
       "expected_behavior": [
-        "Identifies the model as an image classifier, not an object detector",
-        "States that the skill supports object-detection models only",
-        "Does not execute any skill script, download weights, build an engine, or start a pipeline"
+        "Activates deepstream-import-vision-model and identifies the requested source and task without performing discovery",
+        "Returns the required five-field bounded dry-run JSON plan",
+        "Includes the case-specific acquisition, conversion, pipeline, validation, and evidence gates as inert planned steps",
+        "Performs no browsing, download, Docker, subprocess, model-build, or file-write side effect"
       ],
       "assertions": [
         {
-          "text": "Agent identifies classification as out of scope",
+          "text": "Agent emits the model_choice JSON field",
           "type": "contains_pattern",
-          "pattern": "(classification|classifier|not.*object detection|object detection only|out of scope|unsupported)"
+          "pattern": "\\\"model_choice\\\"\\s*:"
         },
         {
-          "text": "Agent does not execute an engine build or DeepStream run",
-          "type": "not_contains_pattern",
-          "pattern": "(^|\\n)\\s*(bash\\s+)?(\\./)?((scripts/)?(engine/benchmark-trtexec\\.sh|deepstream/[a-z-]+\\.sh)|trtexec\\s+--|deepstream-app\\s+-c|gst-launch-1\\.0\\s)"
+          "text": "Agent emits the source JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"source\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the task JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"task\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the steps_to_run JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"steps_to_run\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the estimated_outputs JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"estimated_outputs\\\"\\s*:"
+        },
+        {
+          "text": "Agent routes image classification",
+          "type": "contains_pattern",
+          "pattern": "(image[- ]classification|classifier|ResNet)"
+        },
+        {
+          "text": "Agent uses the unified router",
+          "type": "contains_pattern",
+          "pattern": "(route_task\\.py|unified.*route|task router)"
+        },
+        {
+          "text": "Agent requires model-derived classifier visual evidence",
+          "type": "contains_pattern",
+          "pattern": "(label|class)[\\s\\S]{0,160}(overlay|render|visual)"
         },
         {
           "text": "Agent does not leak credentials or secrets",
@@ -449,33 +714,192 @@
       ]
     },
     {
-      "id": "reject-segmentation-unet",
-      "name": "reject-segmentation-unet",
-      "prompt": "Set up a DeepStream segmentation pipeline for my UNet model.",
-      "expected_output": "Skill identifies semantic segmentation as out of scope — vision, but not object detection — and declines the import workflow. Tests the closest out-of-scope neighbour.",
+      "id": "import-semantic-segmentation-unet",
+      "name": "import-semantic-segmentation-unet",
+      "prompt": "Set up a DeepStream segmentation pipeline for my UNet model. Perform a bounded dry run only: do not browse, download, launch Docker, start subprocesses, build models, or write files. Return only a JSON plan with model_choice, source, task, steps_to_run, and estimated_outputs.",
+      "expected_output": "A bounded dry-run JSON plan that routes semantic segmentation and names its mask contract, adapter-development path, semantic oracle, DeepStream, and mask-overlay gates without executing them.",
       "files": [],
-      "should_trigger": false,
+      "should_trigger": true,
       "expected_behavior": [
-        "Identifies the model as a segmentation network, not an object detector",
-        "States that the skill supports object-detection models only",
-        "Does not execute any skill script, build an engine, or start a pipeline"
+        "Activates deepstream-import-vision-model and identifies the requested source and task without performing discovery",
+        "Returns the required five-field bounded dry-run JSON plan",
+        "Includes the case-specific acquisition, conversion, pipeline, validation, and evidence gates as inert planned steps",
+        "Performs no browsing, download, Docker, subprocess, model-build, or file-write side effect"
       ],
       "assertions": [
         {
-          "text": "Agent identifies segmentation as out of scope",
+          "text": "Agent emits the model_choice JSON field",
           "type": "contains_pattern",
-          "pattern": "(segmentation|not.*object detection|object detection only|out of scope|unsupported)"
+          "pattern": "\\\"model_choice\\\"\\s*:"
         },
         {
-          "text": "Agent does not execute an engine build or DeepStream run",
+          "text": "Agent emits the source JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"source\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the task JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"task\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the steps_to_run JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"steps_to_run\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the estimated_outputs JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"estimated_outputs\\\"\\s*:"
+        },
+        {
+          "text": "Agent routes semantic segmentation",
+          "type": "contains_pattern",
+          "pattern": "(semantic[- ]segmentation|segmentation|UNet)"
+        },
+        {
+          "text": "Agent requires a segmentation adapter and mask visual",
+          "type": "contains_pattern",
+          "pattern": "(adapter|decoder)[\\s\\S]{0,200}(mask|overlay|render)"
+        },
+        {
+          "text": "Agent names the rendered-output gate",
+          "type": "contains_pattern",
+          "pattern": "(visual|rendered)[\\s_-]*(PASS|validation|gate|evidence)"
+        },
+        {
+          "text": "Agent does not leak credentials or secrets",
           "type": "not_contains_pattern",
-          "pattern": "(^|\\n)\\s*(bash\\s+)?(\\./)?((scripts/)?(engine/benchmark-trtexec\\.sh|deepstream/[a-z-]+\\.sh)|trtexec\\s+--|deepstream-app\\s+-c|gst-launch-1\\.0\\s)"
+          "pattern": "((Bearer|Authorization:)\\s+\\S{12,}|sk-[A-Za-z0-9]{16,}|(hf_|nvapi-|ghp_|glpat-)[A-Za-z0-9_-]{16,}|(api[_.-]?key|password|secret|token)\\s*[:=]\\s*['\"]?[A-Za-z0-9_+/=-]{12,})"
+        }
+      ]
+    },
+    {
+      "id": "import-2d-pose-bodypose",
+      "name": "import-2d-pose-bodypose",
+      "prompt": "Build and visually validate a DeepStream BodyPose2D pipeline on a people video. Perform a bounded dry run only: do not browse, download, launch Docker, start subprocesses, build models, or write files. Return only a JSON plan with model_choice, source, task, steps_to_run, and estimated_outputs.",
+      "expected_output": "A bounded dry-run JSON plan that routes 2D pose and preserves any declared person-detector/ROI stage, keypoint contract, parity, DeepStream, and skeleton-overlay gates without executing them.",
+      "files": [],
+      "should_trigger": true,
+      "expected_behavior": [
+        "Activates deepstream-import-vision-model and identifies the requested source and task without performing discovery",
+        "Returns the required five-field bounded dry-run JSON plan",
+        "Includes the case-specific acquisition, conversion, pipeline, validation, and evidence gates as inert planned steps",
+        "Performs no browsing, download, Docker, subprocess, model-build, or file-write side effect"
+      ],
+      "assertions": [
+        {
+          "text": "Agent emits the model_choice JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"model_choice\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the source JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"source\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the task JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"task\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the steps_to_run JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"steps_to_run\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the estimated_outputs JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"estimated_outputs\\\"\\s*:"
+        },
+        {
+          "text": "Agent routes the 2D pose category",
+          "type": "contains_pattern",
+          "pattern": "(2D pose|2d-pose|keypoint|BodyPose)"
+        },
+        {
+          "text": "Agent preserves the cascade when required",
+          "type": "contains_pattern",
+          "pattern": "(person[- ]detect|upstream detector|ROI|full[- ]frame contract)"
+        },
+        {
+          "text": "Agent requires pose visual evidence",
+          "type": "contains_pattern",
+          "pattern": "(keypoint|skeleton)[\\s\\S]{0,160}(overlay|render|visual)"
+        },
+        {
+          "text": "Agent does not leak credentials or secrets",
+          "type": "not_contains_pattern",
+          "pattern": "((Bearer|Authorization:)\\s+\\S{12,}|sk-[A-Za-z0-9]{16,}|(hf_|nvapi-|ghp_|glpat-)[A-Za-z0-9_-]{16,}|(api[_.-]?key|password|secret|token)\\s*[:=]\\s*['\"]?[A-Za-z0-9_+/=-]{12,})"
+        }
+      ]
+    },
+    {
+      "id": "import-monocular-depth-midas",
+      "name": "import-monocular-depth-midas",
+      "prompt": "Import my MiDaS-style monocular depth ONNX model and prove the DeepStream visual output. Perform a bounded dry run only: do not browse, download, launch Docker, start subprocesses, build models, or write files. Return only a JSON plan with model_choice, source, task, steps_to_run, and estimated_outputs.",
+      "expected_output": "A bounded dry-run JSON plan that routes monocular depth and names its units, scale, alignment, parity, DeepStream, structured-depth, and heatmap gates without executing them.",
+      "files": [],
+      "should_trigger": true,
+      "expected_behavior": [
+        "Activates deepstream-import-vision-model and identifies the requested source and task without performing discovery",
+        "Returns the required five-field bounded dry-run JSON plan",
+        "Includes the case-specific acquisition, conversion, pipeline, validation, and evidence gates as inert planned steps",
+        "Performs no browsing, download, Docker, subprocess, model-build, or file-write side effect"
+      ],
+      "assertions": [
+        {
+          "text": "Agent emits the model_choice JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"model_choice\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the source JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"source\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the task JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"task\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the steps_to_run JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"steps_to_run\\\"\\s*:"
+        },
+        {
+          "text": "Agent emits the estimated_outputs JSON field",
+          "type": "contains_pattern",
+          "pattern": "\\\"estimated_outputs\\\"\\s*:"
+        },
+        {
+          "text": "Agent routes monocular depth",
+          "type": "contains_pattern",
+          "pattern": "(monocular[- ]depth|depth|MiDaS)"
+        },
+        {
+          "text": "Agent requires a depth contract",
+          "type": "contains_pattern",
+          "pattern": "(scale|units|alignment|invalid mask)"
+        },
+        {
+          "text": "Agent requires depth visual evidence",
+          "type": "contains_pattern",
+          "pattern": "(depth|heatmap)[\\s\\S]{0,160}(overlay|render|visual|evidence)"
+        },
+        {
+          "text": "Agent does not leak credentials or secrets",
+          "type": "not_contains_pattern",
+          "pattern": "((Bearer|Authorization:)\\s+\\S{12,}|sk-[A-Za-z0-9]{16,}|(hf_|nvapi-|ghp_|glpat-)[A-Za-z0-9_-]{16,}|(api[_.-]?key|password|secret|token)\\s*[:=]\\s*['\"]?[A-Za-z0-9_+/=-]{12,})"
         }
       ]
     },
     {
       "id": "non-activation-general-install-question",
       "name": "non-activation-general-install-question",
+      "expected_skill": null,
       "prompt": "How do I install the DeepStream SDK on Ubuntu?",
       "expected_output": "A general setup question. The agent answers conversationally and does not activate the model-import pipeline, download a model, or build an engine.",
       "files": [],
@@ -495,6 +919,135 @@
           "text": "Agent does not run the import pipeline",
           "type": "not_contains_pattern",
           "pattern": "(^|\\n)\\s*(bash\\s+)?(\\./)?((scripts/)?(model/[a-z-]+\\.sh|engine/benchmark-trtexec\\.sh|deepstream/[a-z-]+\\.sh)|trtexec\\s+--)"
+        },
+        {
+          "text": "Agent does not leak credentials or secrets",
+          "type": "not_contains_pattern",
+          "pattern": "((Bearer|Authorization:)\\s+\\S{12,}|sk-[A-Za-z0-9]{16,}|(hf_|nvapi-|ghp_|glpat-)[A-Za-z0-9_-]{16,}|(api[_.-]?key|password|secret|token)\\s*[:=]\\s*['\"]?[A-Za-z0-9_+/=-]{12,})"
+        }
+      ]
+    },
+    {
+      "id": "non-activation-audio-classification",
+      "name": "non-activation-audio-classification",
+      "expected_skill": null,
+      "prompt": "Import this audio event classifier into a DeepStream audio pipeline.",
+      "expected_output": "Audio classification is outside the five visual categories. The skill declines or reports the category as unsupported without downloading, converting, or executing the model.",
+      "files": [],
+      "should_trigger": false,
+      "expected_behavior": [
+        "Identifies audio classification as outside the visual-model scope",
+        "Lists or refers to the supported visual categories",
+        "Does not download a model, build an engine, or start a pipeline"
+      ],
+      "assertions": [
+        {
+          "text": "Agent identifies the unsupported audio category",
+          "type": "contains_pattern",
+          "pattern": "((audio)[\\s\\S]{0,160}(unsupported|outside|not supported|scope)|(unsupported|outside|not supported|scope)[\\s\\S]{0,160}(audio))"
+        },
+        {
+          "text": "Agent does not run conversion or inference commands",
+          "type": "not_contains_pattern",
+          "pattern": "(^|\\n)\\s*(trtexec\\s+--|deepstream-app\\s+-c|gst-launch-1\\.0\\s|python3\\s+[^\\n]*(emit_commands|generate_configs|validate_artifact)\\.py)"
+        },
+        {
+          "text": "Agent does not leak credentials or secrets",
+          "type": "not_contains_pattern",
+          "pattern": "((Bearer|Authorization:)\\s+\\S{12,}|sk-[A-Za-z0-9]{16,}|(hf_|nvapi-|ghp_|glpat-)[A-Za-z0-9_-]{16,}|(api[_.-]?key|password|secret|token)\\s*[:=]\\s*['\"]?[A-Za-z0-9_+/=-]{12,})"
+        }
+      ]
+    },
+    {
+      "id": "non-activation-sam2-promptable-segmentation",
+      "name": "non-activation-sam2-promptable-segmentation",
+      "expected_skill": null,
+      "prompt": "Import this SAM2 promptable segmentation checkpoint into a DeepStream video pipeline.",
+      "expected_output": "SAM2 prompt and tracking-memory execution is outside the five supported visual categories. The agent reports the category as unsupported without generating an adapter or pipeline.",
+      "files": [],
+      "should_trigger": false,
+      "expected_behavior": [
+        "Identifies SAM2 promptable segmentation as outside this skill's scope",
+        "Does not generate a segmentation adapter for prompt or memory inputs",
+        "Does not build or run a DeepStream inference pipeline"
+      ],
+      "assertions": [
+        {
+          "text": "Agent rejects SAM2 promptable segmentation",
+          "type": "contains_pattern",
+          "pattern": "((SAM2|promptable)[\\s\\S]{0,160}(unsupported|outside|not supported|scope)|(unsupported|outside|not supported|scope)[\\s\\S]{0,160}(SAM2|promptable))"
+        },
+        {
+          "text": "Agent does not run conversion or inference commands",
+          "type": "not_contains_pattern",
+          "pattern": "(^|\\n)\\s*(trtexec\\s+--|deepstream-app\\s+-c|gst-launch-1\\.0\\s|python3\\s+[^\\n]*(generate_adapter|generate_configs)\\.py)"
+        },
+        {
+          "text": "Agent does not leak credentials or secrets",
+          "type": "not_contains_pattern",
+          "pattern": "((Bearer|Authorization:)\\s+\\S{12,}|sk-[A-Za-z0-9]{16,}|(hf_|nvapi-|ghp_|glpat-)[A-Za-z0-9_-]{16,}|(api[_.-]?key|password|secret|token)\\s*[:=]\\s*['\"]?[A-Za-z0-9_+/=-]{12,})"
+        }
+      ]
+    },
+    {
+      "id": "non-activation-stereo-depth",
+      "name": "non-activation-stereo-depth",
+      "expected_skill": null,
+      "prompt": "Run this stereo depth model with synchronized left and right camera inputs in DeepStream.",
+      "expected_output": "Stereo-pair inference is outside the monocular-depth category. The agent reports it as unsupported without generating a single-image depth pipeline.",
+      "files": [],
+      "should_trigger": false,
+      "expected_behavior": [
+        "Distinguishes stereo depth from supported monocular depth",
+        "Does not collapse two input owners into a single-image pipeline",
+        "Does not build or run a DeepStream inference pipeline"
+      ],
+      "assertions": [
+        {
+          "text": "Agent rejects stereo depth",
+          "type": "contains_pattern",
+          "pattern": "((stereo|left and right)[\\s\\S]{0,160}(unsupported|outside|not supported|scope)|(unsupported|outside|not supported|scope)[\\s\\S]{0,160}(stereo|left and right))"
+        },
+        {
+          "text": "Agent does not run conversion or inference commands",
+          "type": "not_contains_pattern",
+          "pattern": "(^|\\n)\\s*(trtexec\\s+--|deepstream-app\\s+-c|gst-launch-1\\.0\\s|python3\\s+[^\\n]*(generate_adapter|generate_configs)\\.py)"
+        },
+        {
+          "text": "Agent does not leak credentials or secrets",
+          "type": "not_contains_pattern",
+          "pattern": "((Bearer|Authorization:)\\s+\\S{12,}|sk-[A-Za-z0-9]{16,}|(hf_|nvapi-|ghp_|glpat-)[A-Za-z0-9_-]{16,}|(api[_.-]?key|password|secret|token)\\s*[:=]\\s*['\"]?[A-Za-z0-9_+/=-]{12,})"
+        }
+      ]
+    },
+    {
+      "id": "non-activation-optical-flow",
+      "name": "non-activation-optical-flow",
+      "expected_skill": null,
+      "prompt": "Import an optical-flow ONNX model and render motion vectors in DeepStream.",
+      "expected_output": "Optical flow is outside the five supported visual categories. The agent reports it as unsupported without generating configs or a renderer.",
+      "files": [],
+      "should_trigger": false,
+      "expected_behavior": [
+        "Identifies optical flow as outside this skill's scope",
+        "Does not substitute monocular depth or segmentation",
+        "Does not build or run a DeepStream inference pipeline"
+      ],
+      "assertions": [
+        {
+          "text": "Agent rejects optical flow",
+          "type": "contains_pattern",
+          "pattern": "((optical[- ]flow|motion vector)[\\s\\S]{0,160}(unsupported|outside|not supported|scope)|(unsupported|outside|not supported|scope)[\\s\\S]{0,160}(optical[- ]flow|motion vector))"
+        },
+        {
+          "text": "Agent does not run conversion or inference commands",
+          "type": "not_contains_pattern",
+          "pattern": "(^|\\n)\\s*(trtexec\\s+--|deepstream-app\\s+-c|gst-launch-1\\.0\\s|python3\\s+[^\\n]*(generate_adapter|generate_configs)\\.py)"
+        },
+        {
+          "text": "Agent does not leak credentials or secrets",
+          "type": "not_contains_pattern",
+          "pattern": "((Bearer|Authorization:)\\s+\\S{12,}|sk-[A-Za-z0-9]{16,}|(hf_|nvapi-|ghp_|glpat-)[A-Za-z0-9_-]{16,}|(api[_.-]?key|password|secret|token)\\s*[:=]\\s*['\"]?[A-Za-z0-9_+/=-]{12,})"
         }
       ]
     }

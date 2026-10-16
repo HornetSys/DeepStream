@@ -85,7 +85,7 @@ void __attribute__((constructor)) gstnvdsmeta_latency_measurement_int(void)
     time (&t);
     time_val = localtime_r (&t, &tm_buf);
 
-    sprintf(file_id,"_id_%d", getpid());
+    snprintf(file_id, sizeof(file_id), "_id_%d", getpid());
 
     strcpy(comp_prefix, file_prefix);
     strcat(comp_prefix, file_id);

@@ -19,7 +19,7 @@ set -e  # Exit on any error
 # Validate NIM_MODEL_NAME
 valid_models=("rtdetr" "cls" "seg" "gdino" "mgdino")
 if [[ ! " ${valid_models[@]} " =~ " ${NIM_MODEL_NAME} " ]]; then
-    echo "Error: NIM_MODEL_NAME must be one of: ${valid_models[*]}"
+    echo "Error: NIM_MODEL_NAME must be one of: ${valid_models[*]}" >&2
     exit 1
 fi
 

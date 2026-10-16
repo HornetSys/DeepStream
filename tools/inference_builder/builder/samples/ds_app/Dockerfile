@@ -21,7 +21,7 @@
 # Intended for standard datacenter/workstation GPUs (e.g. A100, H100, B200,
 # RTX series) running Linux on x86_64. Uses pre-built PyTorch wheels from
 # PyTorch's CUDA index and links against x86_64 system libraries.
-FROM gitlab-master.nvidia.com:5005/deepstreamsdk/release_image/deepstream:9.1.1-26.08.2-triton-20260817-ma-dev99 AS inference_base
+FROM ghcr.io/nvidia/deepstream:9.2-triton-multiarch AS inference_base
 
 # Install Python dependencies required by THIS ds_app sample. These
 # versions are pinned for reproducibility and can be adjusted for
@@ -43,7 +43,7 @@ ARG CUDA_VERSION_FULL=$CUDA_VERSION_MAJOR_MINOR.$CUDA_VERSION_PATCH.$CUDA_VERSIO
 
 WORKDIR /tmp
 
-# TensorRT OSS build is disabled by default. The DeepStream 9.1 base image
+# TensorRT OSS build is disabled by default. The DeepStream 9.2 base image
 # already includes TensorRT plugin/parser libraries and trtexec.
 # Enable the TensorRT OSS build if specific operators required by a model are missing.
 # To re-enable, uncomment and update the block below as needed.

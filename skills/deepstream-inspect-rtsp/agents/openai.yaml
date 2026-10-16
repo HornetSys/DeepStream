@@ -1,0 +1,7 @@
+interface:
+  display_name: "DeepStream Inspect RTSP"
+  short_description: "Inspect DeepStream RTSP reliability"
+  default_prompt: "Use $deepstream-inspect-rtsp to diagnose my DeepStream RTSP ingest drops or latency."
+
+policy:
+  allow_implicit_invocation: true

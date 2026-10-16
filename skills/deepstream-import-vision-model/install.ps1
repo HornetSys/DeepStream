@@ -3,8 +3,8 @@
 #
 # deepstream-import-vision-model - Windows (PowerShell) installer.
 # The native-Windows twin of install.sh, with the IDENTICAL sequence of operations:
-#   1. Copy the whole self-contained skill into <Target>\.claude\skills\deepstream-import-vision-model\
-#      (and .cursor\skills\ unless -NoCursor), minus machine-local build artifacts.
+#   1. Copy the whole self-contained skill into the Claude, Codex, and (unless
+#      -NoCursor) Cursor skill directories, minus machine-local build artifacts.
 #   2. Print the next steps (bootstrap IN the container; nothing installs on the host).
 # This skill has no plugin dependency, so there's no plugin/scope step (unlike the eval skill).
 # The copy is the one host-side action that can't run in a container; everything ELSE runs through
@@ -38,7 +38,11 @@ function Install-SkillTo([string]$SkillsDir) {
             Write-Host "  Already installed at $dest; source and destination are identical"
             return
         }
-        Remove-Item -LiteralPath $dest -Recurse -Force
+        $stamp = Get-Date -Format 'yyyyMMdd_HHmmss'
+        $backup = "$dest.backup.$stamp.$PID"
+        if (Test-Path -LiteralPath $backup) { throw "Refusing to overwrite backup: $backup" }
+        Write-Host "  Preserving previous installation: $dest -> $backup"
+        Move-Item -LiteralPath $dest -Destination $backup
     }
     # Create the destination, then copy the source's CHILDREN into it one by one.
     # `Copy-Item -LiteralPath <dir> -Destination <dir> -Recurse` is not portable: whether it copies
@@ -90,11 +94,9 @@ Write-Host ""
 Write-Host "=== Done ==="
 Write-Host @"
 
-Next - bootstrap the environment IN the container (nothing installs on the host), from the project root:
-  docker run --rm -it --gpus all --shm-size=16g -v "`${PWD}:/work" -w /work ``
-    --entrypoint bash nvcr.io/nvidia/deepstream:9.1-triton-multiarch ``
-    .claude/skills/$SkillName/setup.sh
-  (see .claude/skills/$SkillName/references/windows.md for the full Windows runbook)
+Next - set a verified DS_IMAGE @sha256 digest, then follow SKILL.md to create one named
+campaign container for setup, preflight, and every phase. See
+.claude/skills/$SkillName/references/windows.md for the PowerShell runbook.
 
 Claude Code - invoke the skill:
   Use deepstream-import-vision-model to run this model: https://huggingface.co/onnx-community/yolov8n

@@ -17,13 +17,13 @@ CC:= g++
 
 PKGS:= glib-2.0 gobject-2.0 json-glib-1.0 uuid gstreamer-1.0
 
-NVDS_VERSION:=9.1
+NVDS_VERSION:=9.2
 
 LIB_INSTALL_DIR?=/opt/nvidia/deepstream/deepstream-$(NVDS_VERSION)/lib/
 
 CFLAGS:= -Wall -std=c++11 -shared -fPIC
 
-CFLAGS+= -fPIC -DDS_VERSION=\"9.1\" \
+CFLAGS+= -fPIC -DDS_VERSION=\"9.2\" \
 	 -I /usr/local/cuda-$(CUDA_VER)/include \
 	 -I ../../../../includes
 

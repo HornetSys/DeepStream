@@ -20,21 +20,24 @@
 # timeout. Parses the JSON response via the stdlib json module (no shell pipe).
 #
 # Usage:
-#   bash hf-list-files.sh <HF_ORG> <MODEL_NAME> [subpath]
+#   bash hf-list-files.sh <HF_ORG> <MODEL_NAME> <subpath|""> <commit-sha>
+#   Use "" when subpath is empty.
 #
 # Examples:
-#   bash hf-list-files.sh onnx-community yolov8n
-#   bash hf-list-files.sh onnx-community yolov8n onnx        # check /onnx subdir
+#   bash hf-list-files.sh onnx-community yolov8n "" "$HF_REVISION"
+#   bash hf-list-files.sh onnx-community yolov8n onnx "$HF_REVISION"
 #
 # Honors $HF_TOKEN if set (passed as Authorization: Bearer header).
 set -euo pipefail
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/hf-curl.sh"
 
 HF_ORG="${1:-}"
 MODEL_NAME="${2:-}"
 SUBPATH="${3:-}"
+REVISION="${4:-${HF_REVISION:-}}"
 
 if [[ -z "$HF_ORG" || -z "$MODEL_NAME" ]]; then
-    echo "Usage: $0 <HF_ORG> <MODEL_NAME> [subpath]" >&2
+    echo "Usage: $0 <HF_ORG> <MODEL_NAME> <subpath|\"\"> <commit-sha>" >&2
     exit 1
 fi
 
@@ -47,7 +50,11 @@ for arg_name in HF_ORG MODEL_NAME SUBPATH; do
     fi
 done
 
-URL="https://huggingface.co/api/models/${HF_ORG}/${MODEL_NAME}/tree/main"
+if ! [[ "$REVISION" =~ ^[0-9a-fA-F]{40}$ ]]; then
+    echo "ERROR: REVISION must be an immutable 40-character commit SHA" >&2
+    exit 1
+fi
+URL="https://huggingface.co/api/models/${HF_ORG}/${MODEL_NAME}/tree/${REVISION}"
 [[ -n "$SUBPATH" ]] && URL="${URL}/${SUBPATH}"
 
 # -sS: silent progress but still surface errors on stderr
@@ -55,13 +62,10 @@ URL="https://huggingface.co/api/models/${HF_ORG}/${MODEL_NAME}/tree/main"
 # Drop -f so curl doesn't exit non-zero on 4xx — we inspect the status ourselves
 # so 404 (missing subpath) can be distinguished from network/auth failures.
 CURL_OPTS=(-sS --proto '=https' --tlsv1.2 --max-time 30 -w '%{http_code}')
-if [[ -n "${HF_TOKEN:-}" ]]; then
-    CURL_OPTS+=(-H "Authorization: Bearer ${HF_TOKEN}")
-fi
 
 # Separate exit-code capture from body so we can diagnose failures precisely.
 CURL_RC=0
-RESPONSE="$(curl "${CURL_OPTS[@]}" "$URL")" || CURL_RC=$?
+RESPONSE="$(hf_curl "${CURL_OPTS[@]}" "$URL")" || CURL_RC=$?
 
 if [[ $CURL_RC -ne 0 ]]; then
     echo "ERROR: curl failed (exit $CURL_RC) while fetching $URL" >&2

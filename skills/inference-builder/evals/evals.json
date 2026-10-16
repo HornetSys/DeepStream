@@ -1,0 +1,77 @@
+{
+  "skill_name": "inference-builder",
+  "evals": [
+    {
+      "id": "one-sentence-summary",
+      "name": "one-sentence-summary",
+      "prompt": "Give me a one sentence summary of inference builder.",
+      "expected_output": "A concise summary that describes inference-builder as a tool for generating deployable Vision AI pipelines with video and streaming support on NVIDIA GPUs.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Mentions Vision AI pipelines",
+          "type": "contains_pattern",
+          "pattern": "Vision AI"
+        },
+        {
+          "text": "Mentions video workloads",
+          "type": "contains_pattern",
+          "pattern": "video"
+        },
+        {
+          "text": "Mentions streaming workloads",
+          "type": "contains_pattern",
+          "pattern": "streaming"
+        }
+      ]
+    },
+    {
+      "id": "cli-sanity-check",
+      "name": "cli-sanity-check",
+      "prompt": "Do a sanity check of the inference-builder CLI and tell me the first command you would run.",
+      "expected_output": "The response should direct the user to run the CLI help command from tools/inference_builder so they can verify the authoritative flags before doing anything else.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "Uses the inference-builder CLI entrypoint",
+          "type": "contains_pattern",
+          "pattern": "builder/main\\.py"
+        },
+        {
+          "text": "Uses the help flag for authoritative usage",
+          "type": "contains_pattern",
+          "pattern": "--help"
+        },
+        {
+          "text": "Does not claim a failed sanity check",
+          "type": "not_contains_pattern",
+          "pattern": "failed|failure"
+        }
+      ]
+    },
+    {
+      "id": "dummy-pipeline-dry-run",
+      "name": "dummy-pipeline-dry-run",
+      "prompt": "Using inference-builder, generate a dummy inference pipeline and explain how you would dry run it from the DeepStream repo.",
+      "expected_output": "The response should point to the dummy sample or an equivalent generated dummy pipeline, explain the generate step, and describe a dry run from the repo using the inference-builder tooling.",
+      "files": [],
+      "assertions": [
+        {
+          "text": "References the dummy sample or dummy pipeline path",
+          "type": "contains_pattern",
+          "pattern": "dummy"
+        },
+        {
+          "text": "References inference-builder generation from the repo",
+          "type": "contains_pattern",
+          "pattern": "tools/inference_builder|builder/main\\.py"
+        },
+        {
+          "text": "Mentions a dry run or validation flow",
+          "type": "contains_pattern",
+          "pattern": "dry run|validate|test"
+        }
+      ]
+    }
+  ]
+}

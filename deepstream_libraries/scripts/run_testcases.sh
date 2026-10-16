@@ -29,19 +29,22 @@ failed_test_cases=""
 #   $1 - Test case number
 #   $2 - Command to execute
 run_test() {
+    local test_name="$1"
+    local test_command="$2"
     current_test_case=$((current_test_case + 1))
     echo "################################ Test Case $current_test_case #####################################"
-    echo "#  $1  #"
-    echo "Running command: $2"
-    if eval "$2"; then
+    echo "#  $test_name  #"
+    echo "Running command: $test_command"
+    if eval "$test_command"; then
         echo "Test Case $current_test_case: PASSED"
         success_count=$((success_count + 1))
     else
         echo "Test Case $current_test_case: FAILED"
         failure_count=$((failure_count + 1))
         # Store the failed test case information
-        failed_test_cases="${failed_test_cases} \tTest Case ${current_test_case}: $1"'\n'
+        failed_test_cases="${failed_test_cases} \tTest Case ${current_test_case}: $test_name"'\n'
     fi
+    return 0
 }
 
 # Function to display summary report
@@ -55,6 +58,7 @@ display_report() {
         echo "Failed Test Cases:\n$failed_test_cases"
     fi
     echo "#################################################################################"
+    return 0
 }
 
 # Move to parent directory

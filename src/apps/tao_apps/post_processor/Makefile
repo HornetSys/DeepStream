@@ -16,8 +16,17 @@
 ################################################################################
 
 CUDA_VER?=
+# Require CUDA_VER for every goal except a clean-only invocation.
+# A bare `make` has empty MAKECMDGOALS and still checks.
+ifneq ($(filter-out clean,$(MAKECMDGOALS)),)
+  _DS_NEED_CUDA_VER := 1
+else ifeq ($(MAKECMDGOALS),)
+  _DS_NEED_CUDA_VER := 1
+endif
+ifeq ($(_DS_NEED_CUDA_VER),1)
 ifeq ($(CUDA_VER),)
   $(error "CUDA_VER is not set")
+endif
 endif
 
 LIB_INSTALL_DIR?=/opt/nvidia/deepstream/deepstream/lib/

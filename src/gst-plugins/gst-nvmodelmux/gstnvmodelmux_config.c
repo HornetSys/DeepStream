@@ -553,7 +553,7 @@ gst_modelmux_parse_config_file (GstNvModelMux * self, const gchar * cfg_file)
      * this device; a shard placed on a DIFFERENT gpu gets its input migrated by the
      * bin's ingress converter. Default 0. See ModelMuxConfig.gpu. */
     config->gpu = cfg_uint (kf, SEC, "gpu-id", 0);
-    /* runtime defaults carry no placement until a stream/route default{} sets one */
+    /* runtime defaults carry no placement until a model/routing default{} sets one */
     config->default_primary_gpu = -1;
     config->default_shadow_gpu = -1;
     /* max concurrent streams (sizes every internal mux); MUST be >= the app's streammux

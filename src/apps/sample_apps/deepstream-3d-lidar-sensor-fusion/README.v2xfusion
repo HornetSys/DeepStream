@@ -87,6 +87,19 @@ For Docker User:
   $ sudo docker_run_generate_v2x_trt_engine_model.sh
 
 In Host:
+  By default prepare.sh uses the installed plugin library
+  $SDK_ROOT/lib/libnvds_3d_v2x_infer_custom_preprocess.so, where $SDK_ROOT is the
+  installed DeepStream SDK root (deb/tar package or DeepStream Docker image):
+  /opt/nvidia/deepstream/deepstream, a symlink to
+  /opt/nvidia/deepstream/deepstream-<version>. Set and verify it with:
+  $ export SDK_ROOT=/opt/nvidia/deepstream/deepstream
+  $ cat $SDK_ROOT/version
+  $ ls $SDK_ROOT/lib/libnvds_3d_v2x_infer_custom_preprocess.so
+
+  From the installed SDK (deb/tar/Docker):
+  $ ./prepare.sh engine
+
+  From the repo clone, after building the custom lib in the source tree:
   $ plugins=../../../../../utils/ds3d/inference_custom_lib/ds3d_v2x_infer_custom_preprocess/libnvds_3d_v2x_infer_custom_preprocess.so ./prepare.sh engine
 
 This script will help you download the model and generate it to tensorrt engine file.
@@ -101,6 +114,10 @@ As a shortcut, put V2X-Seq-SPD-Example.zip into v2xfusion/scripts and
 run prepare.sh without parameters, which will directly generate the tensorrt engine file
 and preprocessed dataset.
 
+From the installed SDK (deb/tar/Docker), using $SDK_ROOT/lib/libnvds_3d_v2x_infer_custom_preprocess.so:
+$ ./prepare.sh
+
+From the repo clone:
 $ plugins=../../../../../utils/ds3d/inference_custom_lib/ds3d_v2x_infer_custom_preprocess/libnvds_3d_v2x_infer_custom_preprocess.so ./prepare.sh
 
 If the prepare.sh script runs successfully,

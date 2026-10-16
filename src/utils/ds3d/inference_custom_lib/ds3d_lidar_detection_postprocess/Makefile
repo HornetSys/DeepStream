@@ -18,7 +18,9 @@ LIB_INSTALL_DIR ?= /opt/nvidia/deepstream/deepstream/lib/
 CC:= g++
 
 # Change to your deepstream SDK includes
-CFLAGS+= -I../../../../../includes \
+# -I../../../ is src/utils, so "ds3d/common/..." resolves from this tree first.
+CFLAGS+= -I../../../ \
+	  -I../../../../../includes \
 	  -I/usr/local/cuda/include \
 	  -I../../../../../includes/nvdsinferserver
 

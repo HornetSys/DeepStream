@@ -30,8 +30,8 @@ function cleanup() {
 
 trap cleanup EXIT
 
-NVDS_VERSION=${NVDS_VERSION:-9.1}
-DEFAULT_IMAGE="nvcr.io/nvidia/deepstream:${NVDS_VERSION}-triton-multiarch"
+NVDS_VERSION=${NVDS_VERSION:-9.2}
+DEFAULT_IMAGE="ghcr.io/nvidia/deepstream:${NVDS_VERSION}-triton-multiarch"
 CONTAINER_NAME="v2x-trt-model-builder"
 TARGET_WORKSPACE=/opt/nvidia/deepstream/deepstream/sources/sample_apps/deepstream-3d-lidar-sensor-fusion
 TARGET_MODEL_ROOT=/opt/nvidia/deepstream/deepstream/samples/triton_model_repo

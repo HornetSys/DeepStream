@@ -56,11 +56,9 @@ find_cmake() {
   candidates+=("cmake" "/usr/bin/cmake")
 
   for candidate in "${candidates[@]}"; do
-    if resolved=$(command -v "$candidate" 2>/dev/null); then
-      if "$resolved" --version >/dev/null 2>&1; then
-        printf '%s\n' "$resolved"
-        return 0
-      fi
+    if resolved=$(command -v "$candidate" 2>/dev/null) && "$resolved" --version >/dev/null 2>&1; then
+      printf '%s\n' "$resolved"
+      return 0
     fi
   done
 
@@ -139,10 +137,10 @@ Packaging (--package / --package-format=):
 
 Environment variables (alternative to CLI):
   CUDA_VER                CUDA toolkit version (default: 13.0 on IGX; 13.2 otherwise)
-  NVDS_VERSION            MAJOR.MINOR.PATCH (default: 9.1.1); the install
+  NVDS_VERSION            MAJOR.MINOR.PATCH (default: 9.2.0); the install
                           tree uses MAJOR.MINOR only. GitHub Release
                           proprietary-libs / sample-data assets are always
-                          fetched from the v9.1.1 release (hardcoded; not
+                          fetched from the v9.2.0 release (hardcoded; not
                           derived from NVDS_VERSION).
   INSTALL_METHOD          Artifact install method: deb (default) | tar
   CMAKE_BIN               Path to cmake binary
@@ -242,7 +240,7 @@ KEEP_ASSETS=0
 ONLY_STAGES=()
 JOBS=$(nproc 2>/dev/null || echo 4)
 CUDA_VER=${CUDA_VER:-$CUDA_VER_DEFAULT}
-NVDS_VERSION=${NVDS_VERSION:-9.1.1}
+NVDS_VERSION=${NVDS_VERSION:-9.2.0}
 INSTALL_METHOD=${INSTALL_METHOD:-deb}
 DO_PACKAGE=0
 PACKAGE_FORMAT=both
@@ -355,12 +353,12 @@ while [[ $# -gt 0 ]]; do
   shift
 done
 
-# NVDS_VERSION must be MAJOR.MINOR.PATCH (default: 9.1.1). MAJOR.MINOR alone is
+# NVDS_VERSION must be MAJOR.MINOR.PATCH (default: 9.2.0). MAJOR.MINOR alone is
 # rejected so install paths and packaging stay unambiguous; the install tree
 # and every downstream make/install.sh invocation use the truncated
 # MAJOR.MINOR form below.
 if [[ ! "$NVDS_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-  echo "error: invalid NVDS_VERSION='$NVDS_VERSION' (expected MAJOR.MINOR.PATCH, e.g. 9.1.1)" >&2
+  echo "error: invalid NVDS_VERSION='$NVDS_VERSION' (expected MAJOR.MINOR.PATCH, e.g. 9.2.0)" >&2
   exit 1
 fi
 NVDS_FULL_VERSION="$NVDS_VERSION"
@@ -463,11 +461,11 @@ stage_had_failures() {
 # GITHUB_ASSET_VERSION below): new patch-release assets are uploaded onto the
 # existing tag rather than cutting a new tag each patch, so older branches whose
 # build.sh still points at this same tag keep resolving.
-GITHUB_RELEASE_TAG="9.1.0"
+GITHUB_RELEASE_TAG="9.2.0"
 
 # Version embedded in the release asset filenames themselves (deepstream-binaries-*,
 # deepstream-sample-data_*, …). Bump by hand once newer-patch assets are uploaded.
-GITHUB_ASSET_VERSION="9.1.1"
+GITHUB_ASSET_VERSION="9.2.0"
 
 # Release assets are fetched from the DeepStream GitHub release into ARTIFACTS_DIR.
 GITHUB_RELEASE_BASE="https://github.com/NVIDIA/DeepStream/releases/download/v${GITHUB_RELEASE_TAG}"
@@ -550,6 +548,37 @@ cleanup_downloaded_assets() {
      [[ -z "$(ls -A "$ARTIFACTS_DIR" 2>/dev/null)" ]]; then
     rmdir "$ARTIFACTS_DIR" && echo "    removed empty $ARTIFACTS_DIR"
   fi
+}
+
+# Build x86-only 3rdparty plugins and v4l2 libs from src/3rdparty.
+# Convert must install first: libv4l2 links against libnvv4lconvert.
+# gst-v4l2 then links against libnvv4l2.
+build_3rdparty() {
+  local dest="src/3rdparty"
+  local dir
+
+  if [[ "$PLATFORM" != "x86" ]]; then
+    echo "Skipping 3rdparty gst-nvunixfd/gst-v4l2/v4l2 on $PLATFORM (x86 only)"
+    return 0
+  fi
+
+  for dir in \
+    "$dest/v4l2/libv4lconvert" \
+    "$dest/v4l2/libv4l2" \
+    "$dest/gst-nvunixfd" \
+    "$dest/gst-v4l2"; do
+    if [[ ! -f "$dir/Makefile" ]]; then
+      echo "error: missing $dir/Makefile" >&2
+      FAILED_BUILDS+=("$dir")
+      continue
+    fi
+    echo "Building $dir"
+    if run_submake -C "$dir" $MK; then
+      run_submake -C "$dir" $MK install || FAILED_BUILDS+=("$dir (install)")
+    else
+      FAILED_BUILDS+=("$dir")
+    fi
+  done
 }
 
 run_submake() {
@@ -645,6 +674,7 @@ if [[ "$SKIP_ARTIFACTS" -eq 0 ]] && begin_stage "$ARTIFACTS_STAGE"; then
     INSTALL_METHOD="$INSTALL_METHOD" \
     ARTIFACTS_DIR="$ARTIFACTS_DIR" \
     ARTIFACTS_STAGE_STATE_FILE="$ARTIFACTS_STAGE_STATE_FILE" \
+    RESUME="$RESUME" \
     bash "$SCRIPT_DIR/../scripts/install_artifacts.sh"
 
   finish_stage "$ARTIFACTS_STAGE"
@@ -678,7 +708,9 @@ if begin_stage gst-utils; then
   # libnvdsgst_customhelper.
   for dir in \
     src/gst-utils/gstnvcustomhelper \
+    src/gst-utils/gstnvdshelper \
     src/gst-utils/gst-nvdssr \
+    src/gst-utils/gst-nvdstensor \
     src/utils/nvdsmeta \
     src/utils/nvds_stats \
     src/gst-utils/gst-nvdsmeta \
@@ -710,13 +742,18 @@ fi
 # ---------------------------------------------------------------------------
 if begin_stage utils; then
   _fb_before=${#FAILED_BUILDS[@]}
+  if [[ "$PLATFORM" == "x86" ]]; then
+    build_3rdparty
+  else
+    echo "Skipping 3rdparty gst-nvunixfd/gst-v4l2/v4l2 on $PLATFORM (x86 only)"
+  fi
   # The plain glob below is alphabetical, which puts some consumers ahead of the
   # leaf libraries they link against (nvdsinfer/nvdsinferserver need
-  # libnvds_meta and libnvds_inferlogger; nvds_rest_server needs libnvds_stats;
-  # nvll_osd needs libnvds_utils; nvmsgbroker needs libnvds_logger). Those libs
-  # used to be satisfied by the prebuilt artifacts; now that they are built
-  # from source they must come first.
-  for leaf in nvdsmeta nvdsinfer_logger nvds_logger nvds_stats nvdsutils nvtx_helper; do
+  # libnvds_meta, libnvds_inferlogger, and libnvds_inferutils; nvds_rest_server
+  # needs libnvds_stats; nvll_osd needs libnvds_utils; nvmsgbroker needs
+  # libnvds_logger). Those libs used to be satisfied by the prebuilt artifacts;
+  # now that they are built from source they must come first.
+  for leaf in nvdsmeta nvdsinfer_logger nvdsinferutils nvds_logger nvds_stats nvdsutils nvtx_helper; do
     dir="src/utils/$leaf"
     [[ -f "$dir/Makefile" ]] || continue
     if run_submake -C "$dir" $MK; then
@@ -728,6 +765,9 @@ if begin_stage utils; then
 
   for dir in src/utils/*/; do
     [[ -f "$dir/Makefile" ]] || continue
+    # Nested ds3d components are built in the dedicated loop below so that
+    # libnvds_3d_common is installed first and nvdsinferserver is already built.
+    [[ "$(basename "$dir")" == "ds3d" ]] && continue
     # nvstreammux has no install target; skip install step for it
     if run_submake -C "$dir" $MK; then
       [[ "$(basename "$dir")" != "nvstreammux" ]] && \
@@ -754,6 +794,16 @@ if begin_stage utils; then
           fi
         fi
       done
+    fi
+  done
+
+  # DS3D: common / glprocess / realsense stub must install before consumers.
+  for leaf in src/utils/ds3d/common src/utils/ds3d/glprocess src/utils/ds3d/stub/realsense; do
+    [[ -f "$leaf/Makefile" ]] || continue
+    if run_submake -C "$leaf" $MK; then
+      run_submake -C "$leaf" $MK install || FAILED_BUILDS+=("$leaf (install)")
+    else
+      FAILED_BUILDS+=("$leaf")
     fi
   done
 
@@ -802,6 +852,11 @@ if begin_stage gst-plugins; then
   run_as_root mkdir -p "/opt/nvidia/deepstream/deepstream-${NVDS_VERSION}/lib/gst-plugins/"
   for dir in src/gst-plugins/*/; do
     plugin=$(basename "$dir")
+    # Python plugin — no Makefile; install from its README.
+    if [[ "$plugin" == "gst-nvdstextembedder" ]]; then
+      echo "Skipping $plugin (Python plugin; see its README)"
+      continue
+    fi
     # Built last: depends on other gst-plugins (infer, tracker, osd, tiler, …).
     if [[ "$plugin" == "gst-nvdsudp" || "$plugin" == "gst-dsexample-cuda" || "$plugin" == "gst-nvdsbins" ]]; then
       if [[ "$plugin" == "gst-nvdsbins" ]]; then
@@ -835,7 +890,8 @@ if begin_stage gst-plugins; then
     src/gst-plugins/gst-nvdsmetautils/audio_metadata_serialization \
     src/gst-plugins/gst-nvdsmetautils/video_metadata_serialization \
     src/gst-plugins/gst-nvdspostprocess/postprocesslib_impl \
-    src/gst-plugins/gst-nvdsvideotemplate/customlib_impl; do
+    src/gst-plugins/gst-nvdsvideotemplate/customlib_impl \
+    src/gst-plugins/gst-nvdsvideotemplate/ds-sparse4d; do
     [[ -f "$sublib_dir/Makefile" ]] || continue
     if run_submake -C "$sublib_dir" $MK; then
       run_submake -C "$sublib_dir" $MK install || FAILED_BUILDS+=("$sublib_dir (install)")
@@ -888,6 +944,21 @@ if begin_stage sample_apps; then
       run_user_make -C "$dir" $MK || FAILED_BUILDS+=("$dir")
     fi
   done
+  # Nested custom libs that the sample_apps glob does not visit. Parent
+  # Makefiles recurse into some of these, but install of the .so is not
+  # always copied by the parent (e.g. action-recognition), so build and
+  # install each one explicitly.
+  for sublib_dir in \
+    src/apps/sample_apps/deepstream-3d-action-recognition/custom_sequence_preprocess \
+    src/apps/sample_apps/deepstream-lidar-inference-app/custom_preprocess_impl \
+    src/apps/sample_apps/deepstream-lidar-inference-app/custom_postprocess_impl; do
+    [[ -f "$sublib_dir/Makefile" ]] || continue
+    if run_submake -C "$sublib_dir" $MK; then
+      run_submake -C "$sublib_dir" $MK install || FAILED_BUILDS+=("$sublib_dir (install)")
+    else
+      FAILED_BUILDS+=("$sublib_dir")
+    fi
+  done
   if ! stage_had_failures "$_fb_before"; then
     finish_stage sample_apps
   fi
@@ -928,6 +999,8 @@ if begin_stage tao_apps; then
   else
     echo "==> git submodules already initialized"
   fi
+  run_as_root cp  src/apps/tao_apps/apps/tao_others/deepstream-nvocdr-app/Makefile.nvocdr \
+    src/apps/tao_apps/apps/tao_others/deepstream-nvocdr-app/nvocdr/deepstream/Makefile
   run_submake -C src/apps/tao_apps $MK || FAILED_BUILDS+=("src/apps/tao_apps")
   if ! stage_had_failures "$_fb_before"; then
     finish_stage tao_apps

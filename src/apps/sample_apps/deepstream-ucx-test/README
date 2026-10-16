@@ -142,6 +142,14 @@ serialized metadata via the Gst-NvDsMetaUtils library.
 
 Compilation: To compile the sources, run make with "sudo" or root permission.
 
+Path conventions:
+   <DS_ROOT> is the path where the DeepStream repo is cloned.
+   $SDK_ROOT is the installed DeepStream SDK root (deb/tar package or
+   DeepStream Docker image): /opt/nvidia/deepstream/deepstream, a symlink to
+   /opt/nvidia/deepstream/deepstream-<version>. Set and verify it with:
+   $ export SDK_ROOT=/opt/nvidia/deepstream/deepstream
+   $ cat $SDK_ROOT/version
+
 Test 1:
    Server Setup:
    $ ./deepstream-ucx-test-app -t 1 -s <IP> <PORT> <HEIGHT> <WIDTH> \
@@ -165,8 +173,13 @@ Test 1:
 Test 2:
    Pre-requisites:
    Navigate to the video_metadata_serialization directory and compile the
-   library:
-   $ cd src/gst-plugins/gst-nvdsmetautils/video_metadata_serialization
+   library (see the "Path conventions" note below for <DS_ROOT>/$SDK_ROOT):
+   From the repo clone:
+   $ cd <DS_ROOT>/src/gst-plugins/gst-nvdsmetautils/video_metadata_serialization
+   From the installed SDK (deb/tar/Docker):
+   $ ls -d $SDK_ROOT/sources/gst-plugins/gst-nvdsmetautils/video_metadata_serialization
+   $ cd $SDK_ROOT/sources/gst-plugins/gst-nvdsmetautils/video_metadata_serialization
+   Then:
    $ make
    $ sudo make install
 
@@ -206,8 +219,13 @@ Test 2:
 Test 3:
    Pre-requisites:
    Navigate to the audio_metadata_serialization directory and compile the
-   library:
-   $ cd src/gst-plugins/gst-nvdsmetautils/audio_metadata_serialization
+   library (see the "Path conventions" note below for <DS_ROOT>/$SDK_ROOT):
+   From the repo clone:
+   $ cd <DS_ROOT>/src/gst-plugins/gst-nvdsmetautils/audio_metadata_serialization
+   From the installed SDK (deb/tar/Docker):
+   $ ls -d $SDK_ROOT/sources/gst-plugins/gst-nvdsmetautils/audio_metadata_serialization
+   $ cd $SDK_ROOT/sources/gst-plugins/gst-nvdsmetautils/audio_metadata_serialization
+   Then:
    $ make
    $ sudo make install
 

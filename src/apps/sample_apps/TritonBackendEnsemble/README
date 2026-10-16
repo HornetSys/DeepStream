@@ -77,12 +77,12 @@ Pre-requisites:
 - For X86 platform, please follow instructions from
   https://catalog.ngc.nvidia.com/orgs/nvidia/containers/deepstream
   to download deepstream-triton image.
-  $ docker pull nvcr.io/nvidia/deepstream:[version]-triton
+  $ docker pull ghcr.io/nvidia/deepstream:[version]-triton-multiarch
    [version] means deepstream version numbers e.g. 9.0.0
   $ xhost +
   Set correct $DISPLAY variables on host, then run deepstream-triton docker container.
    $ docker run --gpus '"'device=0'"' -it --rm -v /tmp/.X11-unix:/tmp/.X11-unix \
-     -e DISPLAY=$DISPLAY --net=host nvcr.io/nvidia/deepstream:[version]-triton
+     -e DISPLAY=$DISPLAY --net=host ghcr.io/nvidia/deepstream:[version]-triton-multiarch
    Note: Set correct GPU id in `device=$id`.
 
 - For Jetson platform, please install Triton dependencies.

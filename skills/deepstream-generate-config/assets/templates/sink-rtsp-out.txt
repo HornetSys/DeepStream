@@ -1,0 +1,16 @@
+# RTSP-out sink: encode + udpsink + rtspserver.
+# Stream URL becomes rtsp://<host>:8554/ds-test once the app is running.
+# Default sync=1 (media-rate pacing) so consumers see a smooth stream;
+# override to sync=0 only if you intentionally want best-effort throughput.
+
+[sink0]
+enable=1
+type=4
+sync=1
+source-id=0
+codec=1
+enc-type=0
+bitrate=4000000
+profile=0
+rtsp-port=8554
+udp-port=5400

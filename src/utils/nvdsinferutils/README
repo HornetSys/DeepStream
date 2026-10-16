@@ -1,0 +1,40 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+--------------------------------------------------------------------------------
+Description:
+This library provides inference helpers used by Gst-nvinfer. It implements
+DBScan object clustering and decoding of TAO/TLT encoded models into a TensorRT
+engine.
+Refer to the DeepStream SDK documentation for more details.
+
+--------------------------------------------------------------------------------
+Pre-requisites:
+- libnvds_inferlogger.so (build and install src/utils/nvdsinfer_logger first)
+- libeigen3 Development package
+- TensorRT Development libraries (nvinfer, nvinfer_plugin, nvonnxparser)
+- OpenSSL Development package (libcrypto)
+- CUDA Runtime
+
+--------------------------------------------------------------------------------
+Compiling and installing the library:
+
+  $ export CUDA_VER=13.2 # x86, Jetson and SBSA. For IGX Thor, CUDA_VER=13.0
+  $ make && sudo -E make install
+
+Skip sudo when already root (for example inside a container).
+
+The library libnvds_inferutils.so is installed at
+/opt/nvidia/deepstream/deepstream/lib/

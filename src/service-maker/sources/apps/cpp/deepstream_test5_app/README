@@ -70,9 +70,19 @@ PAYLOAD_DEEPSTREAM_PROTOBUF - Protobuf encoded message with multiple objects in 
 
 $ ./deepstream-test5-app -s source-lists -c config-files [-l label-file] [--perf-measurement-interval-sec] [--hide-stream-name]
 
-NOTE: <DS_ROOT> is the path where the repo is cloned. Replace <platform> with
+NOTE: <DS_ROOT> is the path where the DeepStream repo is cloned. Replace <platform> with
 "x86" on x86 dGPU targets or "tegra" on Jetson/Tegra (aarch64) targets, e.g.
 test5_b2_x86.yaml or test5_b2_tegra.yaml.
+
+NOTE: The commands below use repo clone paths. When using the installed SDK
+(deb/tar package or DeepStream Docker image), replace
+"<DS_ROOT>/src/service-maker" with "$SDK_ROOT/service-maker", i.e. use
+$SDK_ROOT/service-maker/sources/apps/cpp/deepstream_test5_app/.
+$SDK_ROOT is the installed DeepStream SDK root: /opt/nvidia/deepstream/deepstream,
+a symlink to /opt/nvidia/deepstream/deepstream-<version>. Set and verify it with:
+  $ export SDK_ROOT=/opt/nvidia/deepstream/deepstream
+  $ cat $SDK_ROOT/version
+  $ ls $SDK_ROOT/service-maker/sources/apps/cpp/deepstream_test5_app/test5_b2_<platform>.yaml
 
 Use nvurisrcbin for static input:
 

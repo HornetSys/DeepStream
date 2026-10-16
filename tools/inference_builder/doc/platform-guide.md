@@ -9,9 +9,9 @@ for your target hardware **before** writing any Dockerfile or pipeline config.
 
 | Platform | Architecture | Example Hardware | Dockerfile Template | DeepStream Base Image |
 |---|---|---|---|---|
-| **x86_64 datacenter** | x86_64 | A100, H100, B200, RTX | `samples://dockerfile/ds_app/Dockerfile` | `gitlab-master.nvidia.com:5005/deepstreamsdk/release_image/deepstream:9.1.1-26.08.2-triton-20260817-ma-dev99` |
-| **Jetson / Tegra** | aarch64 | Orin, AGX Orin, Thor | `samples://dockerfile/ds_app/Dockerfile.tegra` | `gitlab-master.nvidia.com:5005/deepstreamsdk/release_image/deepstream:9.1.1-26.08.2-triton-20260817-ma-dev99` |
-| **arm-sbsa server** | aarch64 | GB10, GB300, DGX Spark | `samples://dockerfile/ds_app/Dockerfile.dgxspark` | `gitlab-master.nvidia.com:5005/deepstreamsdk/release_image/deepstream:arm-sbsa-9.1.1-26.08.2-triton-20260818-dev250` |
+| **x86_64 datacenter** | x86_64 | A100, H100, B200, RTX | `samples://dockerfile/ds_app/Dockerfile` | `ghcr.io/nvidia/deepstream:9.2-triton-multiarch` |
+| **Jetson / Tegra** | aarch64 | Orin, AGX Orin, Thor | `samples://dockerfile/ds_app/Dockerfile.tegra` | `ghcr.io/nvidia/deepstream:9.2-triton-multiarch` |
+| **arm-sbsa server** | aarch64 | GB10, GB300, DGX Spark | `samples://dockerfile/ds_app/Dockerfile.dgxspark` | `ghcr.io/nvidia/deepstream:9.2-triton-sbsa-dgx-spark` |
 
 ---
 
@@ -54,7 +54,7 @@ If `nvidia-smi` reports GB10 / GB300 / GH200 / Grace and no Jetson device-tree â
 - Tegra BSP libraries (`libnvbufsurface.so`, etc.) **mounted at runtime** by the
   NVIDIA Container Toolkit â€” container will fail without `--runtime nvidia` on
   actual Jetson hardware
-- Base image: DeepStream 9.1 multiarch `-ma` release image
+- Base image: DeepStream 9.2 multiarch `-ma` release image
 - **Note (Jetson AGX Orin):** External storage integration is required to support
   the execution of the DeepStream microservice on the Jetson Orin platform.
 

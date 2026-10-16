@@ -49,7 +49,7 @@ log_error() {
 }
 
 # Global variables
-export DEEPSTREAM_IMAGE="${DEEPSTREAM_IMAGE:-nvcr.io/nvidia/deepstream:9.1-triton-multiarch}"
+export DEEPSTREAM_IMAGE="${DEEPSTREAM_IMAGE:-ghcr.io/nvidia/deepstream:9.2-triton-multiarch}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DEEPSTREAM_ROOT="$(git -C "$REPO_ROOT" rev-parse --show-toplevel)"
 BASE_DIR=${BASE_DIR:-$HOME}

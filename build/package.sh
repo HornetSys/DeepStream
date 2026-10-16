@@ -38,7 +38,7 @@
 #   --keep-stage            Do not delete the staging dir on exit
 #
 # Environment overrides (CLI flags take precedence):
-#   NVDS_VERSION   MAJOR.MINOR.PATCH (default: 9.1.1)
+#   NVDS_VERSION   MAJOR.MINOR.PATCH (default: 9.2.0)
 #   PKG_VERSION    Package version recorded in control  (default: NVDS_VERSION)
 # ---------------------------------------------------------------------------
 set -euo pipefail
@@ -46,13 +46,13 @@ set -euo pipefail
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 REPO_ROOT=$(cd "$SCRIPT_DIR/.." && pwd)
 
-NVDS_VERSION=${NVDS_VERSION:-9.1.1}
+NVDS_VERSION=${NVDS_VERSION:-9.2.0}
 
-# NVDS_VERSION must be MAJOR.MINOR.PATCH (default: 9.1.1). MAJOR.MINOR alone is
+# NVDS_VERSION must be MAJOR.MINOR.PATCH (default: 9.2.0). MAJOR.MINOR alone is
 # rejected. The install tree and deb package name still stay at MAJOR.MINOR for
 # now; PKG_VERSION and output filenames use the full version.
 if [[ ! "$NVDS_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-  echo "error: invalid NVDS_VERSION='$NVDS_VERSION' (expected MAJOR.MINOR.PATCH, e.g. 9.1.1)" >&2
+  echo "error: invalid NVDS_VERSION='$NVDS_VERSION' (expected MAJOR.MINOR.PATCH, e.g. 9.2.0)" >&2
   exit 1
 fi
 NVDS_FULL_VERSION="$NVDS_VERSION"
@@ -91,7 +91,7 @@ Options:
   --keep-stage        Do not delete the staging dir on exit
 
 Environment overrides (CLI flags take precedence):
-  NVDS_VERSION   MAJOR.MINOR.PATCH (default: 9.1.1)
+  NVDS_VERSION   MAJOR.MINOR.PATCH (default: 9.2.0)
   PKG_VERSION    Package version recorded in control   (default: NVDS_VERSION)
 EOF
 }
@@ -364,6 +364,22 @@ if [[ -d "$DS_ROOT/sources/libs/nvds_logger" ]]; then
   log "Relocated nvds_logger -> sources/tools/nvds_logger"
 fi
 
+# Sparse4D prebuilt .so files come from the binaries package at
+# DS_INSTALL_ROOT/sources/sparse4d/. Copy them first, then overlay git-tracked
+# configs + README. Full library sources stay under
+# sources/gst-plugins/gst-nvdsvideotemplate/ds-sparse4d.
+mkdir -p "$DS_ROOT/sources/sparse4d"
+if [[ -d "$DS_INSTALL_ROOT/sources/sparse4d" ]]; then
+  log "Staging Sparse4D prebuilt libraries -> sources/sparse4d"
+  copy_contents_into "$DS_INSTALL_ROOT/sources/sparse4d" "$DS_ROOT/sources/sparse4d"
+fi
+SPARSE4D_SRC="$REPO_ROOT/src/gst-plugins/gst-nvdsvideotemplate/ds-sparse4d"
+if [[ -d "$SPARSE4D_SRC/configs" ]]; then
+  log "Staging Sparse4D configs + README -> sources/sparse4d"
+  copy_into "$SPARSE4D_SRC/configs" "$DS_ROOT/sources/sparse4d"
+  copy_into "$SPARSE4D_SRC/README" "$DS_ROOT/sources/sparse4d"
+fi
+
 # 4. Scripts shipped at DS_ROOT root / samples.
 log "Staging install/uninstall + helper scripts"
 copy_into "$REPO_ROOT/scripts/uninstall.sh" "$DS_ROOT"
@@ -387,28 +403,36 @@ fi
 # layout. Both src/utils/ and src/gst-utils/ are shipped under sources/libs/,
 # so '../../utils' and '../../gst-utils' both become '../../libs'. Repo working
 # tree is untouched; edits apply to deb and tar.
+# LIBS_REL_PATH: shared literal for the patch_staged_file() calls below
+# (SonarQube S1192: avoid repeating the '../../libs' literal).
+LIBS_REL_PATH="../../libs"
 log "Patching staged Makefile paths (utils -> libs)"
 for p in gst-nvinfer gst-nvinferserver gst-nvmsgconv gst-nvmultistream2 \
          gst-nvmultiurisrcbin gst-nvds3dbridge gst-nvds3dfilter gst-nvds3dmixer \
          gst-nvdsbins gst-nvdslogger gst-nvmodelmux gst-nvmultistream gst-nvsegvisual \
          gst-nvtiler; do
-  patch_staged_file "sources/gst-plugins/$p/Makefile" "../../utils" "../../libs"
+  patch_staged_file "sources/gst-plugins/$p/Makefile" "../../utils" "$LIBS_REL_PATH"
 done
 
 # gst-nvdsucx is x86-only, so it is absent from arm64 packages (pruned above).
 if [[ -f "$DS_ROOT/sources/gst-plugins/gst-nvdsucx/Makefile" ]]; then
-  patch_staged_file "sources/gst-plugins/gst-nvdsucx/Makefile" "../../utils" "../../libs"
+  patch_staged_file "sources/gst-plugins/gst-nvdsucx/Makefile" "../../utils" "$LIBS_REL_PATH"
 fi
 
 # These plug-ins additionally include gst-utils headers, which land in
 # sources/libs/ alongside everything else.
 for p in gst-nvdsbins gst-nvinfereval gst-nvmodelmux gst-nvmultiurisrcbin; do
-  patch_staged_file "sources/gst-plugins/$p/Makefile" "../../gst-utils" "../../libs"
+  patch_staged_file "sources/gst-plugins/$p/Makefile" "../../gst-utils" "$LIBS_REL_PATH"
 done
+
+# gst-nvdsanalytics: nvds_analytics ships under sources/libs/.
+patch_staged_file "sources/gst-plugins/gst-nvdsanalytics/Makefile" \
+  "-I ../../../utils/nvds_analytics" \
+  "-I ../../libs/nvds_analytics"
 
 # gst-nvdsinferbase ships under sources/libs/ itself but still refers to
 # sibling utils/ headers.
-patch_staged_file "sources/libs/gst-nvdsinferbase/Makefile" "../../utils" "../../libs"
+patch_staged_file "sources/libs/gst-nvdsinferbase/Makefile" "../../utils" "$LIBS_REL_PATH"
 
 # nvds_utils.cpp consumers: the restructuring above lifted common_src out to
 # libs/nvds_msgapi_common_src and deleted nvds_msgapi/, so point them all at the
@@ -443,11 +467,14 @@ patch_staged_file "sources/apps/sample_apps/deepstream-infer-tensor-meta-test/Ma
 
 # nvds_msgapi protocol adaptors: DS_INC paths adjusted for new libs/ top-level location,
 # and common_src renamed to nvds_msgapi_common_src.
+# DS_INC_4UP: shared literal for the patch_staged_file() calls below (SonarQube
+# S1192: avoid repeating the 'DS_INC:= ../../../../includes' literal).
+DS_INC_4UP="DS_INC:= ../../../../includes"
 log "Patching nvds_msgapi protocol adaptor Makefiles"
 for proto in amqp_protocol_adaptor kafka_protocol_adaptor mqtt_protocol_adaptor redis_protocol_adaptor; do
   if [[ -f "$DS_ROOT/sources/libs/$proto/Makefile" ]]; then
     patch_staged_file "sources/libs/$proto/Makefile" \
-      "DS_INC:= ../../../../includes" \
+      "$DS_INC_4UP" \
       "DS_INC:= ../../../includes"
     patch_staged_file "sources/libs/$proto/Makefile" \
       "../common_src/nvds_utils.cpp" \
@@ -457,7 +484,7 @@ for proto in amqp_protocol_adaptor kafka_protocol_adaptor mqtt_protocol_adaptor 
     if [[ "$proto" = "amqp_protocol_adaptor" || "$proto" = "mqtt_protocol_adaptor" ]]; then
       test_ds_inc="DS_INC:= ../../../../includes/"
     else
-      test_ds_inc="DS_INC:= ../../../../includes"
+      test_ds_inc="$DS_INC_4UP"
     fi
     patch_staged_file "sources/libs/$proto/Makefile.test" \
       "$test_ds_inc" \
@@ -470,7 +497,7 @@ for client in device_client module_client; do
   if [[ -f "$DS_ROOT/sources/libs/azure_protocol_adaptor/$client/Makefile" ]]; then
     patch_staged_file "sources/libs/azure_protocol_adaptor/$client/Makefile" \
       "DS_INC:= ../../../../../includes" \
-      "DS_INC:= ../../../../includes"
+      "$DS_INC_4UP"
     if [[ "$client" = "device_client" ]]; then
       patch_staged_file "sources/libs/azure_protocol_adaptor/$client/Makefile" \
         "../../common_src/nvds_utils.cpp" \
@@ -480,7 +507,7 @@ for client in device_client module_client; do
   if [[ -f "$DS_ROOT/sources/libs/azure_protocol_adaptor/$client/Makefile.test" ]]; then
     patch_staged_file "sources/libs/azure_protocol_adaptor/$client/Makefile.test" \
       "DS_INC:= ../../../../../includes" \
-      "DS_INC:= ../../../../includes"
+      "$DS_INC_4UP"
   fi
 done
 
@@ -540,7 +567,7 @@ done
 log "Patching staged uninstall.sh (deregister deepstream-<ver> package)"
 patch_staged_file "uninstall.sh" \
 'remove_if_deb "deepstream-sample-data"
-if [ -n "${PLATFORM}" ]; then
+if [[ -n "${PLATFORM}" ]]; then
   remove_if_deb "deepstream-binaries-${PLATFORM}"
 fi' \
 '# Single self-contained package: deregister deepstream-${PREV_DS_VER}. When run

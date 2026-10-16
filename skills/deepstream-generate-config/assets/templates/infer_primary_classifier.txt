@@ -1,0 +1,23 @@
+# Classifier nvinfer template (used for SGIEs or primary classifiers).
+# Modeled on samples/configs/deepstream-app/config_infer_secondary_vehicletypes.txt.
+
+[property]
+gpu-id=0
+net-scale-factor=1
+model-color-format=1
+onnx-file=auto
+model-engine-file=auto
+labelfile-path=auto
+int8-calib-file=auto
+batch-size=auto
+network-mode=2
+is-classifier=1
+process-mode=2
+classifier-async-mode=1
+classifier-threshold=0.51
+input-object-min-width=0
+input-object-min-height=0
+operate-on-gie-id=1
+operate-on-class-ids=0
+classifier-type=auto
+gie-unique-id=auto

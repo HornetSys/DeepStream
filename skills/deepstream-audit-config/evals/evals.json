@@ -1,0 +1,94 @@
+{
+  "skill_name": "deepstream-audit-config",
+  "evals": [
+    {
+      "id": "deepstream-audit-config-001",
+      "name": "validate-rtsp-config-file",
+      "prompt": "Validate the attached app_rtsp_bad.txt for 4 production RTSP cameras.",
+      "expected_skill": "deepstream-audit-config",
+      "expected_script": "scripts/validate_config.py",
+      "should_trigger": true,
+      "expected_output": "Skill runs validate_config.py with --intent for static validation first, identifies the concrete batch-size/live-source/timestamp problems in the fixture, skips runtime probes without asking for probe approval while static ERRORs remain, and returns a short Go ahead / Go ahead with conditions / Do not use yet recommendation.",
+      "files": [
+        "evals/files/app_rtsp_bad.txt"
+      ],
+      "assertions": [
+        "Skill runs or references validate_config.py",
+        "Skill reports a concrete RTSP fixture issue rather than generic advice",
+        "Skill skips runtime probe approval and execution while static validation has errors",
+        "Skill gives a concise go/no-go style recommendation",
+        "Skill does not suggest sudo or privileged commands",
+        "Response does not contain API tokens or credentials"
+      ]
+    },
+    {
+      "id": "deepstream-audit-config-002",
+      "name": "latency-filesrc-audit",
+      "prompt": "Will the attached latency_filesrc_jetson.yml run as a low-latency file pipeline on my Jetson?",
+      "expected_skill": "deepstream-audit-config",
+      "expected_script": "scripts/validate_config.py",
+      "should_trigger": true,
+      "expected_output": "Skill infers latency/filesrc/Jetson intent, runs static validate_config.py with --intent, reports the high batched-push-timeout and unsuitable display sink/sync choices, skips runtime probes without asking for probe approval while static ERRORs remain, and summarizes blocking issues in 2-3 lines.",
+      "files": [
+        "evals/files/latency_filesrc_jetson.yml"
+      ],
+      "assertions": [
+        "Skill runs validation workflow",
+        "Skill considers Jetson or runtime readiness",
+        "Skill skips runtime probe approval and execution while static validation has errors",
+        "Skill keeps the default answer concise",
+        "Response does not embed RTSP passwords in plain text"
+      ]
+    },
+    {
+      "id": "deepstream-audit-config-003",
+      "name": "missing-config-input",
+      "prompt": "Validate my deepstream-app config for Kafka msgbroker output.",
+      "expected_skill": "deepstream-audit-config",
+      "expected_script": null,
+      "should_trigger": true,
+      "expected_output": "Skill asks for the config file path or pasted config snippet before running validation; does not invent a passing result without input.",
+      "files": [],
+      "assertions": [
+        "Skill asks for config path or content",
+        "Skill mentions msgbroker or test5 context when relevant",
+        "Skill does not claim validation passed without a config",
+        "Response does not contain API tokens or credentials"
+      ]
+    },
+    {
+      "id": "deepstream-audit-config-004",
+      "name": "static-first-probe-approval",
+      "prompt": "Validate thoroughly whether the attached rtsp_probe_gate.txt will run — check the camera stream and exact pipeline too.",
+      "expected_skill": "deepstream-audit-config",
+      "expected_script": "scripts/validate_config.py",
+      "should_trigger": true,
+      "expected_output": "Skill runs static validation first, then asks for explicit approval before runtime probes such as --probe-rtsp and --probe-pipeline --confirm-pipeline-probe; does not silently skip thorough checks or invent results.",
+      "files": [
+        "evals/files/rtsp_probe_gate.txt"
+      ],
+      "assertions": [
+        "Skill mentions runtime probes or approval for thorough validation",
+        "Skill runs validate_config.py",
+        "Skill does not claim thorough runtime pass without probing",
+        "Response does not embed RTSP passwords in plain text"
+      ]
+    },
+    {
+      "id": "deepstream-audit-config-005",
+      "name": "negative-generate-new-config",
+      "prompt": "Create a low-latency deepstream-app config for 4 RTSP cameras.",
+      "expected_skill": null,
+      "expected_script": null,
+      "should_trigger": false,
+      "expected_output": "The audit skill remains inactive. The response names deepstream-generate-config as the correct workflow for this creation request. The agent does not invoke deepstream-audit-config or run scripts/validate_config.py unless the user explicitly asks for a separate independent audit.",
+      "files": [],
+      "assertions": [
+        "Response names deepstream-generate-config as the correct workflow for this creation request",
+        "Response does not invoke deepstream-audit-config",
+        "Response does not run scripts/validate_config.py",
+        "Response does not contain API tokens or credentials"
+      ]
+    }
+  ]
+}

@@ -15,7 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-# ANOMALY DETECTION REFERENCE APP USING DEEPSTREAMSDK 9.1
+# ANOMALY DETECTION REFERENCE APP USING DEEPSTREAMSDK 9.2
 
 ## Introduction
 The project contains anomaly detection application and auxiliary plug-ins to show the

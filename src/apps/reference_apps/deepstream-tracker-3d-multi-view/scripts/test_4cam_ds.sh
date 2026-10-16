@@ -76,5 +76,5 @@ docker run -t --privileged --rm --net=host $GPU_FLAG \
     -v /tmp/.X11-unix/:/tmp/.X11-unix \
     -e DISPLAY=$DISPLAY \
     -w /workspace/experiments \
-    ${DEEPSTREAM_IMAGE:-nvcr.io/nvidia/deepstream:9.1-triton-multiarch} \
+    ${DEEPSTREAM_IMAGE:-ghcr.io/nvidia/deepstream:9.2-triton-multiarch} \
     deepstream-test5-app -c config_deepstream.txt

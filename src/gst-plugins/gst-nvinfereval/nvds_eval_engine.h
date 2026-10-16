@@ -35,7 +35,7 @@
  *   - A dedicated GTIndex                  (per-model GT file)
  *   - A per-model epoch frame counter      (incremented only on Primary frames)
  *   - A source_id -> camera_id map of the streams carrying that pair
- *     (built from per-frame sensor info; scopes the targeted stream/route;
+ *     (built from per-frame sensor info; scopes the targeted model/routing;
  *     liveness-stamped per epoch so removed streams age out of the scope)
  *   - Per-model KPI thresholds / margins   (from [model-<name>] config section)
  *

@@ -17,7 +17,7 @@
 set -e
 
 if [[ $(whoami) != root ]]; then
-    echo Error: Run this script as a root user
+    echo Error: Run this script as a root user >&2
     exit 1
 fi
 

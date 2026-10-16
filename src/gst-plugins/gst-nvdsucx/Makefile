@@ -14,8 +14,17 @@
 # limitations under the License.
 
 CUDA_VER?=
+# Require CUDA_VER for every goal except a clean-only invocation.
+# A bare `make` has empty MAKECMDGOALS and still checks.
+ifneq ($(filter-out clean,$(MAKECMDGOALS)),)
+  _DS_NEED_CUDA_VER := 1
+else ifeq ($(MAKECMDGOALS),)
+  _DS_NEED_CUDA_VER := 1
+endif
+ifeq ($(_DS_NEED_CUDA_VER),1)
 ifeq ($(CUDA_VER),)
   $(error "CUDA_VER is not set")
+endif
 endif
 
 # Override UCX_PATH if UCX is installed elsewhere.
@@ -23,12 +32,12 @@ UCX_PATH ?= /usr
 
 CXX:= g++
 
-NVDS_VERSION:=9.1
+NVDS_VERSION:=9.2
 
 GST_INSTALL_DIR?=/opt/nvidia/deepstream/deepstream-$(NVDS_VERSION)/lib/gst-plugins/
 LIB_INSTALL_DIR?=/opt/nvidia/deepstream/deepstream-$(NVDS_VERSION)/lib/
 
-CFLAGS:= -fPIC -std=c++17 -DDS_VERSION=\"9.1.1\"
+CFLAGS:= -fPIC -std=c++17 -DDS_VERSION=\"9.2.0\"
 
 CFLAGS+= -I../../../includes \
 	 -I../../utils/nvds_mem_allocator \

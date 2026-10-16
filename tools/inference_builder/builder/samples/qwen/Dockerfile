@@ -18,7 +18,7 @@
 # hardware-accelerated decoding.
 #
 # Stage 1: pull in DeepStream libraries, binaries, and sample assets.
-FROM gitlab-master.nvidia.com:5005/deepstreamsdk/release_image/deepstream:9.1.1-26.08.2-triton-20260817-ma-dev99 AS ds_stage
+FROM ghcr.io/nvidia/deepstream:9.2-triton-multiarch AS ds_stage
 
 FROM nvcr.io/nvidia/tensorrt-llm/release:1.1.0 AS inference_base
 
@@ -29,17 +29,17 @@ ENV NVIDIA_DRIVER_CAPABILITIES $NVIDIA_DRIVER_CAPABILITIES,video
 RUN apt update && apt install -y --no-install-recommends gstreamer1.0-plugins-good gstreamer1.0-plugins-bad \
     libyaml-cpp-dev libgstrtspserver-1.0-0 libjsoncpp25 libgles2 pkg-config
 
-COPY --from=ds_stage /opt/nvidia/deepstream/deepstream-9.1/lib /opt/nvidia/deepstream/deepstream-9.1/lib
-COPY --from=ds_stage /opt/nvidia/deepstream/deepstream-9.1/bin /opt/nvidia/deepstream/deepstream-9.1/bin
-COPY --from=ds_stage /opt/nvidia/deepstream/deepstream-9.1/*.sh /opt/nvidia/deepstream/deepstream-9.1/
-COPY --from=ds_stage /opt/nvidia/deepstream/deepstream-9.1/*.txt /opt/nvidia/deepstream/deepstream-9.1/
-COPY --from=ds_stage /opt/nvidia/deepstream/deepstream-9.1/README* /opt/nvidia/deepstream/deepstream-9.1/
-COPY --from=ds_stage /opt/nvidia/deepstream/deepstream-9.1/*.pdf /opt/nvidia/deepstream/deepstream-9.1/
-COPY --from=ds_stage /opt/nvidia/deepstream/deepstream-9.1/service-maker /opt/nvidia/deepstream/deepstream-9.1/service-maker
-COPY --from=ds_stage /opt/nvidia/deepstream/deepstream-9.1/samples/streams/* /opt/nvidia/deepstream/deepstream-9.1/samples/streams/
+COPY --from=ds_stage /opt/nvidia/deepstream/deepstream-9.2/lib /opt/nvidia/deepstream/deepstream-9.2/lib
+COPY --from=ds_stage /opt/nvidia/deepstream/deepstream-9.2/bin /opt/nvidia/deepstream/deepstream-9.2/bin
+COPY --from=ds_stage /opt/nvidia/deepstream/deepstream-9.2/*.sh /opt/nvidia/deepstream/deepstream-9.2/
+COPY --from=ds_stage /opt/nvidia/deepstream/deepstream-9.2/*.txt /opt/nvidia/deepstream/deepstream-9.2/
+COPY --from=ds_stage /opt/nvidia/deepstream/deepstream-9.2/README* /opt/nvidia/deepstream/deepstream-9.2/
+COPY --from=ds_stage /opt/nvidia/deepstream/deepstream-9.2/*.pdf /opt/nvidia/deepstream/deepstream-9.2/
+COPY --from=ds_stage /opt/nvidia/deepstream/deepstream-9.2/service-maker /opt/nvidia/deepstream/deepstream-9.2/service-maker
+COPY --from=ds_stage /opt/nvidia/deepstream/deepstream-9.2/samples/streams/* /opt/nvidia/deepstream/deepstream-9.2/samples/streams/
 
-RUN /opt/nvidia/deepstream/deepstream-9.1/install.sh
-RUN ln -sf deepstream-9.1 /opt/nvidia/deepstream/deepstream || true
+RUN /opt/nvidia/deepstream/deepstream-9.2/install.sh
+RUN ln -sf deepstream-9.2 /opt/nvidia/deepstream/deepstream || true
 
 # Install Python dependencies required by THIS Qwen sample. These
 # versions are pinned for reproducibility and can be adjusted for

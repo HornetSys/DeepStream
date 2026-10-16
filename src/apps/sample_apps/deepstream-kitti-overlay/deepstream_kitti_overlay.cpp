@@ -188,19 +188,19 @@ tiler_sink_pad_buffer_probe (GstPad * pad, GstPadProbeInfo * info,
     /* count the number of objects in a frame */
     for (l_obj = frame_meta->obj_meta_list; l_obj != NULL; l_obj = l_obj->next) {
       object_meta = (NvDsObjectMeta *) (l_obj->data);
-      if (!g_strcmp0 (object_meta->obj_label, "Car")) {
+      if (!g_strcmp0 (object_meta->obj_label, "car")) {
         vehicle_count++;
         num_rects++;
       }
-      else if (!g_strcmp0 (object_meta->obj_label, "Person")) {
+      else if (!g_strcmp0 (object_meta->obj_label, "person")) {
         person_count++;
         num_rects++;
       }
-      else if (!g_strcmp0 (object_meta->obj_label, "TwoWheeler")) {
+      else if (!g_strcmp0 (object_meta->obj_label, "bicycle")) {
         twowheeler_count++;
         num_rects++;
       }
-      else if (!g_strcmp0 (object_meta->obj_label, "Roadsign")) {
+      else if (!g_strcmp0 (object_meta->obj_label, "road_sign")) {
         roadsign_count++;
         num_rects++;
       }
@@ -286,19 +286,19 @@ appsink_sample (GstElement * sink, gpointer * data)
       for (l_obj = frame_meta->obj_meta_list; l_obj != NULL;
           l_obj = l_obj->next) {
         obj_meta = (NvDsObjectMeta *) (l_obj->data);
-        if (!g_strcmp0 (obj_meta->obj_label, "Car")) {
+        if (!g_strcmp0 (obj_meta->obj_label, "car")) {
           vehicle_count++;
           num_rects++;
         }
-        if (!g_strcmp0 (obj_meta->obj_label, "TwoWheeler")) {
+        if (!g_strcmp0 (obj_meta->obj_label, "bicycle")) {
           twowheeler_count++;
           num_rects++;
         }
-        if (!g_strcmp0 (obj_meta->obj_label, "Person")) {
+        if (!g_strcmp0 (obj_meta->obj_label, "person")) {
           person_count++;
           num_rects++;
         }
-        if (!g_strcmp0 (obj_meta->obj_label, "Roadsign")) {
+        if (!g_strcmp0 (obj_meta->obj_label, "road_sign")) {
           roadsign_count++;
           num_rects++;
         }

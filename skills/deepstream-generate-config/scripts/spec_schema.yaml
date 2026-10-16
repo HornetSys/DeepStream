@@ -1,0 +1,216 @@
+# Canonical input spec for the deepstream-generate-config skill.
+# This file is human-readable documentation only; render.py does its own
+# validation. Comments mark fields with allowed values.
+
+deployment:
+  # app: classic | test5 -- auto-promoted to test5 if any sink has consumer.enable=true
+  app: classic
+  # format: txt | yml
+  format: txt
+  # platform: dgpu | jetson -- controls nvbuf-memory-type defaults and egl<->nv3dsink mapping
+  platform: dgpu
+  gpu_id: 0
+  # output_path: absolute or relative path; extension overrides 'format' if it disagrees.
+  # Agents should pass --out on a writable path (e.g. ./generated_config.txt).
+  # Optional convention only: /opt/nvidia/deepstream/deepstream/samples/configs/deepstream-app/
+  # (root-owned; requires explicit user confirmation before any privileged write).
+  output_path: ./generated_config.txt
+  # ds_root: optional, used to expand ${DS_ROOT} substrings in any string value
+  ds_root: /opt/nvidia/deepstream/deepstream
+
+# profile: latency | perf | display | custom
+# Overlays apply only to keys NOT already set in this spec.
+profile: perf
+
+sources:
+  # kind: file | rtsp | v4l2 | csi | multi_uri | source_list
+  #   file       -- one [source0] per URI, type=2
+  #   rtsp       -- one [source0] per URI, type=4 + reconnect knobs
+  #   v4l2       -- one [source0], type=1, camera-* keys
+  #   csi        -- one [source0], type=5, csi sensor id
+  #   multi_uri  -- single [source0] type=3 with num-sources=N replicating one URI
+  #   source_list -- [source-list] + [source-attr-all] (nvmultiurisrcbin)
+  kind: multi_uri
+  uris:
+    - file:///opt/nvidia/deepstream/deepstream/samples/streams/sample_1080p_h264.mp4
+  # Must equal len(uris) for file/rtsp and must be 1 for v4l2/csi.
+  # source_list accepts either one reusable URI or exactly num_sources URIs.
+  # For multi_uri, this is the replication count and uris may contain at most
+  # one URI.
+  num_sources: 4
+  # live: auto | true | false. auto = true for rtsp/v4l2/csi, false for file/multi_uri.
+  live: auto
+  # use_nvmultiurisrcbin: only meaningful when kind=source_list
+  use_nvmultiurisrcbin: false
+  # simulate_fps_interval_ms: paces file URIs at a fixed inter-frame interval
+  # (in ms) to simulate a live camera. Required for honest latency
+  # benchmarking with file sources, ignored for live sources (rtsp/v4l2/csi).
+  # 0 disables pacing (decoder runs as fast as possible).
+  # Only emitted when kind=source_list and use_nvmultiurisrcbin=true.
+  # latency profile auto-defaults this to 33 (~30 fps) when the above
+  # conditions are met AND at least one URI uses the file:// scheme.
+  simulate_fps_interval_ms: 0
+  # v4l2-specific
+  v4l2_dev_node: 0
+  camera_width: 1920
+  camera_height: 1080
+  camera_fps_n: 30
+  camera_fps_d: 1
+  # csi-specific
+  csi_sensor_id: 0
+
+streammux:
+  # int or 'auto'. auto = sources.num_sources
+  batch_size: auto
+  # int microseconds or 'auto'. auto = 33333 for latency profile, 40000 otherwise
+  batched_push_timeout: auto
+  width: 1920
+  height: 1080
+  # Power-user overrides; merged last over the profile overlay.
+  overrides:
+    # sync-inputs: 0
+    # max-latency: 0
+    # frame-duration: 0
+
+primary_gie:
+  enable: true
+  # preset: trafficcamnet | peoplenet | custom
+  preset: trafficcamnet
+  # When preset=custom, both fields below are required.
+  config_file: ''
+  model_engine_file: ''
+  # interval=0 runs PGIE on every frame. 1 = every other frame, etc.
+  interval: 0
+  # batch_size override; defaults to streammux.batch_size
+  batch_size: auto
+
+  # --- POWER-USER OPT-IN (advanced) ---
+  # Set generate_infer_config: true to have the skill ALSO generate a custom
+  # config_infer_primary.txt next to the main config and point primary-gie at
+  # it. Leave false to reference the stock file for the preset.
+  generate_infer_config: false
+  infer_config_path: config_infer_primary_custom.txt    # sibling filename
+  infer_config:
+    # network_type: detector | classifier
+    network_type: detector
+    # network_mode: 0=FP32, 1=INT8, 2=FP16
+    network_mode: 2
+    # Model files (give at least one of onnx_file or model_engine_file)
+    onnx_file: ''
+    model_engine_file: ''
+    labelfile_path: ''
+    int8_calib_file: ''
+    # Detector-only:
+    num_detected_classes: 4
+    process_mode: 1
+    cluster_mode: 2     # 0=GroupRect, 1=DBSCAN, 2=NMS, 3=DBSCAN+NMS, 4=None
+    pre_cluster_threshold: 0.2
+    nms_iou_threshold: 0.5
+    topk: 20
+    maintain_aspect_ratio: 0
+    net_scale_factor: 0.00392156862745098
+    model_color_format: 0     # 0=RGB, 1=BGR, 2=GRAY
+    # Classifier-only:
+    classifier_threshold: 0.51
+    classifier_type: custom
+    input_object_min_width: 0
+    input_object_min_height: 0
+
+tracker:
+  enable: true
+  # preset: NvDCF_perf | NvDCF_accuracy | NvSORT | IOU | NvDeepSORT | MaskTracker
+  preset: NvDCF_perf
+  tracker_width: 960
+  tracker_height: 544
+
+  # --- POWER-USER OPT-IN (advanced) ---
+  # Set generate_tracker_config: true to have the skill ALSO generate a custom
+  # tracker YAML (NvDCF / NvSORT / IOU only) and point tracker.ll-config-file at it.
+  # tracker_config keys can be snake_case or camelCase.
+  generate_tracker_config: false
+  tracker_config_path: config_tracker_custom.yml
+  tracker_config:
+    # min_detector_confidence: 0.05
+    # max_targets_per_stream: 200
+    # min_iou_diff4_new_target: 0.7
+    # probation_age: 3
+    # max_shadow_tracking_age: 30
+    # early_termination_age: 1
+    # use_unique_id: 0
+    # enable_bbox_unclipping: 1
+    # check_class_match: 1
+
+# Each entry: {preset: vehicletypes|vehiclemake|custom, config_file, model_engine_file,
+#              operate_on_gie_id, operate_on_class_ids, batch_size, gie_unique_id,
+#              generate_infer_config: bool, infer_config: {...}}
+secondary_gies: []
+
+osd:
+  enable: true
+
+tiled_display:
+  # enable -- maps to deepstream-app [tiled-display].enable:
+  #   auto            -- follow profile (display=1, others=0)
+  #   true / 1        -- nvmultistreamtiler: grid of N sources into one output
+  #                       buffer. One sink consumes the tiled output.
+  #   false / 0       -- no tiling. If sinks declare distinct source-ids,
+  #                       deepstream-app AUTO-CREATES nvstreamdemux and each
+  #                       sink gets its own per-source stream. This is the
+  #                       canonical N-sources->N-sinks pattern.
+  #   demux           -- alias for 0, signals intent more clearly when you
+  #                       want the auto-demuxer. Render validates that each
+  #                       source has a sink with a matching source_id.
+  #   parallel_demux  -- raw deepstream-app value 2. Tiler runs AND in
+  #     / 2              parallel ONE sink (with link_to_demux=true) taps a
+  #                       single demuxed source pad. Rare; mostly to record
+  #                       one source while rendering the tile. Setting
+  #                       link_to_demux=true on more than one sink is silently
+  #                       dropped by deepstream-app (only the first wins).
+  enable: auto
+  # rows/columns: auto picks ceil(sqrt(n)) x ceil(n/rows); ignored when no tile.
+  rows: auto
+  columns: auto
+  width: 1280
+  height: 720
+
+# List of sinks. Profile sets a default sink0 only if this list is empty.
+sinks:
+  # - type: fakesink   # type=1 -- profile chooses sync/show-latency
+  #   sync: auto
+  #   show_fps: auto
+  #   show_latency: auto
+  #   nvdslogger: auto
+  # - type: egl        # type=2 (dgpu) / type=7 (jetson, auto-mapped)
+  # - type: file       # type=3
+  #   container: 1     # 1=mp4, 2=mkv
+  #   codec: 1         # 1=h264, 2=h265, 3=mpeg4 (sw)
+  #   enc_type: 0      # 0=HW, 1=SW
+  #   bitrate: 4000000
+  #   profile: 0
+  #   output_file: out.mp4
+  # - type: rtsp_out   # type=4
+  #   codec: 1
+  #   enc_type: 0
+  #   bitrate: 4000000
+  #   profile: 0
+  #   rtsp_port: 8554
+  #   udp_port: 5400
+  # - type: msgbroker  # type=6
+  #   msg_conv_config: dstest5_msgconv_sample_config.txt
+  #   payload_type: 0
+  #   proto_lib: ${DS_ROOT}/lib/libnvds_kafka_proto.so
+  #   conn_str: host;9092;topic
+  #   topic: ds-events
+  #   broker_config: ''        # optional cfg_kafka.txt
+  #   disable_msgconv: 0
+  #   consumer:                # opt-in; forces deployment.app=test5
+  #     enable: true
+  #     proto_lib: ${DS_ROOT}/lib/libnvds_kafka_proto.so
+  #     conn_str: host;9092
+  #     config_file: cfg_kafka.txt
+  #     subscribe_topics: [cmd]
+  - type: fakesink
+
+tests:
+  # file_loop: auto | 0 | 1. auto follows profile.
+  file_loop: auto

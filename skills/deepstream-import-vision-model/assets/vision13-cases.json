@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "suite": "vision13",
+  "cases": [
+    {"case_id": "trafficcamnet", "task": "detection"},
+    {"case_id": "peoplenet", "task": "detection"},
+    {"case_id": "yolov8n", "task": "detection"},
+    {"case_id": "rtdetr", "task": "detection"},
+    {"case_id": "lpd-us", "task": "detection"},
+    {"case_id": "vehiclemakenet", "task": "classification"},
+    {"case_id": "vehicletypenet", "task": "classification"},
+    {"case_id": "citysemsegformer", "task": "segmentation"},
+    {"case_id": "segformer", "task": "segmentation"},
+    {"case_id": "bodypose2d", "task": "pose"},
+    {"case_id": "depth-anything-v2", "task": "depth"},
+    {"case_id": "foundationstereo", "task": "stereo-depth"},
+    {"case_id": "bi3d", "task": "stereo-proximity"}
+  ],
+  "vision14_additional_case": {
+    "case_id": "mobilenetv2-imagenet",
+    "task": "classification"
+  }
+}

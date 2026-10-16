@@ -17,7 +17,7 @@ CC:= g++
 
 PKGS:= glib-2.0 gobject-2.0 json-glib-1.0 uuid
 
-NVDS_VERSION:=9.1
+NVDS_VERSION:=9.2
 
 LIB_INSTALL_DIR?=/opt/nvidia/deepstream/deepstream-$(NVDS_VERSION)/lib/
 

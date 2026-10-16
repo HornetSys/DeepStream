@@ -130,6 +130,7 @@ void module_buffer_bind(py::module &m) {
         .def("extract", [](Buffer& self, unsigned int id) {
             return make_unique<TensorWrapper>(self.extract(id));
         },
+        py::call_guard<py::gil_scoped_release>(),
         pydeepstreamdoc::buffer::BufferDoc::extract, py::arg("batch_id")
         )
         .def("__repr__", [](Buffer& self) {

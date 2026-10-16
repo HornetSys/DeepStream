@@ -16,7 +16,7 @@
 _RULES_MK_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 _REPO_ROOT     := $(realpath $(_RULES_MK_DIR)/../../..)
 
-NVDS_VERSION  ?= 9.1
+NVDS_VERSION  ?= 9.2
 
 BIN_DIR ?= /opt/nvidia/deepstream/deepstream-$(NVDS_VERSION)/bin
 OBJ_DIR ?= $(CURDIR)/.build

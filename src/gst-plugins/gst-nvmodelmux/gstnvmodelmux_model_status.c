@@ -34,9 +34,9 @@ GST_DEBUG_CATEGORY_EXTERN (gst_modelmux_debug_cat);
  * symbols live in libnvdsgst_customhelper. */
 extern gboolean gst_nvquery_is_model_status (GstQuery * query);
 /* routing-plane read query -- same transport, different question. */
-extern gboolean gst_nvquery_is_stream_route (GstQuery * query);
-extern void gst_nvquery_stream_route_set_response (GstQuery * query, const gchar * json);
-extern gboolean gst_nvquery_stream_route_parse_request (GstQuery * query,
+extern gboolean gst_nvquery_is_model_routing (GstQuery * query);
+extern void gst_nvquery_model_routing_set_response (GstQuery * query, const gchar * json);
+extern gboolean gst_nvquery_model_routing_parse_request (GstQuery * query,
     const gchar ** camera_id, gboolean * filtered);
 extern void gst_nvquery_model_status_set_response (GstQuery * query, const gchar * json);
 extern gboolean gst_nvquery_model_status_parse_request (GstQuery * query,
@@ -335,7 +335,7 @@ modelmux_status_resolve_lane (ModelMuxBin * ib, ModelMuxRoleAttach * ra,
 }
 
 /* Append one stream's model/shadow REF ({"name","version",placement...}) --
- * mirrors the stream/route request shape so a controller can reconcile
+ * mirrors the model/routing request shape so a controller can reconcile
  * status against what it PUT. */
 static void
 modelmux_status_append_ref (GString * s, ModelMuxBin * ib, const gchar * label,
@@ -384,7 +384,7 @@ modelmux_status_append_ref (GString * s, ModelMuxBin * ib, const gchar * label,
  *
  * DefaultModelRef -- not ModelMuxConfig.default_* -- is authoritative: the
  * config fields are seeded once in modelmux_bin_new() and never read again,
- * while every runtime re-designation (stream/route default{}, model/load
+ * while every runtime re-designation (model/routing default{}, model/load
  * default flags, OTA rename commit/rollback, promote/swap) mutates the pool
  * ref under modelmux_bin->lock, which the caller already holds. Its IDENTITY
  * is valid even when `bin` is NULL -- a default may be designated and never
@@ -413,6 +413,46 @@ modelmux_status_append_default_ref (GString * s, const gchar * label,
   *first = FALSE;
   g_free (en);
   g_free (ev);
+}
+
+/* Append the top-level "routing" object -- the unified contract's compact
+ * summary of the ACTIVE default policy:
+ *
+ *   "routing": { "mode": "single"|"shadow",
+ *                "model":  {"name","version"[,"gpu"]},
+ *                "shadow": {"name","version"[,"gpu"]}? }
+ *
+ * `mode` names the policy in the shared vocabulary: one serving model is
+ * "single", a primary mirrored by an A/B lane is "shadow". ("canary" is the
+ * third value the contract defines; it is an aoi-inference capability and this
+ * profile never emits it.)
+ *
+ * The contract REQUIRES both `mode` and `model`, so a deployment with no
+ * default primary emits no routing object at all rather than a half one -- an
+ * optional key that is absent is readable, a required key that is missing is a
+ * schema violation. Same source of truth and the same unfiltered-only rule as
+ * the neighbouring "default" block, so the two can never disagree. */
+static void
+modelmux_status_append_routing (GString * s, ModelMuxBin * ib)
+{
+  DefaultModelRef *dm, *ds;
+  gboolean first = TRUE;
+  GString *d;
+
+  if (!ib || !ib->primary_pool)
+    return;
+  dm = &ib->primary_pool->default_ref;
+  if (!dm->name)                       /* no default primary -> no conformant object */
+    return;
+  ds = ib->shadow_pool ? &ib->shadow_pool->default_ref : NULL;
+
+  d = g_string_new (NULL);
+  modelmux_status_append_default_ref (d, "model", dm, &first);
+  if (ds && ds->name)
+    modelmux_status_append_default_ref (d, "shadow", ds, &first);
+  g_string_append_printf (s, ",\"routing\":{\"mode\":\"%s\",%s}",
+      (ds && ds->name) ? "shadow" : "single", d->str);
+  g_string_free (d, TRUE);
 }
 
 /* One ref inside a stream's "pending" object:
@@ -512,7 +552,7 @@ modelmux_status_append_default (GString * s, ModelMuxBin * ib)
 }
 
 /* ==========================================================================
- * ROUTING PLANE READ -- GET /api/v1/stream/route
+ * ROUTING PLANE READ -- GET /api/v1/model/routing
  *
  * Built HERE, next to modelmux_bin_status_json, for the same reason that one
  * lives here: this element owns the state being reported. It also owns the
@@ -526,7 +566,7 @@ modelmux_status_append_default (GString * s, ModelMuxBin * ib)
  * about the same stream. What differs is the SHAPE:
  *
  *   model/status  -- one object per stream, every field, per-window perf.
- *   stream/route  -- streams GROUPED by identical routing state, so "streams"
+ *   model/routing  -- streams GROUPED by identical routing state, so "streams"
  *                    means what it means in the POST (a set of cameras sharing
  *                    one instruction), and a WHITELIST of fields, so the
  *                    per-window perf pair cannot leak in. Those numbers change
@@ -1092,11 +1132,13 @@ modelmux_bin_status_json (ModelMuxBin * ib, const gchar * f_model,
    * is almost never the filtered model, so emitting it unconditionally would
    * leak an unrelated model name into every narrowed response (and does break
    * test_12's "filter excludes the default model" assertions).
-   * stream/route's GET follows the same rule: it drops default{} under
+   * model/routing's GET follows the same rule: it drops default{} under
    * ?stream= for the same reason (the default is redundant or irrelevant for a
    * single stream), so the two views stay consistent. */
-  if (!model_filter && !version_filter && !stream_filter)
+  if (!model_filter && !version_filter && !stream_filter) {
     modelmux_status_append_default (s, ib);
+    modelmux_status_append_routing (s, ib);
+  }
   g_string_append (s, ",\"models\":[");
   for (i = 0; i < names->len; i++) {
     const gchar *name = (const gchar *) g_ptr_array_index (names, i);
@@ -1276,15 +1318,15 @@ modelmux_status_query_probe (GstPad * pad, GstPadProbeInfo * info, gpointer udat
   gchar *json;
   (void) pad;
 
-  /* stream/route: the ROUTING plane, answered whole by this element -- the REST
+  /* model/routing: the ROUTING plane, answered whole by this element -- the REST
    * host forwards the body untouched, exactly as it does for model/status. */
-  if (q && gst_nvquery_is_stream_route (q)) {
+  if (q && gst_nvquery_is_model_routing (q)) {
     const gchar *f_camera = NULL;
     gboolean f_on = FALSE;
     gchar *rjson;
-    gst_nvquery_stream_route_parse_request (q, &f_camera, &f_on);
+    gst_nvquery_model_routing_parse_request (q, &f_camera, &f_on);
     rjson = modelmux_bin_route_json (ib, f_on ? (f_camera ? f_camera : "") : NULL);
-    gst_nvquery_stream_route_set_response (q, rjson);
+    gst_nvquery_model_routing_set_response (q, rjson);
     g_free (rjson);
     return GST_PAD_PROBE_HANDLED;
   }

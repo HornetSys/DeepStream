@@ -314,7 +314,7 @@ modelmux_stream_name_get (ModelMuxBin * modelmux_bin, guint sid)
 }
 
 /* Control-plane wrapper (NOT hot path): friendly source name for a source id,
- * e.g. the camera name a stream/route touched, for notification detail. */
+ * e.g. the camera name a model/routing touched, for notification detail. */
 G_GNUC_INTERNAL const gchar *
 modelmux_bin_source_name (ModelMuxBin * modelmux_bin, guint sid)
 {
@@ -3065,6 +3065,29 @@ modelmux_key_is_configured_default (ModelMuxBin * modelmux_bin, const gchar * ke
           g_strcmp0 (key, modelmux_bin->primary_pool->default_ref.key) == 0) ||
          (modelmux_bin->shadow_pool && modelmux_bin->shadow_pool->default_ref.key &&
           g_strcmp0 (key, modelmux_bin->shadow_pool->default_ref.key) == 0);
+}
+
+gboolean
+modelmux_bin_is_configured_default (ModelMuxBin * modelmux_bin, const gchar * name,
+    const gchar * version)
+{
+  gboolean ret = FALSE;
+  gchar *key;
+  if (!modelmux_bin || !name || !*name)
+    return FALSE;
+  /* build the key OUTSIDE the lock -- the critical section is a string compare */
+  key = (version && *version) ? model_key (name, version) : NULL;
+  g_mutex_lock (&modelmux_bin->lock);
+  if (key)
+    ret = modelmux_key_is_configured_default (modelmux_bin, key);
+  else
+    ret = (modelmux_bin->primary_pool && modelmux_bin->primary_pool->default_ref.name &&
+           g_strcmp0 (name, modelmux_bin->primary_pool->default_ref.name) == 0) ||
+          (modelmux_bin->shadow_pool && modelmux_bin->shadow_pool->default_ref.name &&
+           g_strcmp0 (name, modelmux_bin->shadow_pool->default_ref.name) == 0);
+  g_mutex_unlock (&modelmux_bin->lock);
+  g_free (key);
+  return ret;
 }
 
 /* DEDUP-ON-IDLE: a base bin that just went idle (READY, 0 streams, single
@@ -6304,7 +6327,7 @@ modelmux_bin_attach_stream (ModelMuxBin * modelmux_bin, guint stream_id,
       g_strdup (name ? name : "src"));
   /* The ROUTABLE id, recorded alongside the display name and under the same
    * lock/lifetime rules. No "src" fallback here: an absent camera_id must stay
-   * absent, because a synthesised one would not resolve in POST stream/route and
+   * absent, because a synthesised one would not resolve in POST model/routing and
    * the read would emit an identifier its own write rejects -- precisely the
    * mislabel this map exists to avoid. */
   if (cam_id && *cam_id)

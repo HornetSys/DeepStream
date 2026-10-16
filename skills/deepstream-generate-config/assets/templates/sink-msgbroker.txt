@@ -1,0 +1,15 @@
+# MsgConvBroker sink: bundles nvmsgconv + nvmsgbroker behind a single sink.
+# Required keys (validator enforces): msg-conv-config, msg-broker-proto-lib,
+# msg-broker-conn-str, topic.
+# msg-conv-payload-type: 0=DEEPSTREAM, 1=DEEPSTREAM_MINIMAL, 256=RESERVED, 257=CUSTOM.
+
+[sink0]
+enable=1
+type=6
+sync=0
+source-id=0
+msg-conv-config=dstest5_msgconv_sample_config.txt
+msg-conv-payload-type=0
+msg-broker-proto-lib=/opt/nvidia/deepstream/deepstream/lib/libnvds_kafka_proto.so
+msg-broker-conn-str=<host>;<port>;<topic>
+topic=<topic>

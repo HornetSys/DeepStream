@@ -25,6 +25,13 @@ The DeepStream SDK's multi-object tracker supports multiple deep learning models
 
 All models utilize TensorRT for accelerated inference. This guide demonstrates how to prepare these models for both dGPU and Jetson platforms.
 
+> **Note**: `<DS_ROOT>` is the path where the [DeepStream repo](https://github.com/NVIDIA/DeepStream) is cloned. The SAM2 conversion tool (`<DS_ROOT>/tools/sam2-onnx-tensorrt`) and the 3D tracking reference apps (`<DS_ROOT>/src/apps/reference_apps`) are **not** packaged in the DeepStream deb/tar packages or the DeepStream Docker image. To use them, clone the DeepStream repo (matching your installed DeepStream release) and use them from the repo:
+> ```bash
+> git clone https://github.com/NVIDIA/DeepStream.git
+> cd DeepStream
+> git lfs pull
+> ```
+
 ## Table of Contents
 
 - [Segmentation](#segmentation)
@@ -45,6 +52,7 @@ The `config_tracker_MaskTracker.yml` configuration enables high-accuracy multi-o
 1. **Prepare Model Files**
    ```bash
    mkdir -p /opt/nvidia/deepstream/deepstream/samples/models/Tracker/
+   # Not packaged in deb/tar/Docker; use it from the DeepStream repo clone.
    cd ../../../../../tools/sam2-onnx-tensorrt
    python3 -m venv sam2_env
    source sam2_env/bin/activate
@@ -127,7 +135,7 @@ onnxFile: "change-to-model-name.onnx"
 
 ## Pose Estimation
 
-For 3D tracking examples, refer to the `../../../../apps/reference_apps/deepstream-tracker-3d`. Currently, only NVIDIA TAO BodyPose3DNet is supported.
+For 3D tracking examples, refer to `../../../../apps/reference_apps/deepstream-tracker-3d` in the DeepStream repo clone (not packaged in deb/tar/Docker). Currently, only NVIDIA TAO BodyPose3DNet is supported.
 
 ### Model Source
 - **Model**: NVIDIA TAO BodyPose3DNet
@@ -143,7 +151,7 @@ For 3D tracking examples, refer to the `../../../../apps/reference_apps/deepstre
 
 2. **Configure and Run DeepStream App**
 
-   Visit `../../../../apps/reference_apps` for how to setup and use single and multi-view 3D tracking.
+   Visit `../../../../apps/reference_apps` in the DeepStream repo clone (not packaged in deb/tar/Docker) for how to setup and use single and multi-view 3D tracking.
 
 ## Additional Resources
 

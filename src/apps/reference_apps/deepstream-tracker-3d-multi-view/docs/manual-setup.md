@@ -18,9 +18,9 @@ limitations under the License.
 ## Manual Setup Instructions
 
 
-1. Please check [Deepstream Container Prerequisites](https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_docker_containers.html#prerequisites) for Deepstream container setup, and download the latest DeepStream container image. 
+1. Please check [Deepstream Container Prerequisites](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_docker_containers#prerequisites) for Deepstream container setup, and download the latest DeepStream container image. 
     ```bash
-    docker pull nvcr.io/nvidia/deepstream:9.1-triton-multiarch
+    docker pull ghcr.io/nvidia/deepstream:9.2-triton-multiarch
     ```
 2. Git clone the current `deepstream_reference_apps` repository to the host machine and enter `deepstream-tracker-3d-multi-view` directory
     ```bash
@@ -55,7 +55,7 @@ limitations under the License.
         -v $PWD/models:/workspace/models \
         -w /workspace/models/PeopleNetTransformer \
         --entrypoint /bin/bash \
-        nvcr.io/nvidia/deepstream:9.1-triton-multiarch \
+        ghcr.io/nvidia/deepstream:9.2-triton-multiarch \
         -c "cd custom_parser && make clean && make"
     # [Expected output] You should see "libnvds_infercustomparser_tao.so" built under models/PeopleNetTransformer/custom_parser/. Warnings during build are expected.
 
@@ -64,7 +64,7 @@ limitations under the License.
         -v $PWD/models:/workspace/models \
         -w /workspace/models/RTDETR \
         --entrypoint /bin/bash \
-        nvcr.io/nvidia/deepstream:9.1-triton-multiarch \
+        ghcr.io/nvidia/deepstream:9.2-triton-multiarch \
         -c "cd custom_parser && make clean && make"
     # [Expected output] You should see "libnvds_infercustomparser_tao.so" built under models/RTDETR/custom_parser/. Warnings during build are expected.
     ```
@@ -208,7 +208,7 @@ limitations under the License.
     ```bash
     # Create a temporary Dockerfile
     cat > ./Dockerfile.ib_mv3dt << 'EOF'
-    FROM nvcr.io/nvidia/deepstream:9.1-triton-multiarch
+    FROM ghcr.io/nvidia/deepstream:9.2-triton-multiarch
     RUN pip3 install torch==2.7.0 omegaconf==2.3.0
     ENV GST_PLUGIN_PATH=/opt/nvidia/deepstream/deepstream/lib/gst-plugins
     ENV LD_LIBRARY_PATH=/opt/nvidia/deepstream/deepstream/lib:$LD_LIBRARY_PATH

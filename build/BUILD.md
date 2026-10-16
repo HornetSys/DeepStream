@@ -30,9 +30,9 @@ Before building from source, the NVIDIA compute stack must be installed on the h
 | IGX Thor (aarch64) | IGX-SW 2.0 GA | — (bundled) | 13.0 | 9.12.0.46 | 10.13.x |
 | SBSA / DGX Spark | Ubuntu 24.04 | 595.58.03+ | 13.2 | 9.20.0.48 | 10.16.x |
 
-For installation instructions, refer to the official [DeepStream SDK Installation Guide](https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_Installation.html).
+For installation instructions, refer to the official [DeepStream SDK Installation Guide](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_Installation).
 
-> **Docker users:** NVIDIA NGC provides pre-built DeepStream 9.1 containers with the full compute stack pre-installed. If using a container, skip this section and proceed directly to the [Build and Install](#build-and-install) section below (after cloning the repo and running `git lfs install`).
+> **Docker users:** NVIDIA NGC provides pre-built DeepStream 9.2 containers with the full compute stack pre-installed. If using a container, skip this section and proceed directly to the [Build and Install](#build-and-install) section below (after cloning the repo and running `git lfs install`).
 
 ---
 
@@ -70,7 +70,7 @@ the [DeepStream GitHub release](https://github.com/NVIDIA/DeepStream/releases) i
      python3-dev
    ```
 
-   See also the [DeepStream Installation Guide — Install Prerequisite Packages](https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_Installation.html#id2).
+   See also the [DeepStream Installation Guide — Install Prerequisite Packages](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_Installation#install-prerequisite-packages).
 
 ### aarch64 (Jetson)
 
@@ -99,7 +99,7 @@ the [DeepStream GitHub release](https://github.com/NVIDIA/DeepStream/releases) i
      python3-dev
    ```
 
-   See also the [DeepStream Installation Guide — Install Prerequisite Packages](https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_Installation.html#install-prerequisite-packages).
+   See also the [DeepStream Installation Guide — Install Prerequisite Packages](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_Installation#install-prerequisite-packages).
 
 ### SBSA / DGX Spark (Server Base System Architecture)
 
@@ -199,10 +199,11 @@ From the repo root:
 bash build/build.sh
 ```
 
-> **Note:** `build/build.sh` does **not** build `gst-nvdsudp` or `gst-dsexample-cuda`. Compile and install those plugins separately by following their READMEs:
+> **Note:** `build/build.sh` does **not** build `gst-nvdsudp`, `gst-dsexample-cuda`, or `gst-nvdstextembedder`. Compile and install `gst-nvdsudp` and `gst-dsexample-cuda` separately by following their READMEs. `gst-nvdstextembedder` is a Python plugin and is not compiled.
 >
 > - [`src/gst-plugins/gst-nvdsudp/README`](../src/gst-plugins/gst-nvdsudp/README)
 > - [`src/gst-plugins/gst-dsexample-cuda/README`](../src/gst-plugins/gst-dsexample-cuda/README)
+> - [`src/gst-plugins/gst-nvdstextembedder/README.md`](../src/gst-plugins/gst-nvdstextembedder/README.md)
 
 > **Note:** Some sample apps are platform-specific and are skipped automatically depending on the detected `PLATFORM`:
 >
@@ -238,7 +239,7 @@ bash build/build.sh --help
 | `--deepstream-libraries-wheel[=DIR]` | Build only the DeepStream Libraries wheel. Output defaults to `artifacts/`; a relative `DIR` is resolved from the repository root. |
 | `--deepstream-libraries-wheel-version=VERSION` | Build the DeepStream Libraries wheel at `VERSION` (default: `1.4`). |
 
-Environment variables may also be passed on the command line: `CUDA_VER=13.2`, `NVDS_VERSION=9.1.1`, `CMAKE_BIN=/usr/bin/cmake`. To switch to tarball install: `INSTALL_METHOD=tar`.
+Environment variables may also be passed on the command line: `CUDA_VER=13.2`, `NVDS_VERSION=9.2.0`, `CMAKE_BIN=/usr/bin/cmake`. To switch to tarball install: `INSTALL_METHOD=tar`.
 
 ### Examples
 
@@ -292,13 +293,13 @@ Default CUDA version is `13.2` (`13.0` for IGX Thor systems). Set `CUDA_VER` acc
 CUDA_VER=13.2 bash build/build.sh
 ```
 
-To override the DeepStream version (default: `9.1.1`, must be `MAJOR.MINOR.PATCH`;
+To override the DeepStream version (default: `9.2.0`, must be `MAJOR.MINOR.PATCH`;
 the install tree uses the truncated `MAJOR.MINOR` form). The GitHub Release
-proprietary-libs / sample-data assets are always fetched from the `v9.1.1`
+proprietary-libs / sample-data assets are always fetched from the `v9.2.0`
 release (hardcoded, not derived from `NVDS_VERSION`):
 
 ```bash
-NVDS_VERSION=9.1.1 bash build/build.sh
+NVDS_VERSION=9.2.0 bash build/build.sh
 ```
 
 If a user-local `cmake` wrapper shadows the system CMake, either remove it from `PATH` or point the build script at a known-good binary:
@@ -337,13 +338,13 @@ rm -rf ~/.cache/gstreamer-1.0/
 To remove a DeepStream installation from `/opt`:
 
 ```bash
-# Remove DeepStream 9.1 (default)
+# Remove DeepStream 9.2 (default version 9.2.0 → install tree deepstream-9.2/)
 sudo bash scripts/uninstall.sh
 
 # Remove a specific version (MAJOR.MINOR.PATCH)
-sudo bash scripts/uninstall.sh 9.1.1
+sudo bash scripts/uninstall.sh 9.2.0
 # or equivalently:
-sudo PREV_DS_VER=9.1.1 bash scripts/uninstall.sh
+sudo PREV_DS_VER=9.2.0 bash scripts/uninstall.sh
 ```
 
 `uninstall.sh` removes binaries, libs, samples, and service-maker files from
@@ -440,7 +441,7 @@ bash build/package.sh --help
 | `--stage-dir=PATH` | Scratch staging directory (default: `build/.pkg-stage`) |
 | `--keep-stage` | Do not delete the staging directory on exit (useful for inspection) |
 
-Environment overrides: `NVDS_VERSION` (default `9.1.1`, must be `MAJOR.MINOR.PATCH`) and `PKG_VERSION`
+Environment overrides: `NVDS_VERSION` (default `9.2.0`, must be `MAJOR.MINOR.PATCH`) and `PKG_VERSION`
 (default: same as `NVDS_VERSION`).
 
 ### Output

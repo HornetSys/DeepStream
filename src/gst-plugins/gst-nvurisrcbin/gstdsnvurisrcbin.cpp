@@ -2713,6 +2713,6 @@ nvurisrcbin_plugin_init (GstPlugin * plugin)
 GST_PLUGIN_DEFINE (GST_VERSION_MAJOR,
     GST_VERSION_MINOR,
     nvdsgst_nvurisrcbin,
-    DESCRIPTION, nvurisrcbin_plugin_init, "9.1", LICENSE,
+    DESCRIPTION, nvurisrcbin_plugin_init, "9.2", LICENSE,
     BINARY_PACKAGE, URL)
 

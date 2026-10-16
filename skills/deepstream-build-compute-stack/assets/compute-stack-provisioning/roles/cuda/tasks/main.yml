@@ -1,0 +1,69 @@
+################################################################################
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+################################################################################
+---
+# The CUDA repo/keyring tasks below are shared prerequisites: the display driver
+# (nvidia-open / nvidia-driver-pinning), cuDNN, and TensorRT packages all ship from the
+# CUDA repo, so these tasks carry the driver/cudnn/tensorrt tags (in addition to cuda).
+# Only the final cuda-toolkit install is cuda-tag-exclusive.
+# failed_when: false (not ignore_errors) so a not-yet-installed keyring is a normal
+# "not present" result, not an alarming red "fatal ... FAILED!" line in the output.
+- name: Check if cuda-keyring is already installed
+  command: dpkg-query -W -f='${Status}' cuda-keyring
+  register: cuda_keyring_check
+  failed_when: false
+  changed_when: false
+  tags: ['repo', 'cuda', 'cudnn', 'tensorrt', 'driver']
+
+- name: Normalize architecture for CUDA repo URL
+  set_fact:
+    cuda_arch: "{{ 'sbsa' if ansible_facts['architecture'] == 'aarch64' else ansible_facts['architecture'] }}"
+  tags: ['repo', 'cuda', 'cudnn', 'tensorrt', 'driver']
+
+- name: Download CUDA keyring for {{ ansible_facts['architecture'] }}
+  get_url:
+    url: https://developer.download.nvidia.com/compute/cuda/repos/{{ ubuntu_release_token }}04/{{ cuda_arch }}/cuda-keyring_1.1-1_all.deb
+    dest: /tmp/cuda-keyring_1.1-1_all.deb
+    checksum: "sha256:{{ cuda_keyring_sha256_sbsa if ansible_facts['architecture'] == 'aarch64' else cuda_keyring_sha256_x86_64 }}"
+  when: cuda_keyring_check.rc != 0
+  tags: ['repo', 'cuda', 'cudnn', 'tensorrt', 'driver']
+
+- name: Install CUDA keyring
+  command: dpkg -i /tmp/cuda-keyring_1.1-1_all.deb
+  when: cuda_keyring_check.rc != 0
+  tags: ['repo', 'cuda', 'cudnn', 'tensorrt', 'driver']
+
+- name: Update APT package index
+  apt:
+    update_cache: yes
+  tags: ['repo', 'cuda', 'cudnn', 'tensorrt', 'driver']
+
+- name: Install cuda-toolkit-{{ cuda_version_prod }}
+  apt:
+    name: cuda-toolkit-{{ cuda_version_prod }}
+    state: present
+  tags: ['cuda']
+
+# The toolkit does not put nvcc on PATH; add it for login shells so `nvcc --version`
+# works without a manual PATH export. Takes effect on the next login session.
+- name: Add CUDA to PATH/LD_LIBRARY_PATH for login shells
+  ansible.builtin.copy:
+    dest: /etc/profile.d/cuda.sh
+    mode: '0644'
+    content: |
+      export PATH=/usr/local/cuda/bin${PATH:+:$PATH}
+      export LD_LIBRARY_PATH=/usr/local/cuda/lib64${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
+  tags: ['cuda']
