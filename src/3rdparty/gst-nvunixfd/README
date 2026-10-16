@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+--------------------------------------------------------------------------------
+Description:
+libgstnvunixfd.so is the x86_64 GStreamer unixfd plugin used by DeepStream.
+The vendored plugin sources are LGPL-2.1-only; see LICENSE.
+
+--------------------------------------------------------------------------------
+Pre-requisites:
+- GStreamer 1.0 development packages
+- CUDA Runtime
+- x86_64 (this Makefile does not build on other architectures)
+
+--------------------------------------------------------------------------------
+Compiling and installing the library:
+
+  $ export CUDA_VER=13.2 # x86_64 only
+  $ make && sudo -E make install
+
+Skip sudo when already root (for example inside a container).
+
+The library libgstnvunixfd.so is installed at
+/opt/nvidia/deepstream/deepstream/lib/gst-plugins/

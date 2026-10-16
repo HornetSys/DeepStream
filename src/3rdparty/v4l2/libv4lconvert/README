@@ -1,0 +1,57 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+--------------------------------------------------------------------------------
+Description:
+libnvv4lconvert.so is the DeepStream build of libv4lconvert (from v4l-utils).
+It converts capture pixel formats. libnvv4l2.so links against it, and the
+gst-v4l2 plugin (nvv4l2decoder) uses libnvv4l2.
+
+Build this library before libv4l2. See ../README for the full order.
+
+The library sources are LGPL-2.1-or-later. This README is Apache-2.0.
+
+--------------------------------------------------------------------------------
+Platform:
+x86_64 only. The Makefile stops on any other architecture, including Jetson.
+
+--------------------------------------------------------------------------------
+Pre-requisites:
+- DeepStream SDK installed, so the install directory exists
+- gcc
+
+--------------------------------------------------------------------------------
+Compiling and installing the library (from this directory):
+
+  $ make && sudo make install
+
+Skip sudo when already root (for example inside a container).
+
+The default install directory is /opt/nvidia/deepstream/deepstream/lib/.
+make install copies libnvv4lconvert.so there and adds a libv4lconvert.so.0
+symlink to it.
+
+To install somewhere else:
+
+  $ make install LIB_INSTALL_DIR=<dir>/
+
+--------------------------------------------------------------------------------
+Verify:
+
+  $ ldd /opt/nvidia/deepstream/deepstream/lib/libnvv4lconvert.so
+
+After libv4l2 and gst-v4l2 are also installed:
+
+  $ gst-inspect-1.0 nvv4l2decoder

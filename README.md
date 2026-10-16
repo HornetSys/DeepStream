@@ -17,6 +17,7 @@ This repository contains the complete source code for DeepStream 9.1.
 - [`src/apps/reference_apps/`](src/README.md#reference-applications) — advanced reference applications
 - [`src/apps/tao_apps/`](src/README.md#tao-apps) — TAO-model integration apps
 - [`src/service-maker/`](src/README.md#service-maker) — Service Maker C++/Python SDK and apps
+- [`src/3rdparty/`](src/3rdparty/) — x86-only vendored sources (`gst-nvunixfd`, `gst-v4l2`, `v4l2`) built by `build/build.sh`
 
 **Tools** ([`tools/`](tools/)):
 - [`inference_builder`](tools/inference_builder/README.md) — visual inference pipeline builder
@@ -179,6 +180,7 @@ DeepStream/
 │   ├── rtvi-vlm-customize-model/             # RTVI VLM model customization skill
 │   └── rtvi-cv-scaffold-vss-service/         # RTVI CV VSS-service scaffolding skill
 ├── src/
+│   ├── 3rdparty/                            # x86-only vendored gst-nvunixfd, gst-v4l2, v4l2
 │   ├── apps/                                # sample, reference, and TAO sample applications
 │   ├── gst-plugins/                         # GStreamer plugin sources (per-plugin subdirs)
 │   ├── gst-utils/                           # GStreamer utility library sources
@@ -304,6 +306,8 @@ Join the DeepStream community to ask questions, share feedback, and report issue
 This project is licensed under [CC-BY-4.0 AND Apache-2.0](./LICENSE).
 - SPDX-License-Identifier: CC-BY-4.0 AND Apache-2.0
 
+The CC-BY-4.0 AND Apache-2.0 project license is not applicable to [`src/3rdparty/`](src/3rdparty/). Those vendored sources keep their own licenses as listed below.
+
 ### Release Asset License
 
 All GitHub Release assets (`.deb` packages and `.tar.gz` tarballs under the `deepstream-binaries-*` and `deepstream-sample-data_*` names) are governed by the [Software License Agreement For NVIDIA Software Development Kits](https://developer.download.nvidia.com/assets/Deepstream/DeepStream_6.0/NVIDIA_DeepStream_SDK_EULA_6.0.pdf), refer the "LicenseAgreement" included within all GitHub Release Assets packages.
@@ -311,3 +315,18 @@ All GitHub Release assets (`.deb` packages and `.tar.gz` tarballs under the `dee
 ## Third‑Party License/Notice
 
 Refer [THIRD_PARTY_LICENSES](./THIRD_PARTY_LICENSES.txt) for all 3rd Party OSS licenses and Notices
+
+Vendored sources under [`src/3rdparty/`](src/3rdparty/) (x86 only) keep their upstream licenses:
+
+| Path | License |
+| ---- | ------- |
+| [src/3rdparty/gst-nvunixfd/](src/3rdparty/gst-nvunixfd/) | LGPL-2.1-only ([LICENSE](src/3rdparty/gst-nvunixfd/LICENSE)); NVIDIA-authored files (`Makefile`, `gstnvipcbufferpool.*`) are Apache-2.0 |
+| [src/3rdparty/gst-v4l2/](src/3rdparty/gst-v4l2/) | LGPL-2.0 ([LICENSE.gst-nvvideo4linux2](src/3rdparty/gst-v4l2/LICENSE.gst-nvvideo4linux2)); NVIDIA-authored files (`Makefile`, `README.txt`, `nvhelper_dyn.*`, `wsl_utils.*`) are Apache-2.0; `nalutils.*` and `gstv4l2h26xparser.*` are derived from GStreamer `gst-plugins-bad` codecparsers (LGPL-2.0-or-later) |
+| [src/3rdparty/v4l2/](src/3rdparty/v4l2/) | LGPL-2.1-or-later (`libv4l2` / `libv4lconvert` from v4l-utils); `libv4lconvert` bundles TinyJPEG (BSD-3-Clause) and an IDCT from the Independent JPEG Group (IJG), so this software is based in part on the work of the Independent JPEG Group (notices in `THIRD_PARTY_LICENSES.txt`); NVIDIA-authored `README` files are Apache-2.0 |
+
+A few component subdirectories retain their own vendored/upstream `LICENSE` file (in addition to being covered by `THIRD_PARTY_LICENSES.txt` and/or the root [`LICENSE`](./LICENSE)); these are kept in place for build/CI tooling that expects a local license file at that path:
+
+| Path | License |
+| ---- | ------- |
+| [src/3rdparty/gst-nvunixfd/LICENSE](src/3rdparty/gst-nvunixfd/LICENSE) | LGPL-2.1-only (vendored GStreamer unixfd; also listed in `THIRD_PARTY_LICENSES.txt`) |
+| [src/3rdparty/gst-v4l2/LICENSE.gst-nvvideo4linux2](src/3rdparty/gst-v4l2/LICENSE.gst-nvvideo4linux2) | LGPL-2.0 (vendored GStreamer V4L2; also listed in `THIRD_PARTY_LICENSES.txt`) |

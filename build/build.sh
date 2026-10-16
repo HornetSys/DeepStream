@@ -552,6 +552,37 @@ cleanup_downloaded_assets() {
   fi
 }
 
+# Build x86-only 3rdparty plugins and v4l2 libs from src/3rdparty.
+# Convert must install first: libv4l2 links against libnvv4lconvert.
+# gst-v4l2 then links against libnvv4l2.
+build_3rdparty() {
+  local dest="src/3rdparty"
+  local dir
+
+  if [[ "$PLATFORM" != "x86" ]]; then
+    echo "Skipping 3rdparty gst-nvunixfd/gst-v4l2/v4l2 on $PLATFORM (x86 only)"
+    return 0
+  fi
+
+  for dir in \
+    "$dest/v4l2/libv4lconvert" \
+    "$dest/v4l2/libv4l2" \
+    "$dest/gst-nvunixfd" \
+    "$dest/gst-v4l2"; do
+    if [[ ! -f "$dir/Makefile" ]]; then
+      echo "error: missing $dir/Makefile" >&2
+      FAILED_BUILDS+=("$dir")
+      continue
+    fi
+    echo "Building $dir"
+    if run_submake -C "$dir" $MK; then
+      run_submake -C "$dir" $MK install || FAILED_BUILDS+=("$dir (install)")
+    else
+      FAILED_BUILDS+=("$dir")
+    fi
+  done
+}
+
 run_submake() {
   if [[ "$VERBOSE" -eq 1 ]]; then
     run_as_root make -j"$JOBS" "$@"
@@ -710,6 +741,11 @@ fi
 # ---------------------------------------------------------------------------
 if begin_stage utils; then
   _fb_before=${#FAILED_BUILDS[@]}
+  if [[ "$PLATFORM" == "x86" ]]; then
+    build_3rdparty
+  else
+    echo "Skipping 3rdparty gst-nvunixfd/gst-v4l2/v4l2 on $PLATFORM (x86 only)"
+  fi
   # The plain glob below is alphabetical, which puts some consumers ahead of the
   # leaf libraries they link against (nvdsinfer/nvdsinferserver need
   # libnvds_meta and libnvds_inferlogger; nvds_rest_server needs libnvds_stats;
