@@ -142,7 +142,9 @@ Replace the filename with the specific asset you want to download from the relea
 
 Starting from DeepStream 9.1, all SDK packages are available through the GitHub releases page at https://github.com/NVIDIA/DeepStream/releases/tag/v9.1.0.
 
-DeepStream Docker container images are distributed through [ghcr.io/nvidia/deepstream](https://ghcr.io/nvidia/deepstream).
+DeepStream Docker container images are distributed through the
+[DeepStream package on GitHub Container Registry (GHCR)](https://github.com/orgs/NVIDIA/packages/container/package/deepstream)
+under the `ghcr.io/nvidia/deepstream` image namespace.
 
 ## 10. Where are the DS 9.1 public tar/deb files?
 
@@ -154,7 +156,9 @@ They are now located in the DeepStream mono-repo. See the DS 9.1 release tag:
 
 The legacy `deepstream-l4t` container repository will not be updated in future DeepStream releases, though old releases remain accessible to users.
 
-Current Jetson and dGPU container images are distributed through [ghcr.io/nvidia/deepstream](https://ghcr.io/nvidia/deepstream).
+Current Jetson and dGPU container images are distributed through the
+[DeepStream package on GHCR](https://github.com/orgs/NVIDIA/packages/container/package/deepstream)
+under the `ghcr.io/nvidia/deepstream` image namespace.
 
 ## 12. Where did the DeepStream Open Source Dockers move to for DS 9.1? (previously https://github.com/NVIDIA-AI-IOT/deepstream_dockers)
 
@@ -194,7 +198,7 @@ Starting with DeepStream 9.2, the SBSA/DGX Spark SDK tarball
 
 You can also use the official Docker container, which ships with DeepStream fully installed and all dependencies pre-configured:
 
-   https://ghcr.io/nvidia/deepstream
+   [DeepStream package on GitHub Container Registry (GHCR)](https://github.com/orgs/NVIDIA/packages/container/package/deepstream)
 
 To modify a specific open-source component inside the container, clone the mono-repo and run `make` only in that component's directory. Since all prerequisites are already present in the container, there is no need to run the full `build/build.sh`:
 
