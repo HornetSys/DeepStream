@@ -1,0 +1,72 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+DS3D RealSense data loader is an implementation of `ds3d::dataloader` which
+captures aligned depth and colour frames from an Intel RealSense camera and
+produces a `ds3d::datamap` for each capture, together with the camera intrinsic
+and depth-scale parameters needed by the depth-to-point-cloud filter.
+
+DS3D is framework agnostic. There is no gstreamer/Glib dependencies. Any framework could
+simply wrap DS3D modules.
+
+`libnvds_3d_dataloader_realsense.so` is built from these source files. and the
+RealSense data loader is created through API `createRealsenseDataloader`.
+Application users can call this API to instantiate a RealSense dataloader.
+
+In compatible with Gstreamer plugins, `ds3d::dataloader` could be loaded into GstAppSrc
+in runtime through API `NvDs3D_CreateDataLoaderSrc(config)`
+The config content shall as:
+
+    type: ds3d::dataloader
+    out_caps: ds3d/datamap
+    custom_lib_path: libnvds_3d_dataloader_realsense.so
+    custom_create_function: createRealsenseDataloader
+    config_body:
+       ...
+
+Any custom `ds3d::dataloader` must derive from `ds3d::SyncImplDataLoader` for sychronized
+dataloader. And implement the following interfaces:
+
+    ErrCode startImpl(const std::string& content, const std::string& path) override;
+    ErrCode readDataImpl(GuardDataMap& datamap) override;
+    ErrCode stopImpl() override;
+    ErrCode flushImpl() override;
+
+In addition, users also need export a C-API for application to intiate this dataloader.
+The exported C-API name is not limited. In this sample, it is `createRealsenseDataloader`.
+
+More details, refer to the DeepStream SDK documentation for section of "DeepStream 3D Custom Manual".
+https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_3D_Custom_Manual.html
+
+--------------------------------------------------------------------------------
+Pre-requisites:
+- libnvds_3d_common.so (build and install ds3d/common first)
+- libyaml-cpp Development package
+- CUDA Runtime
+- Intel RealSense SDK (librealsense2) on the target at run time. It is not
+  needed at build time: the library links against the stub built by
+  `ds3d/stub/realsense`, and the headers are vendored under
+  `ds3d/3rdparty/realsense2`. To capture from a real camera, install the SDK per
+  https://github.com/IntelRealSense/librealsense/blob/master/doc/distribution_linux.md
+
+--------------------------------------------------------------------------------
+Compiling and installing this `ds3d::dataloader` lib:
+- Export CUDA_VER, then build. sudo -E keeps the variable for make.
+  $ export CUDA_VER=13.2 # x86, Jetson and SBSA. For IGX Thor, CUDA_VER=13.0
+  $ make && sudo -E make install
+  The RealSense link stub is built automatically if it is missing.
+- Verify `libnvds_3d_dataloader_realsense.so` exist and installed well.
+
+NOTE: Compiling does not need root. Install with `sudo -E` so CUDA_VER is kept. Skip sudo when already root (for example inside a container).

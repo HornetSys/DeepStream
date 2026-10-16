@@ -14,8 +14,17 @@
 # limitations under the License.
 
 CUDA_VER?=
+# Require CUDA_VER for every goal except a clean-only invocation.
+# A bare `make` has empty MAKECMDGOALS and still checks.
+ifneq ($(filter-out clean,$(MAKECMDGOALS)),)
+  _DS_NEED_CUDA_VER := 1
+else ifeq ($(MAKECMDGOALS),)
+  _DS_NEED_CUDA_VER := 1
+endif
+ifeq ($(_DS_NEED_CUDA_VER),1)
 ifeq ($(CUDA_VER),)
   $(error "CUDA_VER is not set")
+endif
 endif
 
 DS_SRC_PATH := /opt/nvidia/deepstream/deepstream
@@ -24,12 +33,12 @@ CC:= g++
 
 NVCC:=/usr/local/cuda-$(CUDA_VER)/bin/nvcc
 
-# Change to your deepstream SDK includes
-CFLAGS+= -I../../../../../includes \
+# -I../../.. is src/utils, so "ds3d/common/..." resolves from this tree first.
+CFLAGS+= -I../../.. \
+         -I../../../../../includes \
          -I/usr/local/cuda/include \
          -I../../../../../includes/nvdsinferserver \
          -I../../../nvdsinferserver \
-         -I../../../../../includes \
          -I../../../../../includes/ds3d \
          -I../../../../../includes/ds3d/common \
          -I../../../../../includes/ds3d/common/helper
@@ -60,7 +69,7 @@ $(TARGET_LIB): $(TARGET_LIB_OBJS) Makefile
 
 %.o: %.cu $(INCS) Makefile
 	@echo $(CFLAGS)
-	$(NVCC) -c -o $@ --compiler-options '-fPIC -I../../../../../includes/ds3d/common/helper' $<
+	$(NVCC) -c -o $@ --compiler-options '-fPIC -I../../.. -I../../../ds3d/common/helper -I../../../../../includes/ds3d/common/helper' $<
 
 install: $(TARGET_LIB)
 	cp -rv $(TARGET_LIB) $(LIB_INSTALL_DIR)

@@ -32,7 +32,7 @@ Pre-requisites:
 --------------------------------------------------------------------------------
 Compiling and installing this custom lib:
 - Run make and sudo make install
-  $ make && make install
+  $ make && sudo make install
 - Verify `libnvds_3d_v2x_infer_custom_postprocess.so` exist and installed well.
 
-NOTE: To compile the sources, run make with "sudo" or root permission.
+NOTE: Compiling does not need root. `sudo make install` copies the library under /opt/nvidia/deepstream. Skip sudo when already root (for example inside a container).

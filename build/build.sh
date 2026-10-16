@@ -709,7 +709,9 @@ if begin_stage gst-utils; then
   # libnvdsgst_customhelper.
   for dir in \
     src/gst-utils/gstnvcustomhelper \
+    src/gst-utils/gstnvdshelper \
     src/gst-utils/gst-nvdssr \
+    src/gst-utils/gst-nvdstensor \
     src/utils/nvdsmeta \
     src/utils/nvds_stats \
     src/gst-utils/gst-nvdsmeta \
@@ -748,11 +750,11 @@ if begin_stage utils; then
   fi
   # The plain glob below is alphabetical, which puts some consumers ahead of the
   # leaf libraries they link against (nvdsinfer/nvdsinferserver need
-  # libnvds_meta and libnvds_inferlogger; nvds_rest_server needs libnvds_stats;
-  # nvll_osd needs libnvds_utils; nvmsgbroker needs libnvds_logger). Those libs
-  # used to be satisfied by the prebuilt artifacts; now that they are built
-  # from source they must come first.
-  for leaf in nvdsmeta nvdsinfer_logger nvds_logger nvds_stats nvdsutils nvtx_helper; do
+  # libnvds_meta, libnvds_inferlogger, and libnvds_inferutils; nvds_rest_server
+  # needs libnvds_stats; nvll_osd needs libnvds_utils; nvmsgbroker needs
+  # libnvds_logger). Those libs used to be satisfied by the prebuilt artifacts;
+  # now that they are built from source they must come first.
+  for leaf in nvdsmeta nvdsinfer_logger nvdsinferutils nvds_logger nvds_stats nvdsutils nvtx_helper; do
     dir="src/utils/$leaf"
     [[ -f "$dir/Makefile" ]] || continue
     if run_submake -C "$dir" $MK; then
@@ -764,6 +766,9 @@ if begin_stage utils; then
 
   for dir in src/utils/*/; do
     [[ -f "$dir/Makefile" ]] || continue
+    # Nested ds3d components are built in the dedicated loop below so that
+    # libnvds_3d_common is installed first and nvdsinferserver is already built.
+    [[ "$(basename "$dir")" == "ds3d" ]] && continue
     # nvstreammux has no install target; skip install step for it
     if run_submake -C "$dir" $MK; then
       [[ "$(basename "$dir")" != "nvstreammux" ]] && \
@@ -790,6 +795,16 @@ if begin_stage utils; then
           fi
         fi
       done
+    fi
+  done
+
+  # DS3D: common / glprocess / realsense stub must install before consumers.
+  for leaf in src/utils/ds3d/common src/utils/ds3d/glprocess src/utils/ds3d/stub/realsense; do
+    [[ -f "$leaf/Makefile" ]] || continue
+    if run_submake -C "$leaf" $MK; then
+      run_submake -C "$leaf" $MK install || FAILED_BUILDS+=("$leaf (install)")
+    else
+      FAILED_BUILDS+=("$leaf")
     fi
   done
 
@@ -838,6 +853,11 @@ if begin_stage gst-plugins; then
   run_as_root mkdir -p "/opt/nvidia/deepstream/deepstream-${NVDS_VERSION}/lib/gst-plugins/"
   for dir in src/gst-plugins/*/; do
     plugin=$(basename "$dir")
+    # Python plugin — no Makefile; install from its README.
+    if [[ "$plugin" == "gst-nvdstextembedder" ]]; then
+      echo "Skipping $plugin (Python plugin; see its README)"
+      continue
+    fi
     # Built last: depends on other gst-plugins (infer, tracker, osd, tiler, …).
     if [[ "$plugin" == "gst-nvdsudp" || "$plugin" == "gst-dsexample-cuda" || "$plugin" == "gst-nvdsbins" ]]; then
       if [[ "$plugin" == "gst-nvdsbins" ]]; then
@@ -871,7 +891,8 @@ if begin_stage gst-plugins; then
     src/gst-plugins/gst-nvdsmetautils/audio_metadata_serialization \
     src/gst-plugins/gst-nvdsmetautils/video_metadata_serialization \
     src/gst-plugins/gst-nvdspostprocess/postprocesslib_impl \
-    src/gst-plugins/gst-nvdsvideotemplate/customlib_impl; do
+    src/gst-plugins/gst-nvdsvideotemplate/customlib_impl \
+    src/gst-plugins/gst-nvdsvideotemplate/ds-sparse4d; do
     [[ -f "$sublib_dir/Makefile" ]] || continue
     if run_submake -C "$sublib_dir" $MK; then
       run_submake -C "$sublib_dir" $MK install || FAILED_BUILDS+=("$sublib_dir (install)")

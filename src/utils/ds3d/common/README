@@ -1,0 +1,57 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+DS3D common is the shared runtime for every other DS3D module. It provides the
+`ds3d::datamap` container, the 2D/3D frame wrappers, the abstract data-process
+interfaces (`ds3d::dataloader`, `ds3d::datafilter`, `ds3d::datarender`,
+`ds3d::databridge`, `ds3d::datamixer`), the YAML configuration helpers and the
+CUDA/error-handling utilities.
+
+DS3D is framework agnostic. There is no gstreamer/Glib dependency in this
+library. Any framework could simply wrap DS3D modules.
+
+`libnvds_3d_common.so` is built from these source files. The only exported
+C-API is `NvDs3d_CreateDataHashMap`, which backs the `ds3d::datamap`
+implementation; everything else is header-only and consumed from
+`includes/ds3d/common`.
+
+The public headers are not duplicated here — they are installed from
+`includes/ds3d/common` and included as `<ds3d/common/...>`:
+
+    ds3d/common/common.h                 core types and error codes
+    ds3d/common/hpp/datamap.hpp          datamap guard wrapper
+    ds3d/common/hpp/frame.hpp            2D/3D frame guard wrappers
+    ds3d/common/hpp/yaml_config.hpp      YAML component-config parsing
+    ds3d/common/impl/impl_*.h            base classes for custom modules
+    ds3d/common/helper/*.h               CUDA, queue and timing helpers
+
+Every other DS3D module links against this library, so it must be built and
+installed first.
+
+More details, refer to the DeepStream SDK documentation for section of "DeepStream 3D Custom Manual".
+https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_3D_Custom_Manual.html
+
+--------------------------------------------------------------------------------
+Pre-requisites:
+- CUDA Runtime
+
+--------------------------------------------------------------------------------
+Compiling and installing this lib:
+- Export CUDA_VER, then build. sudo -E keeps the variable for make.
+  $ export CUDA_VER=13.2 # x86, Jetson and SBSA. For IGX Thor, CUDA_VER=13.0
+  $ make && sudo -E make install
+- Verify `libnvds_3d_common.so` exist and installed well.
+
+NOTE: Compiling does not need root. Install with `sudo -E` so CUDA_VER is kept. Skip sudo when already root (for example inside a container).

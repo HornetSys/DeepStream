@@ -1,0 +1,69 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+DS3D LiDAR file writer is an implementation of `ds3d::datarender` which writes
+the point cloud and the 3D detection results from a `ds3d::datamap` out to files
+instead of drawing them. It is the headless counterpart of the GL render modules
+and is the sink of choice for batch runs, regression checks and machines without
+a display. It is the write-side mirror of the `ds3d/dataloader/lidarsource`
+reader.
+
+DS3D is framework agnostic. There is no gstreamer/Glib dependencies. Any framework could
+simply wrap DS3D modules.
+
+`libnvds_lidarfilewrite.so` is built from these source files. and the LiDAR file
+render is created through API `createLidarFileDataRender`. Application users can
+call this API to instantiate this datarender.
+
+In compatible with Gstreamer plugins, `ds3d::datarender` could be loaded into GstAppSink
+in runtime through API `NvDs3D_CreateDataRenderSink(config)`
+The config content shall as:
+
+    type: ds3d::datarender
+    in_caps: ds3d/datamap
+    custom_lib_path: libnvds_lidarfilewrite.so
+    custom_create_function: createLidarFileDataRender
+    config_body:
+       ...
+
+Any custom `ds3d::datarender` must derive from `ds3d::BaseImplDataRender` for data rendering
+And implement the following interfaces:
+
+    ErrCode startImpl(const std::string& content, const std::string& path) override;
+    ErrCode prerollImpl(GuardDataMap datamap) override;
+    ErrCode renderImpl(GuardDataMap datamap, OnGuardDataCBImpl dataDoneCb) override;
+    ErrCode stopImpl() override;
+    ErrCode flushImpl() override;
+
+In addition, users also need export a C-API for application to intiate this datarender.
+The exported C-API name is not limited. In this sample, it is `createLidarFileDataRender`.
+
+More details, refer to the DeepStream SDK documentation for section of "DeepStream 3D Custom Manual".
+https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_3D_Custom_Manual.html
+
+--------------------------------------------------------------------------------
+Pre-requisites:
+- libnvds_3d_common.so (build and install ds3d/common first)
+- libyaml-cpp Development package
+- CUDA Runtime
+
+--------------------------------------------------------------------------------
+Compiling and installing this `ds3d::datarender` lib:
+- Export CUDA_VER, then build. sudo -E keeps the variable for make.
+  $ export CUDA_VER=13.2 # x86, Jetson and SBSA. For IGX Thor, CUDA_VER=13.0
+  $ make && sudo -E make install
+- Verify `libnvds_lidarfilewrite.so` exist and installed well.
+
+NOTE: Compiling does not need root. Install with `sudo -E` so CUDA_VER is kept. Skip sudo when already root (for example inside a container).

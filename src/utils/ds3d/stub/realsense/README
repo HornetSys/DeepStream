@@ -1,0 +1,46 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+This directory builds a link-time stub of `librealsense2.so`.
+
+The DS3D RealSense dataloader (`ds3d/dataloader/realsense`) is built against the
+Intel RealSense SDK, but that SDK is not a build dependency of DeepStream. The
+stub lets the dataloader link on a machine where the RealSense SDK is not
+installed: `librealsense2.export` lists the symbols the dataloader references,
+and the Makefile turns each entry into an empty `void sym() {}` definition
+before linking them into a shared library with the correct soname.
+
+The stub is a build helper only — `make install` deliberately installs nothing.
+At run time the dynamic loader resolves `librealsense2.so` to the real Intel
+RealSense SDK, which must be installed on the target for the dataloader to
+actually capture from a RealSense camera. See the Intel RealSense SDK
+installation guide:
+https://github.com/IntelRealSense/librealsense/blob/master/doc/distribution_linux.md
+
+The matching RealSense headers are vendored under `ds3d/3rdparty/realsense2`.
+
+--------------------------------------------------------------------------------
+Pre-requisites:
+- A C compiler (gcc); no external libraries are needed.
+
+--------------------------------------------------------------------------------
+Compiling this stub:
+- Run make
+  $ make
+- Verify `librealsense2.so` exist in this directory. It is picked up through
+  `-L../../stub/realsense` when `ds3d/dataloader/realsense` is linked.
+
+NOTE: Do not install this library into the DeepStream lib directory — it would
+shadow the real librealsense2 at run time.

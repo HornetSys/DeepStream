@@ -67,6 +67,11 @@ Located in `gst-utils/`. Each utility has its own `README` at `gst-utils/<utilit
 
 - [`gstnvcustomhelper`](gst-utils/gstnvcustomhelper/README)
 - [`gstnvdscustomhelper`](gst-utils/gstnvdscustomhelper/README)
+- [`gstnvdshelper`](gst-utils/gstnvdshelper/README)
+- [`gst-nvdstensor`](gst-utils/gst-nvdstensor/README)
+- [`gst-nvdsinferbase`](gst-utils/gst-nvdsinferbase/README)
+- [`gst-nvdsmeta`](gst-utils/gst-nvdsmeta/README)
+- [`gst-nvipcmeta`](gst-utils/gst-nvipcmeta/README)
 - [`gst-nvdssr`](gst-utils/gst-nvdssr/README)
 
 ### Utility Libraries
@@ -94,6 +99,8 @@ The following components build successfully only when the listed external SDK is
 | `gst-dsexample-cuda` | OpenCV 4.x built with CUDA support | [gst-plugins/gst-dsexample-cuda/README](gst-plugins/gst-dsexample-cuda/README) |
 | `gst-nvdsudp` | Rivermax SDK (`rivermax_api.h`) | [gst-plugins/gst-nvdsudp/README](gst-plugins/gst-nvdsudp/README) |
 | `libnvdsgst_inferserver` | Triton Inference Server client | [gst-plugins/gst-nvinferserver/README](gst-plugins/gst-nvinferserver/README) |
+| `ds-sparse4d` | PyTorch 2.9.0+cu130 | [gst-plugins/gst-nvdsvideotemplate/ds-sparse4d/README](gst-plugins/gst-nvdsvideotemplate/ds-sparse4d/README) |
+| `gst-nvdstextembedder` | Python (`torch`, `open-clip-torch`); not compiled by `build/build.sh` | [gst-plugins/gst-nvdstextembedder/README.md](gst-plugins/gst-nvdstextembedder/README.md) |
 
 ---
 

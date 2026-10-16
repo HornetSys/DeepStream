@@ -55,11 +55,9 @@ Pre-requisites:
 
 --------------------------------------------------------------------------------
 Compiling and installing this `ds3d::dataloader` lib:
-- Export or set in Makefile the appropriate CUDA_VER, e.g.
-  $ export CUDA_VER=13.2 # set the right CUDA version
-      For x86, Jetson & SBSA, CUDA_VER=13.2
-- Run make and sudo make install
-  $ make && make install
+- Export CUDA_VER, then build. sudo -E keeps the variable for make.
+  $ export CUDA_VER=13.2 # x86, Jetson and SBSA. For IGX Thor, CUDA_VER=13.0
+  $ make && sudo -E make install
 - Verify `libnvds_lidarfileread.so` exist and installed well.
 
-NOTE: To compile the sources, run make with "sudo" or root permission.
+NOTE: Compiling does not need root. Install with `sudo -E` so CUDA_VER is kept. Skip sudo when already root (for example inside a container).
