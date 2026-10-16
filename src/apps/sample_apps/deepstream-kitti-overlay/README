@@ -89,7 +89,7 @@ Step A — Generate KITTI dumps with deepstream-app
 
 1) Pick a deepstream-app config (example uses the shipped 4-source sample):
 
-     /opt/nvidia/deepstream/deepstream-9.1/samples/configs/deepstream-app/
+     /opt/nvidia/deepstream/deepstream-9.2/samples/configs/deepstream-app/
 
 2) In the [application] section, set (or uncomment) an absolute output directory:
 
@@ -104,12 +104,12 @@ Step A — Generate KITTI dumps with deepstream-app
    app. Example:
 
      [source0]
-     uri=file:///opt/nvidia/deepstream/deepstream-9.1/samples/streams/sample_1080p_h264.mp4
+     uri=file:///opt/nvidia/deepstream/deepstream-9.2/samples/streams/sample_1080p_h264.mp4
 
 4) Run deepstream-app from the config directory (relative model/stream paths
    resolve from cwd):
 
-     $ cd /opt/nvidia/deepstream/deepstream-9.1/samples/configs/deepstream-app
+     $ cd /opt/nvidia/deepstream/deepstream-9.2/samples/configs/deepstream-app
      $ deepstream-app -c source4_1080p_dec_infer-resnet_tracker_sgie_tiled_display.txt
 
 5) Verify dumps were written:
@@ -138,7 +138,7 @@ Arguments are URI / kitti-dir pairs:
 Display output (single source):
 
   $ ./deepstream-kitti-overlay \
-      file:///opt/nvidia/deepstream/deepstream-9.1/samples/streams/sample_1080p_h264.mp4 \
+      file:///opt/nvidia/deepstream/deepstream-9.2/samples/streams/sample_1080p_h264.mp4 \
       /tmp/kitti_data1
 
 Display output (two sources):
@@ -156,14 +156,14 @@ RTSP example:
 Save overlayed output to an MP4 (hardware encoder):
 
   $ ./deepstream-kitti-overlay \
-      file:///opt/nvidia/deepstream/deepstream-9.1/samples/streams/sample_1080p_h264.mp4 \
+      file:///opt/nvidia/deepstream/deepstream-9.2/samples/streams/sample_1080p_h264.mp4 \
       /tmp/kitti_data1 \
       outfile-hw-enc /tmp/out.mp4
 
 Software encoder (e.g. Ampere platforms if HW encode is unavailable):
 
   $ ./deepstream-kitti-overlay \
-      file:///opt/nvidia/deepstream/deepstream-9.1/samples/streams/sample_1080p_h264.mp4 \
+      file:///opt/nvidia/deepstream/deepstream-9.2/samples/streams/sample_1080p_h264.mp4 \
       /tmp/kitti_data1 \
       outfile-sw-enc /tmp/out.mp4
 

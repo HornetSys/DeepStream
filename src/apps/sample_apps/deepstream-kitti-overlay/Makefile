@@ -17,7 +17,7 @@ APP:= deepstream-kitti-overlay
 
 TARGET_DEVICE = $(shell gcc -dumpmachine | cut -f1 -d -)
 
-NVDS_VERSION:=9.1
+NVDS_VERSION:=9.2
 
 LIB_INSTALL_DIR?=/opt/nvidia/deepstream/deepstream-$(NVDS_VERSION)/lib/
 APP_INSTALL_DIR?=/opt/nvidia/deepstream/deepstream-$(NVDS_VERSION)/bin/

@@ -14,8 +14,17 @@
 # limitations under the License.
 
 CUDA_VER?=
+# Require CUDA_VER for every goal except a clean-only invocation.
+# A bare `make` has empty MAKECMDGOALS and still checks.
+ifneq ($(filter-out clean,$(MAKECMDGOALS)),)
+  _DS_NEED_CUDA_VER := 1
+else ifeq ($(MAKECMDGOALS),)
+  _DS_NEED_CUDA_VER := 1
+endif
+ifeq ($(_DS_NEED_CUDA_VER),1)
 ifeq ($(CUDA_VER),)
   $(error "CUDA_VER is not set")
+endif
 endif
 
 WSL:=$(shell uname -a | grep -io "microsoft" | tr '[:upper:]' '[:lower:]')
@@ -26,9 +35,9 @@ SRCS:= gstnvinfer.cpp  gstnvinfer_allocator.cpp gstnvinfer_property_parser.cpp \
 INCS:= $(wildcard *.h)
 LIB:=libnvdsgst_infer.so
 
-NVDS_VERSION:=9.1
+NVDS_VERSION:=9.2
 
-CFLAGS+= -fPIC -std=c++11 -DDS_VERSION=\"9.1.1\" \
+CFLAGS+= -fPIC -std=c++11 -DDS_VERSION=\"9.2.0\" \
 	 -I /usr/local/cuda-$(CUDA_VER)/include \
 	 -I ../../../includes \
 	 -I ../gst-nvdspreprocess/include \
