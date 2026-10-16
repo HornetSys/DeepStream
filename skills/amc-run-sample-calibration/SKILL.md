@@ -41,7 +41,7 @@ The sample includes GT, so the run produces evaluation metrics (L2 distance, rep
 ## Prerequisites
 
 - [ ] AMC microservice running (follow `skills/amc-setup-calibration-stack/SKILL.md` if not)
-- [ ] Sample zip present at `assets/sdg_08_2_sample_data_010926.zip`
+- [ ] Sample zip present at `assets/sdg_08_2_sample_data_010926.zip` (published as a DeepStream v9.2.0 release asset; if missing, download it: `curl -L -o assets/sdg_08_2_sample_data_010926.zip https://github.com/NVIDIA/DeepStream/releases/download/v9.2.0/sdg_08_2_sample_data_010926.zip`)
 - [ ] Python 3 with `requests` installed, or use the Swagger UI path below
   - Install it explicitly before running the script: `python3 -m pip install requests`
   - If `pip` is unavailable, install your distro's Python packaging support first
