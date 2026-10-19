@@ -480,7 +480,7 @@ Use command : `sudo service gdm stop` `sudo service lightdm stop` `sudo pkill -9
 ### Run dGPU on ARM Docker (SBSA)
 
 <Note>
-NVIDIA driver 580.159.03 is required for SBSA. The driver is bundled with the Docker image and does not need to be installed separately.
+A compatible NVIDIA driver must be installed on the host for SBSA. The driver is not included in the Docker image; the NVIDIA Container Toolkit makes the host driver available to the container.
 </Note>
 
 1. Pull the DeepStream Triton Inference Server docker
@@ -511,7 +511,7 @@ container method described below.
 </Note>
 
 <Note>
-NVIDIA driver 580.159.03 is required for DGX Spark. The driver is bundled with the Docker image and does not need to be installed separately.
+A compatible NVIDIA driver must be installed on the host for DGX Spark. The driver is not included in the Docker image; the NVIDIA Container Toolkit makes the host driver available to the container.
 </Note>
 
 Refer [NVIDIA DGX Spark Release Notes](https://docs.nvidia.com/dgx/dgx-spark/release-notes.html#current-software-versions) for stack details.
