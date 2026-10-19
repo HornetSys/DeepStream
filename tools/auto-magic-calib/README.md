@@ -91,7 +91,7 @@ Expected runtime varies by host, image/model downloads, video length, detector c
 - NVIDIA GPU with hardware encoder (NVENC)
 - NVIDIA driver 590
 - Docker (setup to run without sudo privilege)
-- NVIDIA container toolkit (see [NVIDIA DeepStream Docker Prerequisites](https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_docker_containers.html#prerequisites))
+- NVIDIA container toolkit (see [NVIDIA DeepStream Docker Prerequisites](https://docs.nvidia.com/deepstream/9.2/text/DS_docker_containers#prerequisites))
 - [NGC CLI](https://org.ngc.nvidia.com/setup/installers/cli) (required to
   download the optional NGC sample dataset)
 
@@ -126,7 +126,7 @@ such as `nvidia/amc-nv-warehouse`.
    key as the password.
 
 ### Project Setup
-AutoMagicCalib is distributed as part of the DeepStream monorepo. Clone
+AutoMagicCalib is distributed as part of the DeepStream repository. Clone
 DeepStream, then run the commands below from
 `tools/auto-magic-calib`. This directory contains this README along with
 `compose/`, `assets/`, `models/`, and `projects/`.
