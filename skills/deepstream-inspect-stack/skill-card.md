@@ -31,8 +31,8 @@ Mitigation: Review and scan skill before deployment. <br>
 - [Python Bindings Troubleshooting](references/python-bindings.md) <br>
 - [Verify Commands](references/verify-commands.md) <br>
 - [Troubleshooting](references/troubleshooting.md) <br>
-- [DeepStream Developer Guide](https://docs.nvidia.com/metropolis/deepstream/dev-guide/) <br>
-- [DeepStream Installation Guide](https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_Installation.html) <br>
+- [DeepStream Developer Guide](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2) <br>
+- [DeepStream Installation Guide](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_Installation) <br>
 - [NGC DeepStream Container Catalog](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/deepstream) <br>
 
 

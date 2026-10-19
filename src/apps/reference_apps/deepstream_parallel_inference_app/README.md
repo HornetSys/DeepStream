@@ -99,9 +99,9 @@ The sample should be downloaded and built with **root** permission.
 
 # Application Configuration Semantics
 
-The parallel inferencing app uses the YAML configuration file to config GIEs, sources, and other features of the pipeline. The basic group semantics is the same as [deepstream-app](https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_ref_app_deepstream.html#expected-output-for-the-deepstream-reference-application-deepstream-app).
+The parallel inferencing app uses the YAML configuration file to config GIEs, sources, and other features of the pipeline. The basic group semantics is the same as [deepstream-app](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_ref_app_deepstream#expected-output-for-the-deepstream-reference-application-deepstream-app).
 
-Please refer to deepstream-app [Configuration Groups](https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_ref_app_deepstream.html#configuration-groups) part for the semantics of corresponding groups.
+Please refer to deepstream-app [Configuration Groups](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_ref_app_deepstream#configuration-groups) part for the semantics of corresponding groups.
 
 There are additional new groups introduced by the parallel inferencing app which enable the app to select sources for different inferencing branches and to select output metadata for different inferencing GIEs:
 

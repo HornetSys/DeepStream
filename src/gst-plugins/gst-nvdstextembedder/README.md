@@ -776,7 +776,7 @@ embedder.set_property("texts", json.dumps(search_query))
 - [SigLIP 2 Giant Model](https://huggingface.co/google/siglip2-giant-opt-patch16-384)
 - [DFN5B-CLIP Model](https://huggingface.co/apple/DFN5B-CLIP-ViT-H-14-378)
 - [OpenCLIP Library](https://github.com/mlfoundations/open_clip)
-- [DeepStream SDK Documentation](https://docs.nvidia.com/metropolis/deepstream/dev-guide/)
+- [DeepStream SDK Documentation](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2)
 - [GStreamer Python Plugin Development](https://gstreamer.freedesktop.org/documentation/plugin-development/index.html)
 
 ## License

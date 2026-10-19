@@ -4,7 +4,7 @@ Use this file when the user wants a concrete public recommendation: DeepStream v
 
 Authoritative public sources:
 
-- DeepStream installation guide: https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_Installation.html
+- DeepStream installation guide: https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_Installation
 - NGC DeepStream catalog: https://catalog.ngc.nvidia.com/orgs/nvidia/containers/deepstream
 - Public DeepStream coding-agent examples: https://github.com/NVIDIA-AI-IOT/DeepStream_Coding_Agent
 

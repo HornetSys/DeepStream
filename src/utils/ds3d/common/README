@@ -41,7 +41,7 @@ Every other DS3D module links against this library, so it must be built and
 installed first.
 
 More details, refer to the DeepStream SDK documentation for section of "DeepStream 3D Custom Manual".
-https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_3D_Custom_Manual.html
+https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_3D_Custom_Manual
 
 --------------------------------------------------------------------------------
 Pre-requisites:

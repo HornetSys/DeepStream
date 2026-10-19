@@ -11,7 +11,7 @@ with the user** before leasing/provisioning.
 - **Version-specific WSL doc** (lists what was validated for that release):
   `https://docs.nvidia.com/metropolis/deepstream/<VER>/dev-guide/text/DS_on_WSL2.html`
   e.g. `.../deepstream/7.1/dev-guide/text/DS_on_WSL2.html`. The **unversioned**
-  `https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_on_WSL2.html` is
+  `https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_on_WSL2` is
   the **current/latest** release.
 - **DeepStream release notes / "Platform and OS Compatibility"** for that version
   (driver, CUDA, TensorRT, Ubuntu).

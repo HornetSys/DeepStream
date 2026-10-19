@@ -50,7 +50,7 @@ In addition, users also need export a C-API for application to intiate this data
 The exported C-API name is not limited. In this sample, it is `createLidarInferenceFilter`.
 
 More details, refer to the DeepStream SDK documentation for section of "DeepStream 3D Custom Manual".
-https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_3D_Custom_Manual.html
+https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_3D_Custom_Manual
 
 --------------------------------------------------------------------------------
 Pre-requisites:

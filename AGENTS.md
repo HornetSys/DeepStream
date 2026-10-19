@@ -207,19 +207,19 @@ sub-pages). When a task involves SDK usage, plugin/config semantics, Python APIs
 Service Maker, performance, or troubleshooting, **consult the public docs first
 instead of guessing from memory.**
 
-- Main docs (source of truth): https://docs.nvidia.com/metropolis/deepstream/dev-guide/index.html
+- Main docs (source of truth): https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2
 
 High-value entry points (prefer these targeted links when the area is known —
 don't recursively crawl the whole site):
 
-- Quickstart / setup: https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_Quickstart.html
-- Plugins reference (intro): https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_plugin_Intro.html
-- Gst-nvinfer plugin: https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_plugin_gst-nvinfer.html
-- Gst-nvinferserver (Triton) plugin: https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_plugin_gst-nvinferserver.html
-- Service Maker: https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_service_maker_intro.html
+- Quickstart / setup: https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_Quickstart
+- Plugins reference (intro): https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_plugin_Intro
+- Gst-nvinfer plugin: https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_plugin_gst-nvinfer
+- Gst-nvinferserver (Triton) plugin: https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_plugin_gst-nvinferserver
+- Service Maker: https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_service_maker_intro
 - Python API: https://docs.nvidia.com/metropolis/deepstream/dev-guide/python-api/index.html
-- Performance: https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_Performance.html
-- Troubleshooting: https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_troubleshooting.html
+- Performance: https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_Performance
+- Troubleshooting: https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_troubleshooting
 
 Use the main URL as the canonical reference, but prefer the targeted sub-page
 links above whenever the task maps to a known area.

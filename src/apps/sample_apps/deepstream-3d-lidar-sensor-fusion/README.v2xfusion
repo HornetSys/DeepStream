@@ -25,7 +25,7 @@
 ===============================================================================
 
 Please follow instructions in the
-https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_Installation.html on how
+https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_Installation on how
 to install the prerequisites for the Deepstream SDK, the DeepStream SDK itself,
 and the apps.
 

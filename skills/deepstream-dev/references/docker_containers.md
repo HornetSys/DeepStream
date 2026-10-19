@@ -5,7 +5,7 @@
 DeepStream Docker images are hosted on the NVIDIA NGC container registry (`nvcr.io`). They package all SDK dependencies (GStreamer, TensorRT, CUDA, models, sample streams) and require the NVIDIA Container Toolkit (`nvidia-container-toolkit`) for GPU access.
 
 - **NGC catalog page**: https://catalog.ngc.nvidia.com/orgs/nvidia/containers/deepstream
-- **Official docs**: https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_docker_containers.html
+- **Official docs**: https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_docker_containers
 
 ---
 
