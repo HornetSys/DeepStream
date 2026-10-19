@@ -71,7 +71,7 @@ By default, rtdetr model is used. If you want to use a different model, please c
 
 ## Generate the DeepStream Application Package and Build Container Image
 
-Assume you've followed the [top level instructions](../../../README.md#getting-started) to set up the environment and be sure you're in the inference_builder folder, then activate your virtual environment:
+Assume you've followed the [top level instructions](../../../../README.md#getting-started) to set up the environment and be sure you're in the inference_builder folder, then activate your virtual environment:
 
 ```bash
 source .venv/bin/activate

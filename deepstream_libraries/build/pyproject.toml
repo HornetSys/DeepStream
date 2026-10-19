@@ -20,7 +20,7 @@ description = "Nvidia Deepstream"
 readme = "deepstream_libraries/README.md"
 license = "CC-BY-4.0 AND Apache-2.0"
 authors = ["Nvidia Deepstream"]
-homepage = "https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_Libraries.html"
+homepage = "https://docs.nvidia.com/deepstream/9.2/text/DS_Libraries"
 
 [tool.poetry.dependencies]
 python = ">=3.12,<3.15"

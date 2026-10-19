@@ -265,6 +265,6 @@ curl localhost:8000/v2/models/YOUR_TRITON_MODEL/ready
 
 ## References
 
-- [DeepStream SDK Documentation](https://docs.nvidia.com/metropolis/deepstream/dev-guide/)
+- [DeepStream SDK Documentation](https://docs.nvidia.com/deepstream/9.2)
 - [GStreamer Plugin Writer's Guide](https://gstreamer.freedesktop.org/documentation/plugin-development/)
 - [Triton Client Libraries](https://github.com/triton-inference-server/client)

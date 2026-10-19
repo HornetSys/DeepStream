@@ -74,7 +74,7 @@ models:
       - nvdsinfer_config.yaml
 ```
 
-With the above configuration file, you can generate inference code for the RT-DETR object detection model using the DeepStream backend, which takes image or video url as input and produces bounding boxes as output. (Step by step guide can be found in the [detection README](./builder/samples/ds_app/detection/README.md))
+With the above configuration file, you can generate inference code for the RT-DETR object detection model using the DeepStream backend, which takes image or video url as input and produces bounding boxes as output. (Step by step guide can be found in the [detection README](../builder/samples/ds_app/detection/README.md))
 
 Breakdown of the configuration:
 

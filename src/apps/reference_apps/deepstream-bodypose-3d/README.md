@@ -30,7 +30,7 @@ to install the prequisites for building Deepstream SDK apps.
 The pretrained TAO models [PeopleNet](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/peoplenet) and [BodyPose3DNet](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/bodypose3dnet) from NGC.
 
 ## Installation
-Follow https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_Quickstart to setup the DeepStream SDK
+Follow https://docs.nvidia.com/deepstream/9.2/text/DS_Quickstart to setup the DeepStream SDK
 
 1. Define sample app home as `export BODYPOSE3D_HOME=<parent-path>/deepstream-bodypose-3d`.
 

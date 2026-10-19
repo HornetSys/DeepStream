@@ -1,9 +1,9 @@
 # DeepStream on WSL2 — FAQ & known-issue learnings
 
 Distilled from the official
-[DeepStream on WSL2](https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_on_WSL2.html)
+[DeepStream on WSL2](https://docs.nvidia.com/deepstream/9.2/text/DS_on_WSL2)
 guide, its
-[FAQ](https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_WSL2_FAQ.html),
+[FAQ](https://docs.nvidia.com/deepstream/9.2/text/DS_WSL2_FAQ),
 and the NVIDIA issue tracker / forums. These drive several skill behaviors.
 
 ## WARNING: nvv4l2 codec SIGSEGV — pin nvidia-container-toolkit
@@ -69,8 +69,8 @@ default `1.18.0-1`). Refs:
 The official pages change per release. Before running for a new DeepStream version,
 re-read and reconcile this skill against:
 
-- Guide: <https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_on_WSL2.html>
-- FAQ:   <https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_WSL2_FAQ.html>
+- Guide: <https://docs.nvidia.com/deepstream/9.2/text/DS_on_WSL2>
+- FAQ:   <https://docs.nvidia.com/deepstream/9.2/text/DS_WSL2_FAQ>
 
 Watch specifically for changes to: the verification commands (Step 6), the DeepStream
 image tag, supported GPUs/driver, the recommended WSL2 version, and any new

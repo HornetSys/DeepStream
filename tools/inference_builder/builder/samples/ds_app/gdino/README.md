@@ -49,7 +49,7 @@ cp -r builder/samples/ds_app/gdino/mask_gdino/* $MODEL_REPO/mask_gdino/
 
 ## Generate the deepstream application package and build it into a container image:
 
-Assume you've followed the [top level instructions](../../../README.md#getting-started) to set up the environment and be sure you're in the inference_builder folder, then activate your virtual environment:
+Assume you've followed the [top level instructions](../../../../README.md#getting-started) to set up the environment and be sure you're in the inference_builder folder, then activate your virtual environment:
 
 ```bash
 source .venv/bin/activate

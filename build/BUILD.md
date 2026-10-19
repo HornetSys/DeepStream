@@ -30,7 +30,7 @@ Before building from source, the NVIDIA compute stack must be installed on the h
 | IGX Thor (aarch64) | IGX-SW 2.0 GA | — (bundled) | 13.0 | 9.12.0.46 | 10.13.x |
 | SBSA / DGX Spark | Ubuntu 24.04 | 595.58.03+ | 13.2 | 9.20.0.48 | 10.16.x |
 
-For installation instructions, refer to the official [DeepStream SDK Installation Guide](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_Installation).
+For installation instructions, refer to the official [DeepStream SDK Installation Guide](https://docs.nvidia.com/deepstream/9.2/text/DS_Installation).
 
 > **Docker users:** NVIDIA NGC provides pre-built DeepStream 9.2 containers with the full compute stack pre-installed. If using a container, skip this section and proceed directly to the [Build and Install](#build-and-install) section below (after cloning the repo and running `git lfs install`).
 
@@ -70,7 +70,7 @@ the [DeepStream GitHub release](https://github.com/NVIDIA/DeepStream/releases) i
      python3-dev
    ```
 
-   See also the [DeepStream Installation Guide — Install Prerequisite Packages](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_Installation#install-prerequisite-packages).
+   See also the [DeepStream Installation Guide — Install Prerequisite Packages](https://docs.nvidia.com/deepstream/9.2/text/DS_Installation#install-prerequisite-packages).
 
 ### aarch64 (Jetson)
 
@@ -99,7 +99,7 @@ the [DeepStream GitHub release](https://github.com/NVIDIA/DeepStream/releases) i
      python3-dev
    ```
 
-   See also the [DeepStream Installation Guide — Install Prerequisite Packages](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_Installation#install-prerequisite-packages).
+   See also the [DeepStream Installation Guide — Install Prerequisite Packages](https://docs.nvidia.com/deepstream/9.2/text/DS_Installation#install-prerequisite-packages).
 
 ### SBSA / DGX Spark (Server Base System Architecture)
 

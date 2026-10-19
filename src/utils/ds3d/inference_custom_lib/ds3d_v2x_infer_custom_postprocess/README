@@ -22,7 +22,7 @@ It exports interface 'CreateDs3dTritonInferV2xPostprocess' for deepstream-3d-lid
 processing with ds3d inference plugin.
 
 More details, refer to the DeepStream SDK documentation for section of "DeepStream 3D Custom Manual".
-https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_3D_Custom_Manual.html
+https://docs.nvidia.com/deepstream/9.2/text/DS_3D_Custom_Manual
 
 --------------------------------------------------------------------------------
 Pre-requisites:

@@ -169,4 +169,4 @@ To rebuild a single module, run `make` in its own directory after `common` (and 
 
 ## Documentation
 
-See the "DeepStream 3D Custom Manual" in the DeepStream SDK documentation: https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_3D_Custom_Manual.html
+See the "DeepStream 3D Custom Manual" in the DeepStream SDK documentation: https://docs.nvidia.com/deepstream/9.2/text/DS_3D_Custom_Manual

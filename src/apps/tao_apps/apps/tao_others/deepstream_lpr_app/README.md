@@ -128,7 +128,7 @@ A sample of Chinese car plate recognition:
 3. The second argument of deepstream-lpr-app should be 2(fakesink) for performance test.
 4. The trafficcamnet and LPD models are all INT8 models, the LPR model is FP16 model.
 5. There is a bug for Triton gprc mode: the first two character can't be recognized.
-6. For some yolo models, some layers of the models should use FP32 precision. This is a network characteristics that the accuracy drops rapidly when maximum layers are run in INT8 precision. Please refer the [layer-device-precision](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_plugin_gst-nvinfer) for more details.
+6. For some yolo models, some layers of the models should use FP32 precision. This is a network characteristics that the accuracy drops rapidly when maximum layers are run in INT8 precision. Please refer the [layer-device-precision](https://docs.nvidia.com/deepstream/9.2/text/DS_plugin_gst-nvinfer) for more details.
 7. For Chinese plate recognition, please make sure the Chinese language support is in the OS. `Take Ubuntu as an example :`
 
  - Install Chinese Language package . 

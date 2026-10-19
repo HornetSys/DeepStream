@@ -4,8 +4,8 @@ Use this file to compare a user's reported DeepStream stack against public NVIDI
 
 Authoritative public sources:
 
-- Current DeepStream documentation: https://docs.nvidia.com/metropolis/deepstream/dev-guide/
-- Current DeepStream installation guide: https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_Installation.html
+- Current DeepStream documentation: https://docs.nvidia.com/deepstream/9.2
+- Current DeepStream installation guide: https://docs.nvidia.com/deepstream/9.2/text/DS_Installation
 - NGC DeepStream catalog: https://catalog.ngc.nvidia.com/orgs/nvidia/containers/deepstream
 - Public DeepStream coding-agent examples: https://github.com/NVIDIA-AI-IOT/DeepStream_Coding_Agent
 

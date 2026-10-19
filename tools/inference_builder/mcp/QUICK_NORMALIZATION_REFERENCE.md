@@ -205,7 +205,3 @@ offsets: "127.5;127.5;127.5"  # Subtracts 0.5 per channel
 >
 > Using the wrong scale factor OR wrong per-channel offsets will result in poor inference accuracy, regardless of how good your model is.
 
-For detailed information, see:
-- [NORMALIZATION_GUIDE.md](NORMALIZATION_GUIDE.md) - Comprehensive guide
-- [EXAMPLE_DEEPSTREAM_CONFIG.md](EXAMPLE_DEEPSTREAM_CONFIG.md) - Usage examples
-

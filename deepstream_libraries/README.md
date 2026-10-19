@@ -128,7 +128,7 @@ For more references and application please refer to the below link:
 - [CVCUDA](https://github.com/CVCUDA/CV-CUDA/releases/tag/v0.16.0)
 - [NvImageCodec](https://github.com/NVIDIA/nvImageCodec/releases/tag/v0.8.0)
 - [PyNvVideoCodec](https://pypi.org/project/PyNvVideoCodec/2.1/)
-- [Deepstream Libraries](https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_Libraries.html)
+- [Deepstream Libraries](https://docs.nvidia.com/deepstream/9.2/text/DS_Libraries)
 
 ## Notes
 - **VPF (VideoProcessingFramework)**: The main VPF package is deprecated. PyNvVideoCodec (installed via wheel) is the modern replacement. PytorchNvCodec extension is available for PyTorch support. VPF installation failures are non-fatal as PyNvVideoCodec provides the required functionality.

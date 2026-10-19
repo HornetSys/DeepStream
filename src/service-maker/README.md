@@ -265,5 +265,5 @@ Located in `sources/modules/`. These are loadable shared-library modules that pl
 
 ## Further Reading
 
-- [DeepStream Service Maker Developer Guide](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_service_maker_python)
-- [DeepStream SDK Documentation](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2)
+- [DeepStream Service Maker Developer Guide](https://docs.nvidia.com/deepstream/9.2/text/DS_service_maker_python)
+- [DeepStream SDK Documentation](https://docs.nvidia.com/deepstream/9.2)

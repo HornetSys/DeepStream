@@ -25,9 +25,9 @@ Risk: Review before execution as proposals could introduce incorrect or misleadi
 Mitigation: Review and scan skill before deployment. <br>
 
 ## Reference(s): <br>
-- [AMC Setup Calibration Stack Skill](skills/amc-setup-calibration-stack/SKILL.md) <br>
-- [AMC Run Video Calibration Skill](skills/amc-run-video-calibration/SKILL.md) <br>
-- [AMC Run RTSP Calibration Skill](skills/amc-run-rtsp-calibration/SKILL.md) <br>
+- [AMC Setup Calibration Stack Skill](../amc-setup-calibration-stack/SKILL.md) <br>
+- [AMC Run Video Calibration Skill](../amc-run-video-calibration/SKILL.md) <br>
+- [AMC Run RTSP Calibration Skill](../amc-run-rtsp-calibration/SKILL.md) <br>
 
 
 ## Skill Output: <br>

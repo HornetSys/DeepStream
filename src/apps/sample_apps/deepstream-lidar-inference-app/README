@@ -154,7 +154,7 @@ Note: For x86 platforms, users must run the samples inside the container.
 ```
 # Application Configuration Semantics
 There are additional new sections introduced by the lidar inferencing app.
-please refer to https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_3D_Lidar_Inference.html#deepstream-lidar-inference-app-ds3d-userapp-group-settings
+please refer to https://docs.nvidia.com/deepstream/9.2/text/DS_3D_Lidar_Inference#deepstream-lidar-inference-app-ds3d-userapp-group-settings
 
 ## Notice
 1. model will gives different num_boxes each time when testing the same file.

@@ -39,7 +39,7 @@ $ sudo docker run --gpus all -it --ipc=host --rm --privileged -v /tmp/.X11-unix:
 $ ./prepare_triton_models.sh
 ```
 
-For DGX Spark platform, please refer to [DGX Spark Triton docker](https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_Installation.html#run-dgx-spark-docker) to run Triton docker on DGX Spark.
+For DGX Spark platform, please refer to [DGX Spark Triton docker](https://docs.nvidia.com/deepstream/9.2/text/DS_Installation#run-dgx-spark-docker) to run Triton docker on DGX Spark.
 
 If the server is running in the same machine as the DeepStream application, the following command can be used directly. If it is not, please set the gRPC url as the IP address of the server machine in all the configuration files in deepstream_app_tao_configs/triton-grpc:
 

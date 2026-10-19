@@ -218,9 +218,9 @@ To add a new responder:
 
 ## Related Documentation
 
-- [Usage Guide](../../doc/usage.md) - Server configuration details
-- [Architecture](../ARCHITECTURE.md) - How responders fit into the system
-- [OpenAPI Specification](../../builder/samples/*/openapi.yaml) - API definitions
+- [Usage Guide](../doc/usage.md) - Server configuration details
+- [Architecture](../doc/architecture.md) - How responders fit into the system
+- OpenAPI Specification: `builder/samples/*/openapi.yaml` - API definitions
 
 ## References
 

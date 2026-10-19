@@ -53,4 +53,4 @@ For further details on each app, please see each project's README.
  A GStreamer plugin for NVIDIA DeepStream that integrates Vision-Language Models (VLM) using VLLM for real-time video understanding and analysis.
 
 ## Pyservicemaker Sample apps: [README](pyservicemaker_sample_apps/README.md)
-The apps in pyservicemaker_sample_apps are additional samples demonstrating usage of the Python API for DeepStream Service Maker, either by flow API or by pipeline API. See the [Python Service Maker documentation](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_service_maker_python) for details.
+The apps in pyservicemaker_sample_apps are additional samples demonstrating usage of the Python API for DeepStream Service Maker, either by flow API or by pipeline API. See the [Python Service Maker documentation](https://docs.nvidia.com/deepstream/9.2/text/DS_service_maker_python) for details.
