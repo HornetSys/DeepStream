@@ -59,9 +59,10 @@ The service supports both a geometry-based approach (AMC) using object trajector
 # Quick Start
 
 ### Agent Skills
-AutoMagicCalib workflows use the existing DeepStream agent skills under
-[`skills/`](../../skills/README.md). Select the setup, sample, video, or RTSP
-calibration skill from the DeepStream repository root. Full calibration runs
+AutoMagicCalib workflows use the consolidated DeepStream
+[`amc-run-auto-calibration`](../../skills/amc-run-auto-calibration/SKILL.md)
+skill for setup, sample data, local video, RTSP calibration, and custom-dataset
+tuning. Full calibration runs
 require the runtime prerequisites below and are not expected to complete in
 restricted or no-GPU sandboxes; in those environments, agents should limit work
 to planning, configuration review, and command preparation.
@@ -90,7 +91,7 @@ Expected runtime varies by host, image/model downloads, video length, detector c
 - NVIDIA GPU with hardware encoder (NVENC)
 - NVIDIA driver 590
 - Docker (setup to run without sudo privilege)
-- NVIDIA container toolkit (see [NVIDIA DeepStream Docker Prerequisites](https://docs.nvidia.com/deepstream/9.2/text/DS_docker_containers#prerequisites))
+- NVIDIA container toolkit (see [NVIDIA DeepStream Docker Prerequisites](https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_docker_containers.html#prerequisites))
 - [NGC CLI](https://org.ngc.nvidia.com/setup/installers/cli) (required to
   download the optional NGC sample dataset)
 
@@ -125,7 +126,7 @@ such as `nvidia/amc-nv-warehouse`.
    key as the password.
 
 ### Project Setup
-AutoMagicCalib is distributed as part of the DeepStream repository. Clone
+AutoMagicCalib is distributed as part of the DeepStream monorepo. Clone
 DeepStream, then run the commands below from
 `tools/auto-magic-calib`. This directory contains this README along with
 `compose/`, `assets/`, `models/`, and `projects/`.
@@ -2052,5 +2053,5 @@ This repository contains materials released under different licenses:
 The scripts in this repository interact with and pull the proprietary AutoMagicCalib and AutoMagicCalibUI containers. The use of these containers, and any software, data, or intellectual property contained within them, is governed by a separate set of licenses and third-party notices.
 
 The applicable End User License Agreement (EULA), 3rd-party notice, and reference information for the release images can be found in:
-- [`nvcr.io/nvidia/vss-core/vss-auto-calibration:3.3.0`](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/vss-core/containers/vss-auto-calibration?version=3.3.0)
-- [`nvcr.io/nvidia/vss-core/vss-auto-calibration-ui:3.3.0`](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/vss-core/containers/vss-auto-calibration-ui?version=3.3.0)
+- [`nvcr.io/nvidia/vss-core/vss-auto-calibration:3.3.0`](https://catalog.ngc.nvidia.com/orgs/nvidia/vss-core/containers/vss-auto-calibration?version=3.3.0)
+- [`nvcr.io/nvidia/vss-core/vss-auto-calibration-ui:3.3.0`](https://catalog.ngc.nvidia.com/orgs/nvidia/vss-core/containers/vss-auto-calibration-ui?version=3.3.0)
