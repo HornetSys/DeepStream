@@ -4,6 +4,81 @@ title: "Installation"
 
 NVIDIA <sup>®</sup> DeepStream Software Development Kit (SDK) is an accelerated AI framework to build intelligent video analytics (IVA) pipelines. DeepStream runs on NVIDIA <sup>®</sup> T4, NVIDIA® Hopper, NVIDIA <sup>®</sup> Blackwell, NVIDIA <sup>®</sup> Ampere, NVIDIA <sup>®</sup> ADA, NVIDIA® DGX Spark, and platforms such as NVIDIA <sup>®</sup> Jetson AGX Thor, NVIDIA <sup>®</sup> Jetson Orin and NVIDIA <sup>®</sup> IGX Thor. For dGPU platforms Enterprise GPUs are highly recommended for deployments that are expected to run 24x7. Gaming GPUs are not designed to perform in such type of environments.
 
+## Install from the GitHub Mono-repo (Build from Source)
+
+The DeepStream mono-repo at https://github.com/NVIDIA/DeepStream is the recommended starting point for DeepStream 9.2. It contains the open-source components (GStreamer plugins, utilities, sample, reference and TAO applications, and Service Maker) together with `build/build.sh`, a single script that downloads the prebuilt proprietary runtime from the GitHub release, installs the open-source dependencies, builds the source components, and installs everything to `/opt/nvidia/deepstream/deepstream-9.2/`.
+
+### Choose an installation method
+
+| Method | Use when |
+|---|---|
+| Mono-repo build (`build/build.sh`) | You want the sources, or need to modify, rebuild or extend DeepStream components. |
+| Release packages (`.deb` / `.tbz2`) | You want a binary installation without building. See the platform sections below. |
+| Container | You want a ready-made environment with the compute stack installed. See [Docker Containers](/text/DS_docker_containers). |
+
+### Prerequisites
+
+- The NVIDIA compute stack (driver, CUDA, cuDNN and TensorRT) for your platform. Install it by following the Jetson, dGPU or dGPU on ARM sections below, and match the versions listed in [Platform and OS Compatibility](#platform-and-os-compatibility).
+- `git`, `git-lfs`, `cmake` and `wget`.
+- SBSA / DGX Spark: bare-metal installation is not supported. Build inside the DeepStream SBSA container instead. See [FAQ for DeepStream GitHub Mono-repo](/text/DS_Monorepo_FAQ).
+
+For the complete list of system packages per platform, see `build/BUILD.md` in the mono-repo.
+
+### Build and install
+
+```bash
+# Install Git LFS (required for LFS-tracked sample media)
+sudo apt-get install git-lfs && git lfs install
+
+# Clone the repo with submodules
+git clone --recurse-submodules https://github.com/NVIDIA/DeepStream.git && cd DeepStream
+
+# Build and install. The script prompts for sudo only when writing to system paths.
+bash build/build.sh
+```
+
+`build/build.sh` detects the platform and runs these stages in order:
+
+1. `artifacts`: downloads the prebuilt runtime libraries and sample data from the [DeepStream GitHub release](https://github.com/NVIDIA/DeepStream/releases) and installs them (x86 and Jetson).
+2. `deps`: builds and installs the open-source dependencies.
+3. Source stages: `gst-utils`, `utils`, `gst-plugins`, `sample_apps`, `yolo`, `tao_apps`, `reference_apps` and `service-maker`.
+4. `install.sh`: registers the binaries and installs the `pyservicemaker` Python wheel.
+
+A transcript of each run is written to `build/build.log`.
+
+Commonly used options:
+
+| Option | Description |
+|---|---|
+| `--only=STAGE[,STAGE]` | Build only the named component stage(s). |
+| `--resume` | Skip stages already completed, after an interrupted build. |
+| `--skip-deps`, `--skip-artifacts` | Skip the dependency or artifact install when it is already done. |
+| `--install-method=<deb or tar>` | Install the release assets from Debian packages (`deb`, the default) or tarballs (`tar`). |
+| `--keep-assets` | Keep the downloaded release assets in `artifacts/` after a successful build. |
+| `-j N` | Number of parallel build jobs. |
+| `--verbose` | Show sub-make errors. |
+
+The defaults are `CUDA_VER=13.2` (13.0 on IGX) and `NVDS_VERSION=9.2.0`. Run `bash build/build.sh --help` for all options.
+
+### Verify the installation
+
+After the first install, clear the GStreamer plugin cache, then run the reference application with a sample configuration:
+
+```bash
+rm -rf ~/.cache/gstreamer-1.0/
+cd /opt/nvidia/deepstream/deepstream-9.2/samples/configs/deepstream-app
+deepstream-app -c source30_1080p_dec_infer-resnet_tiled_display.txt
+```
+
+### Notes
+
+- `build/build.sh` does not build `gst-nvdsudp`, `gst-dsexample-cuda` or `gst-nvdstextembedder`. Build these separately by following the README in each component directory.
+- Some sample applications are platform-specific and are skipped automatically on platforms where they are not supported.
+- On Jetson Orin, use external storage: the downloaded release assets can exhaust internal storage.
+- On SBSA / DGX Spark, to modify a single open-source component, run `make` in that component's directory inside the container. See [FAQ for DeepStream GitHub Mono-repo](/text/DS_Monorepo_FAQ).
+
+For the full build reference, including uninstall, Service Maker local compilation and packaging, see `build/BUILD.md` in the mono-repo.
+
 ## Jetson Setup
 
 This section explains how to prepare a Jetson device before installing the DeepStream SDK.
