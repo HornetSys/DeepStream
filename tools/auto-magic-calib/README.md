@@ -82,7 +82,7 @@ Restart or reopen the coding assistant after copying the skills. See
 [`skills/README.md`](../../skills/README.md) for the full skill catalog and
 example prompts.
 
-Expected runtime varies by host, image/model downloads, video length, detector choice, and whether you run Auto/Manual rectification plus optional VGGT and layout post-processing. The bundled sample can take several minutes up to about 30 minutes, custom video calibration can take 10-60+ minutes, and optional VGGT refinement usually adds a few minutes.
+Expected runtime varies by host, image/model downloads, video length, detector choice, and whether you run Auto/Manual rectification plus independent VGGT calibration and layout post-processing. The bundled sample can take several minutes up to about 30 minutes, custom video calibration can take 10-60+ minutes, and independent VGGT calibration usually takes a few minutes when selected.
 
 ### System Requirements
 - x86_64 system
@@ -2052,5 +2052,5 @@ This repository contains materials released under different licenses:
 The scripts in this repository interact with and pull the proprietary AutoMagicCalib and AutoMagicCalibUI containers. The use of these containers, and any software, data, or intellectual property contained within them, is governed by a separate set of licenses and third-party notices.
 
 The applicable End User License Agreement (EULA), 3rd-party notice, and reference information for the release images can be found in:
-- [`nvcr.io/nvidia/auto-magic-calib:3.2.1`](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/auto-magic-calib?version=3.2.1)
-- [`nvcr.io/nvidia/auto-magic-calib-ui:3.2.1`](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/auto-magic-calib-ui?version=3.2.1)
+- [`nvcr.io/nvidia/vss-core/vss-auto-calibration:3.3.0`](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/vss-core/containers/vss-auto-calibration?version=3.3.0)
+- [`nvcr.io/nvidia/vss-core/vss-auto-calibration-ui:3.3.0`](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/vss-core/containers/vss-auto-calibration-ui?version=3.3.0)
