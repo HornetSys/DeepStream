@@ -41,7 +41,7 @@ The element-configuration YAML that these helpers consume is the same
 the other DS3D modules.
 
 More details, refer to the DeepStream SDK documentation for section of "DeepStream 3D Custom Manual".
-https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_3D_Custom_Manual
+https://docs.nvidia.com/deepstream/9.2/text/DS_3D_Custom_Manual
 
 --------------------------------------------------------------------------------
 Pre-requisites:

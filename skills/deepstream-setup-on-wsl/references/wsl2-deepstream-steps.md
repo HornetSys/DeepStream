@@ -5,7 +5,7 @@ truth for this skill. It preserves the supported stack while narrowing broad
 container, network, and X11 permissions. Record any further deviation in the run
 report.
 
-Source: <https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_on_WSL2>
+Source: <https://docs.nvidia.com/deepstream/9.2/text/DS_on_WSL2>
 
 ## Prerequisites (validated matrix from the guide)
 
@@ -145,7 +145,7 @@ sudo docker pull nvcr.io/nvidia/deepstream:9.1-triton-multiarch@sha256:<verified
 ```
 
 > **NOTE:** The official NVIDIA guide uses additional runtime flags for display/audio access.
-> For that form, see: https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_on_WSL2
+> For that form, see: https://docs.nvidia.com/deepstream/9.2/text/DS_on_WSL2
 > Those host interfaces are not granted by this skill. The default smoke run is
 > headless, has no network, and does not expose the host display or sound device.
 

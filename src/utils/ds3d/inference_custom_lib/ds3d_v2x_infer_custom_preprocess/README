@@ -21,7 +21,7 @@ It exports interface 'CreateInferServerCustomPreprocess' for deepstream-3d-lidar
 pre-processing with ds3d inference plugin.
 
 More details, refer to the DeepStream SDK documentation for section of "DeepStream 3D Custom Manual".
-https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_3D_Custom_Manual
+https://docs.nvidia.com/deepstream/9.2/text/DS_3D_Custom_Manual
 
 --------------------------------------------------------------------------------
 Pre-requisites:

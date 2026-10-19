@@ -61,7 +61,7 @@ parameters:
 
 ### Preprocess Configuration
 
-Used to define preprocessing operations that run before inference. This is required when non-image tensors must be injected into the pipeline (e.g., for models that require additional metadata or custom tensor inputs). Refer to [nvdspreprocess plugin documentation](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_plugin_gst-nvdspreprocess) for more details.
+Used to define preprocessing operations that run before inference. This is required when non-image tensors must be injected into the pipeline (e.g., for models that require additional metadata or custom tensor inputs). Refer to [nvdspreprocess plugin documentation](https://docs.nvidia.com/deepstream/9.2/text/DS_plugin_gst-nvdspreprocess) for more details.
 
 ```yaml
 parameters:

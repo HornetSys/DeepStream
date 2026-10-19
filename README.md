@@ -52,7 +52,7 @@ The Brev launchable workflow is available in [`deploy/brev/`](deploy/brev/README
 
 Before building, ensure the following prerequisites are installed:
 
-- **NVIDIA compute stack** — driver, CUDA, cuDNN, and TensorRT at the versions listed below. See the [DeepStream SDK Installation Guide](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_Installation).
+- **NVIDIA compute stack** — driver, CUDA, cuDNN, and TensorRT at the versions listed below. See the [DeepStream SDK Installation Guide](https://docs.nvidia.com/deepstream/9.2/text/DS_Installation).
 - **DeepStream 9.2 proprietary runtime** — the prebuilt libraries and sample data are published as GitHub Release assets. `bash build/build.sh` automatically downloads the packages into `artifacts/` before the build process starts.
 
   > **Note:** After a successful build, `artifacts/` is removed automatically. Pass `--keep-assets` to retain them.
@@ -99,8 +99,8 @@ deepstream-app -c source30_1080p_dec_infer-resnet_tiled_display.txt
 rm -rf ~/.cache/gstreamer-1.0/
 ```
 
-- More such examples: [DeepStream Quickstart Guide](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_Quickstart#run-deepstream-app-the-reference-application)
-- Detailed API reference: [DeepStream SDK Developer Guide](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2)
+- More such examples: [DeepStream Quickstart Guide](https://docs.nvidia.com/deepstream/9.2/text/DS_Quickstart#run-deepstream-app-the-reference-application)
+- Detailed API reference: [DeepStream SDK Developer Guide](https://docs.nvidia.com/deepstream/9.2)
 
 Each app must be run from its source directory so relative config paths resolve correctly. Refer to the `README` inside each app directory for app-specific run instructions and config options.
 
@@ -159,19 +159,19 @@ deepstream-app -c source30_1080p_dec_infer-resnet_tiled_display.txt
 
 | Page | Description |
 |------|-------------|
-| [Overview & Architecture](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_Overview) | What DeepStream is, key features, and the GStreamer-based pipeline architecture. |
-| [Release Notes](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_Release_notes) | What's new in this release, supported platforms, and known issues. |
-| [Installation](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_Installation) | Step-by-step installation of the NVIDIA compute stack and DeepStream SDK on x86 and Jetson. |
-| [Docker Containers](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_docker_containers) | Available DeepStream NGC container images (incl. Triton variants) and how to pull and run them. |
-| [DeepStream Samples](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_C_Sample_Apps) | Reference walkthroughs of the bundled C/C++ sample applications and what each one demonstrates. |
-| [Reference Applications](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_ref_app_github) | Advanced GitHub-hosted reference apps demonstrating specialized end-to-end pipelines. |
-| [TAO Apps](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_TAO_integration) | DeepStream sample apps integrating TAO-trained models (detection, classification, segmentation, pose, LPR). |
-| [DeepStream Plugins](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_plugin_Intro) | Reference for every DeepStream GStreamer plugin — properties, pad caps, and usage. |
-| [Service Maker](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_service_maker_intro) | Build DeepStream pipelines declaratively with the C++ / Python Service Maker SDK. |
+| [Overview & Architecture](https://docs.nvidia.com/deepstream/9.2/text/DS_Overview) | What DeepStream is, key features, and the GStreamer-based pipeline architecture. |
+| [Release Notes](https://docs.nvidia.com/deepstream/9.2/text/DS_Release_notes) | What's new in this release, supported platforms, and known issues. |
+| [Installation](https://docs.nvidia.com/deepstream/9.2/text/DS_Installation) | Step-by-step installation of the NVIDIA compute stack and DeepStream SDK on x86 and Jetson. |
+| [Docker Containers](https://docs.nvidia.com/deepstream/9.2/text/DS_docker_containers) | Available DeepStream NGC container images (incl. Triton variants) and how to pull and run them. |
+| [DeepStream Samples](https://docs.nvidia.com/deepstream/9.2/text/DS_C_Sample_Apps) | Reference walkthroughs of the bundled C/C++ sample applications and what each one demonstrates. |
+| [Reference Applications](https://docs.nvidia.com/deepstream/9.2/text/DS_ref_app_github) | Advanced GitHub-hosted reference apps demonstrating specialized end-to-end pipelines. |
+| [TAO Apps](https://docs.nvidia.com/deepstream/9.2/text/DS_TAO_integration) | DeepStream sample apps integrating TAO-trained models (detection, classification, segmentation, pose, LPR). |
+| [DeepStream Plugins](https://docs.nvidia.com/deepstream/9.2/text/DS_plugin_Intro) | Reference for every DeepStream GStreamer plugin — properties, pad caps, and usage. |
+| [Service Maker](https://docs.nvidia.com/deepstream/9.2/text/DS_service_maker_intro) | Build DeepStream pipelines declaratively with the C++ / Python Service Maker SDK. |
 | [Inference Builder](tools/inference_builder/README.md) | Compose and configure DeepStream inference pipelines visually with the Inference Builder tool. |
 | [Auto Magic Calib](https://github.com/NVIDIA-AI-IOT/auto-magic-calib/tree/bc5b1d9b3154d4242f147c35754670bc7981d37a) | Automatic camera calibration tool for multi-camera DeepStream deployments. |
-| [DeepStream Libraries](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_Libraries) | DeepStream utility and helper libraries bundled in this repository at `deepstream_libraries/`. |
-| [DeepStream Coding Agent](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_AI_Agent) | Use the bundled `skills/` with Claude Code and other AI coding assistants to generate DeepStream pipelines. |
+| [DeepStream Libraries](https://docs.nvidia.com/deepstream/9.2/text/DS_Libraries) | DeepStream utility and helper libraries bundled in this repository at `deepstream_libraries/`. |
+| [DeepStream Coding Agent](https://docs.nvidia.com/deepstream/9.2/text/DS_AI_Agent) | Use the bundled `skills/` with Claude Code and other AI coding assistants to generate DeepStream pipelines. |
 
 # Repository Structure
 
@@ -253,7 +253,7 @@ The table below maps the existing NVIDIA-AI-IOT GitHub repository sources to the
 | [NVIDIA-Optical-Character-Detection-and-Recognition-Solution (nvocdr)](https://github.com/NVIDIA-AI-IOT/NVIDIA-Optical-Character-Detection-and-Recognition-Solution) | [src/apps/tao_apps/apps/tao_others/deepstream-nvocdr-app/nvocdr/](src/apps/tao_apps/apps/tao_others/deepstream-nvocdr-app/nvocdr/) | [NVIDIA OCDR Solution Software License](src/apps/tao_apps/apps/tao_others/deepstream-nvocdr-app/nvocdr/LICENSE) |
 
 # Performance
-Summary of benchmarks; for detailed performance numbers and hardware used, refer to the [DeepStream Performance Guide](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_Performance).
+Summary of benchmarks; for detailed performance numbers and hardware used, refer to the [DeepStream Performance Guide](https://docs.nvidia.com/deepstream/9.2/text/DS_Performance).
 
 # Releases & Roadmap
 

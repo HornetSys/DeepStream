@@ -1536,7 +1536,7 @@ are published to the message broker.",
         "Specify the NvDCF tracker mode. The acceptable value is either \
 \"accuracy\" or \"perf\". The default value is \"perf\"  \"accuracy\" mode"\
 " requires DeepSORT model to be installed. Please refer to [Setup Official Re-ID Model]"\
-"(https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_plugin_gst-nvtracker) section for details.",
+"(https://docs.nvidia.com/deepstream/9.2/text/DS_plugin_gst-nvtracker) section for details.",
         NULL}
       ,
       {"fps", 0, 0, G_OPTION_ARG_NONE, &_print_fps,

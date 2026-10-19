@@ -49,7 +49,7 @@ Supported models include: PeopleNet Transformer, CitySemSegFormer, Mask2Former, 
 
 Located in `service-maker/`. A C++ and Python SDK that abstracts GStreamer/GLib APIs for building DeepStream applications declaratively.
 
-See [`service-maker/README.md`](service-maker/README.md) for build instructions, API overview, and app list. See also the [Service Maker introduction](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_service_maker_intro).
+See [`service-maker/README.md`](service-maker/README.md) for build instructions, API overview, and app list. See also the [Service Maker introduction](https://docs.nvidia.com/deepstream/9.2/text/DS_service_maker_intro).
 
 - **Core** — `service-maker/sources/core/` — the runtime library (`libnvds_service_maker.so`)
   and its static helper archive (`libnvds_service_maker_utils.a`)
@@ -65,7 +65,7 @@ See [`service-maker/README.md`](service-maker/README.md) for build instructions,
 
 Located in `gst-plugins/`. Source for all DeepStream GStreamer plugins.
 
-See [`gst-plugins/README.md`](gst-plugins/README.md) for the full list. Each plugin has its own `README` at `gst-plugins/<plugin>/README` with properties and usage. See also the [DeepStream Plugins introduction](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_plugin_Intro).
+See [`gst-plugins/README.md`](gst-plugins/README.md) for the full list. Each plugin has its own `README` at `gst-plugins/<plugin>/README` with properties and usage. See also the [DeepStream Plugins introduction](https://docs.nvidia.com/deepstream/9.2/text/DS_plugin_Intro).
 
 ### GStreamer Utilities
 
@@ -222,4 +222,4 @@ The following components are **legacy and no longer maintained**. They are still
 - `gst-nvdsspeech`
 - `gst-nvdstexttospeech`
 
-For component details, source, and configuration, refer to the [DeepStream 9.2 public release documentation](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2).
+For component details, source, and configuration, refer to the [DeepStream 9.2 public release documentation](https://docs.nvidia.com/deepstream/9.2).

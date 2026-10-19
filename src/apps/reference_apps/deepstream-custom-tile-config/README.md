@@ -21,7 +21,7 @@ limitations under the License.
 This sample demonstrates the usage of "custom-tile-config" of nvmultistreamtiler to customize the tiling positions and sizes of multiple videos within the display window. The rectangle display areas of every video can be configured by the "custom-tile-config" property of nvmultistreamtiler for CustomTileConfig struct.
 
 ## Prerequisites
-The sample works with DeepStream 9.2 GA or above version. Please follow [DeepStream SDK installation instruction](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_Installation) or use [DeepStream docker container](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_docker_containers) to prepare the DeepStream environment.
+The sample works with DeepStream 9.2 GA or above version. Please follow [DeepStream SDK installation instruction](https://docs.nvidia.com/deepstream/9.2/text/DS_Installation) or use [DeepStream docker container](https://docs.nvidia.com/deepstream/9.2/text/DS_docker_containers) to prepare the DeepStream environment.
 
 ## Running the Application
 Download the source code and build

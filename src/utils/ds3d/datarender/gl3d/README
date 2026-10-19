@@ -53,7 +53,7 @@ The exported C-API name is not limited. In this sample, they are the three
 `create*DataRender` functions listed above.
 
 More details, refer to the DeepStream SDK documentation for section of "DeepStream 3D Custom Manual".
-https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_3D_Custom_Manual
+https://docs.nvidia.com/deepstream/9.2/text/DS_3D_Custom_Manual
 
 --------------------------------------------------------------------------------
 Pre-requisites:

@@ -59,4 +59,4 @@ The following package versions are included in DeepStream Libraries v1.4:
    - Print the wheel's absolute output path when the build completes
 
 ## Documentation
-For more information, visit the [official DeepStream Libraries documentation](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_Libraries).
+For more information, visit the [official DeepStream Libraries documentation](https://docs.nvidia.com/deepstream/9.2/text/DS_Libraries).

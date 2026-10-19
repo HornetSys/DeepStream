@@ -50,7 +50,7 @@ The following pyservicemaker applications with TAO models are provided:
 * [DeepStream SDK 9.2 GA](https://developer.nvidia.com/deepstream-sdk)
 
     Make sure deepstream-test1 sample can run successful to verify your installation. According to the
-    [document](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_docker_containers),
+    [document](https://docs.nvidia.com/deepstream/9.2/text/DS_docker_containers),
     please run below command to install additional audio video packages.
 
 ```bash

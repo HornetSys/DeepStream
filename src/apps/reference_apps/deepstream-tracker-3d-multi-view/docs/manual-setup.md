@@ -18,7 +18,7 @@ limitations under the License.
 ## Manual Setup Instructions
 
 
-1. Please check [Deepstream Container Prerequisites](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_docker_containers#prerequisites) for Deepstream container setup, and download the latest DeepStream container image. 
+1. Please check [Deepstream Container Prerequisites](https://docs.nvidia.com/deepstream/9.2/text/DS_docker_containers#prerequisites) for Deepstream container setup, and download the latest DeepStream container image. 
     ```bash
     docker pull ghcr.io/nvidia/deepstream:9.2-triton-multiarch
     ```

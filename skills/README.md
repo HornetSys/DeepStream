@@ -33,7 +33,7 @@ The following are required on the target execution environment:
 
 > The `deepstream-import-vision-model` and `deepstream-eval-and-finetune` skills run their toolchains inside `nvcr.io/nvidia/deepstream:9.1-triton-multiarch`; the host needs Docker, NVIDIA Container Toolkit, and a compatible NVIDIA driver. Their setup and preflight scripts create and verify the mounted Python environments and runtime tools.
 
-> For detailed environment setup, refer to the [DeepStream SDK Developer Guide](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2).
+> For detailed environment setup, refer to the [DeepStream SDK Developer Guide](https://docs.nvidia.com/deepstream/9.2).
 
 ### DeepStream Version Compatibility
 

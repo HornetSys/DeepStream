@@ -1293,4 +1293,4 @@ VisualTracker:
 - **Service Maker Python API**: `service_maker_api.md`
 - **nvinfer Configuration**: `nvinfer_config.md`
 - **Use Cases & Pipelines**: `use_cases_pipelines.md`
-- **Official Docs**: https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_plugin_gst-nvtracker
+- **Official Docs**: https://docs.nvidia.com/deepstream/9.2/text/DS_plugin_gst-nvtracker

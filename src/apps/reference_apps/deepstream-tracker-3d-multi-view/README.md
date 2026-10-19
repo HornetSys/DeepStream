@@ -46,7 +46,7 @@ The sample applications in this repository require Ubuntu 24.04 and NVIDIA drive
 
 #### Setup
 
-1. Please check [DeepStream Container Prerequisites](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_docker_containers#prerequisites) for DeepStream container setup.
+1. Please check [DeepStream Container Prerequisites](https://docs.nvidia.com/deepstream/9.2/text/DS_docker_containers#prerequisites) for DeepStream container setup.
 
 2. Git clone the current `deepstream_reference_apps` repository to the host machine and enter `deepstream-tracker-3d-multi-view` directory
     ```bash
@@ -144,7 +144,7 @@ Two separate windows will be launched. One named **Bird-Eye View of Multi-View 3
 - This window shows the DeepStream on-screen display (OSD) of 4 camera views in a grid. This window is directly from Deepstream pipeline, and will show as black window at the beginning.
 - To view a specific camera view in the DeepStream OSD window, left-click on the desired view. To return to the multi-camera grid view, simply right-click anywhere in the window.
 - **The DeepStreamTest5App will exit automatically. To quit the DeepStreamTest5App window early, select the window and press 'q'.** After you press 'q', the app will terminate within a few seconds, and finally you will see "App run successful" printed.
-- Note about window name: MV3DT is built upon DeepStreamTest5App with specific config files, which is why the window displays "DeepStreamTest5App" as its title. This base application provides essential IoT protocol support (Kafka and MQTT) required by MV3DT. Currently, the window name cannot be changed. For more details, see the [DeepStreamTest5App documentation](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_ref_app_test5).
+- Note about window name: MV3DT is built upon DeepStreamTest5App with specific config files, which is why the window displays "DeepStreamTest5App" as its title. This base application provides essential IoT protocol support (Kafka and MQTT) required by MV3DT. Currently, the window name cannot be changed. For more details, see the [DeepStreamTest5App documentation](https://docs.nvidia.com/deepstream/9.2/text/DS_ref_app_test5).
 
 
 **Expected output during engine generation period from window overview/spread:**
@@ -361,7 +361,7 @@ This section provides customization options for the MV3DT pipeline. If you are n
    └── transforms.yml (optional, for BEV visualization)
    ```
 
-2. **Create camera calibration files** following the format of `datasets/mtmc_4cam/camInfo/Warehouse_Synthetic_Cam001.yml`. Replace the `projectionMatrix_3x4_w2p` values with your camera's projection matrix. For more details about these files, please refer to the [Single-View 3D Tracking](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_plugin_gst-nvtracker#single-view-3d-tracking) and [The 3x4 Camera Projection Matrix](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_plugin_gst-nvtracker#the-3x4-camera-projection-matrix) sections of the DeepStream documentation.
+2. **Create camera calibration files** following the format of `datasets/mtmc_4cam/camInfo/Warehouse_Synthetic_Cam001.yml`. Replace the `projectionMatrix_3x4_w2p` values with your camera's projection matrix. For more details about these files, please refer to the [Single-View 3D Tracking](https://docs.nvidia.com/deepstream/9.2/text/DS_plugin_gst-nvtracker#single-view-3d-tracking) and [The 3x4 Camera Projection Matrix](https://docs.nvidia.com/deepstream/9.2/text/DS_plugin_gst-nvtracker#the-3x4-camera-projection-matrix) sections of the DeepStream documentation.
 
 3. **Optional: BEV visualization setup** - Prepare a BEV map image and create a `transforms.yml` file specifying the projection matrix that maps world coordinates (in meters) to BEV image coordinates, following the sample format in `datasets/mtmc_4cam/transforms.yml`.
 

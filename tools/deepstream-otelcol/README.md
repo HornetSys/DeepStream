@@ -136,7 +136,7 @@ With the pipeline running and the collector started:
 
 ### Supported metrics
 
-DeepStream exports the following metrics (see the [official metrics table](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_OpenTelemetry#supported-prometheus-metrics) for typical values):
+DeepStream exports the following metrics (see the [official metrics table](https://docs.nvidia.com/deepstream/9.2/text/DS_OpenTelemetry#supported-prometheus-metrics) for typical values):
 
 | Metric | Description |
 |--------|-------------|
@@ -288,7 +288,7 @@ The collector outputs to stdout by default. Check the terminal output for any er
 
 ## References
 
-- [DeepStream OpenTelemetry Support](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_OpenTelemetry) — configuration, metrics, and architecture
+- [DeepStream OpenTelemetry Support](https://docs.nvidia.com/deepstream/9.2/text/DS_OpenTelemetry) — configuration, metrics, and architecture
 - [OpenTelemetry Collector documentation](https://opentelemetry.io/docs/collector/)
 - [OTLP/HTTP specification](https://opentelemetry.io/docs/specs/otlp/#otlphttp)
 

@@ -3,10 +3,10 @@
 Start with the public DeepStream documentation when checking supported plugin or
 configuration semantics:
 
-- [Plugins reference](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_plugin_Intro)
-- [Gst-nvinfer](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_plugin_gst-nvinfer)
-- [Gst-nvinferserver](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_plugin_gst-nvinferserver)
-- [Troubleshooting](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_troubleshooting)
+- [Plugins reference](https://docs.nvidia.com/deepstream/9.2/text/DS_plugin_Intro)
+- [Gst-nvinfer](https://docs.nvidia.com/deepstream/9.2/text/DS_plugin_gst-nvinfer)
+- [Gst-nvinferserver](https://docs.nvidia.com/deepstream/9.2/text/DS_plugin_gst-nvinferserver)
+- [Troubleshooting](https://docs.nvidia.com/deepstream/9.2/text/DS_troubleshooting)
 
 For contributor reviews in a source checkout, inspect the implementation paths
 that apply:

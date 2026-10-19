@@ -71,7 +71,7 @@ uridecoderbin -->streammux-->nvinfer(detection)-->nvosd-->
 * [DeepStream SDK 9.2 GA](https://developer.nvidia.com/deepstream-sdk)
 
    Make sure deepstream-test1 sample can run successfully to verify your installation. According to the
-   [document](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_docker_containers),
+   [document](https://docs.nvidia.com/deepstream/9.2/text/DS_docker_containers),
    please run below command to install additional audio video packages.
 
   ```
@@ -195,7 +195,7 @@ User can find the detailed label information for the MODEL in the README.md and 
 
 The DeepStream configuration file includes some runtime parameters for DeepStream **nvinfer** plugin or **nvinferserver** plugin, such as model path, label file path, TensorRT inference precision, input and output node names, input dimensions and so on.  
 In this sample, each model has its own DeepStream configuration file, e.g. pgie_peoplenet_transformer_tao_config.txt for peoplenet transformer model.
-Please refer to [DeepStream Development Guide](https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_plugin_gst-nvinfer#gst-nvinfer-file-configuration-specifications) for detailed explanations of those parameters.
+Please refer to [DeepStream Development Guide](https://docs.nvidia.com/deepstream/9.2/text/DS_plugin_gst-nvinfer#gst-nvinfer-file-configuration-specifications) for detailed explanations of those parameters.
 
 ### Model Outputs
 

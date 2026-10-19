@@ -106,6 +106,6 @@ changes.
 
 - Ultralytics YOLO26 — `https://docs.ultralytics.com/models/yolo26`
 - Hugging Face Ultralytics/YOLO26 — `https://huggingface.co/Ultralytics/YOLO26`
-- DeepStream `Gst-nvinfer` — `https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_plugin_gst-nvinfer`
-- DeepStream custom parser interface — `https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_plugin_gst-nvinfer#custom-bounding-box-parsing`
-- NvDCF tracker config reference — `https://nvidia-deepstream.docs.buildwithfern.com/deepstream/9.2/text/DS_plugin_gst-nvtracker`
+- DeepStream `Gst-nvinfer` — `https://docs.nvidia.com/deepstream/9.2/text/DS_plugin_gst-nvinfer`
+- DeepStream custom parser interface — `https://docs.nvidia.com/deepstream/9.2/text/DS_plugin_gst-nvinfer#custom-bounding-box-parsing`
+- NvDCF tracker config reference — `https://docs.nvidia.com/deepstream/9.2/text/DS_plugin_gst-nvtracker`
