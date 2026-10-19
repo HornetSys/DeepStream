@@ -1,0 +1,101 @@
+################################################################################
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+################################################################################
+---
+- name: Derive driver branch from nv_driver_prod
+  set_fact:
+    nv_driver_branch: "{{ nv_driver_prod.split('.')[0] }}"
+
+- name: Install NVIDIA driver pinning metapackage ({{ nv_driver_prod }})
+  apt:
+    name: "nvidia-driver-pinning-{{ nv_driver_prod }}"
+    state: present
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+
+- name: Install nvidia-open-{{ nv_driver_branch }}
+  apt:
+    name:
+      - "nvidia-open-{{ nv_driver_branch }}"
+      - nvidia-xconfig
+    state: present
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+  register: nv_driver_install
+
+- name: Report required remote reboot
+  ansible.builtin.debug:
+    msg: "NVIDIA driver packages changed; the remote host will reboot before provisioning continues."
+  when: inventory_hostname != 'localhost' and nv_driver_install.changed
+
+- name: Reboot host after driver installation
+  reboot:
+    post_reboot_delay: 15
+    reboot_timeout: 500
+  when: inventory_hostname != 'localhost' and nv_driver_install.changed
+
+- name: Wait for host after reboot
+  ansible.builtin.wait_for_connection:
+    connect_timeout: 30
+    sleep: 15
+    timeout: 900
+  when: inventory_hostname != 'localhost' and nv_driver_install.changed
+
+- name: Verify nvidia-smi after a remote reboot
+  command: nvidia-smi
+  register: nvidia_smi_result
+  retries: 10
+  delay: 10
+  until: nvidia_smi_result.rc == 0
+  when: inventory_hostname != 'localhost' and nv_driver_install.changed
+
+- name: Verify nvidia-smi (best-effort — no reboot occurred)
+  command: nvidia-smi
+  ignore_errors: true
+  when: not (inventory_hostname != 'localhost' and nv_driver_install.changed)
+
+# The display/Xorg block is best-effort: headless GPU servers often have no display-manager
+# and no loaded driver yet (e.g. a localhost run before reboot). None of it should abort the play.
+- name: Report disruptive Xorg reconfiguration
+  ansible.builtin.debug:
+    msg: "Existing Xorg sessions will be stopped and /etc/X11/xorg.conf will be regenerated; restore that file from the host backup if rollback is needed."
+
+- name: Stop display-manager service
+  service:
+    name: display-manager
+    state: stopped
+  ignore_errors: yes
+
+- name: Kill Xorg processes
+  shell: "pkill -9 Xorg || true"
+  failed_when: false
+
+- name: Get GPU PCI BusID
+  shell: nvidia-xconfig --query-gpu-info | grep -i 'PCI BusID' | head -n 1 | awk '{print $4}'
+  register: pci_id
+  changed_when: false
+  failed_when: false
+
+- name: Generate Xorg config (1920x1080)
+  shell: nvidia-xconfig -a --allow-empty-initial-configuration --virtual=1920x1080 --cool-bits=4 --busid {{ pci_id.stdout }}
+  when: pci_id.stdout | trim != ""
+  failed_when: false
+
+- name: Start display-manager service
+  service:
+    name: display-manager
+    state: started
+  ignore_errors: yes

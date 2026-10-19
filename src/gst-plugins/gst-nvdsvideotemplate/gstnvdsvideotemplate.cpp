@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -622,7 +622,7 @@ gst_nvdsvideotemplate_get_property (GObject * object, guint prop_id,
           g_value_set_string (value, str);
 
           if (str)
-              delete str;
+              delete[] str;
       }
       break;
     case PROP_DUMMY_META_INSERT:
@@ -893,5 +893,5 @@ nvdsvideotemplate_plugin_init (GstPlugin * plugin)
 GST_PLUGIN_DEFINE (GST_VERSION_MAJOR,
     GST_VERSION_MINOR,
     nvdsgst_videotemplate,
-    DESCRIPTION, nvdsvideotemplate_plugin_init, "9.1", LICENSE, BINARY_PACKAGE,
+    DESCRIPTION, nvdsvideotemplate_plugin_init, "9.2", LICENSE, BINARY_PACKAGE,
     URL)

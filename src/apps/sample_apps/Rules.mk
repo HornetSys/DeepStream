@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2020-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,7 +16,7 @@
 _RULES_MK_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 _REPO_ROOT     := $(realpath $(_RULES_MK_DIR)/../../..)
 
-NVDS_VERSION  ?= 9.1
+NVDS_VERSION  ?= 9.2
 
 BIN_DIR ?= /opt/nvidia/deepstream/deepstream-$(NVDS_VERSION)/bin
 OBJ_DIR ?= $(CURDIR)/.build

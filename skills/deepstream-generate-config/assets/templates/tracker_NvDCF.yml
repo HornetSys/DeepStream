@@ -1,0 +1,51 @@
+%YAML:1.0
+# NvDCF tracker template. Mirrors samples/configs/deepstream-app/config_tracker_NvDCF_perf.yml.
+# render_tracker.py substitutes values for keys named in spec.tracker.tracker_config.
+
+BaseConfig:
+  minDetectorConfidence: 0.0430    # If the confidence of a detector bbox is lower than this, then it won't be considered for tracking
+
+TargetManagement:
+  enableBboxUnClipping: 1    # In case the bbox is likely to be clipped by image border, unclip bbox
+  preserveStreamUpdateOrder: 0    # When assigning new target ids, preserve input streams' order to keep target ids in a deterministic order over multiple runs
+  maxTargetsPerStream: 150    # Max number of targets to track per stream
+  minIouDiff4NewTarget: 0.7418    # Discard newly detected object if IOU with any existing target exceeds this
+  minTrackerConfidence: 0.4009    # Tracks below this confidence are placed in shadow mode
+  probationAge: 2    # Age above which a target is considered valid
+  maxShadowTrackingAge: 51    # Max length of shadow tracking
+  earlyTerminationAge: 1    # Shadow age at which a TENTATIVE target is terminated
+
+TrajectoryManagement:
+  useUniqueID: 0    # Use 64-bit unique ID for tracker IDs
+
+DataAssociator:
+  dataAssociatorType: 0
+  associationMatcherType: 1    # 0=GREEDY, 1=CASCADED
+  checkClassMatch: 1
+  minMatchingScore4Overall: 0.4290
+  minMatchingScore4SizeSimilarity: 0.3627
+  minMatchingScore4Iou: 0.2575
+  minMatchingScore4VisualSimilarity: 0.5356
+  matchingScoreWeight4VisualSimilarity: 0.3370
+  matchingScoreWeight4SizeSimilarity: 0.4354
+  matchingScoreWeight4Iou: 0.3656
+  tentativeDetectorConfidence: 0.2008
+  minMatchingScore4TentativeIou: 0.5296
+
+StateEstimator:
+  stateEstimatorType: 1    # 0=DUMMY, 1=SIMPLE, 2=REGULAR
+  processNoiseVar4Loc: 1.5110
+  processNoiseVar4Size: 1.3159
+  processNoiseVar4Vel: 0.0300
+  measurementNoiseVar4Detector: 3.0283
+  measurementNoiseVar4Tracker: 8.1505
+
+VisualTracker:
+  visualTrackerType: 2    # 0=DUMMY, 1=NvDCF_legacy, 2=NvDCF_VPI
+  useColorNames: 1
+  useHog: 0
+  featureImgSizeLevel: 2
+  featureFocusOffsetFactor_y: -0.2000
+  filterLr: 0.0750
+  filterChannelWeightsLr: 0.1000
+  gaussianSigma: 0.7500

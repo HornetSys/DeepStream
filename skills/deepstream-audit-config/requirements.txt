@@ -1,0 +1,2 @@
+# Optional YAML config support; .txt validation uses only the Python standard library.
+PyYAML>=6.0

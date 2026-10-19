@@ -16,10 +16,12 @@
 FROM nvcr.io/nvidia/cuda:13.2.0-runtime-ubuntu24.04
 
 ARG TENSORRT_VERSION=10.16.1.11-1+cuda13.2
+ARG OPENTELEMETRY_CPP_VERSION=v1.23.0
+ARG OPENTELEMETRY_BUILD_JOBS
 # ARG CUDNN_VERSION
 
 
-ENV DS_VERSION=9.1
+ENV DS_VERSION=9.2
 
 # Add open GL libraries and other required components. Added new gstreamer components and additional components including CVE patches
 # IP removal is included here
@@ -188,16 +190,6 @@ RUN apt-get update && \
        apt autoremove ; ldconfig
 
 
-# open telemetry
- RUN --mount=type=bind,src=x86_dockerfiles,target=/tmp/docker \
-     mkdir -p /tmp/temp_otel99 && \
-     cd /tmp/temp_otel99 && \
-     cp  /tmp/docker/optel/* . && \
-     dpkg -i *.deb && \
-     cd / && \
-     rm -rf /tmp/temp_otel99
-
-
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install --reinstall -y --allow-downgrades libprotobuf32t64=3.21.12-8.2ubuntu0.3 libprotoc32t64=3.21.12-8.2ubuntu0.3 && \
     apt-get install -y --no-install-recommends protobuf-compiler libprotobuf-dev=3.21.12-8.2ubuntu0.3 && \
@@ -206,11 +198,54 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 
+# open telemetry
+# Built from source instead of prebuilt .deb packages: the Debian/Ubuntu archives
+# rotate opentelemetry-cpp binaries out of the pool, which breaks the docker build.
+# Runs after the protobuf step so the OTLP exporters link against the same protobuf
+# the image ships. Default OTELCPP_VERSIONED_LIBS=OFF and WITH_STL=OFF are required:
+# prebuilt DeepStream libraries expect unversioned SONAMEs
+# (libopentelemetry_metrics.so) and the nostd ABI used by includes/opentelemetry.
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+      cmake \
+      libcurl4-openssl-dev \
+      libgrpc++-dev \
+      nlohmann-json3-dev \
+      protobuf-compiler-grpc && \
+    git clone --depth 1 --branch ${OPENTELEMETRY_CPP_VERSION} \
+      https://github.com/open-telemetry/opentelemetry-cpp.git /tmp/opentelemetry-cpp && \
+    git -C /tmp/opentelemetry-cpp submodule update --init --depth 1 third_party/opentelemetry-proto && \
+    cmake -S /tmp/opentelemetry-cpp -B /tmp/opentelemetry-cpp/build \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_INSTALL_PREFIX=/usr \
+      -DCMAKE_INSTALL_LIBDIR=lib/x86_64-linux-gnu \
+      -DCMAKE_CXX_STANDARD=17 \
+      -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+      -DBUILD_SHARED_LIBS=ON \
+      -DOPENTELEMETRY_INSTALL=ON \
+      -DWITH_OTLP_HTTP=ON \
+      -DWITH_OTLP_GRPC=ON \
+      -DWITH_EXAMPLES=OFF \
+      -DWITH_FUNC_TESTS=OFF \
+      -DWITH_BENCHMARK=OFF \
+      -DBUILD_TESTING=OFF && \
+    cmake --build /tmp/opentelemetry-cpp/build \
+      --parallel "${OPENTELEMETRY_BUILD_JOBS:-$(nproc)}" && \
+    cmake --install /tmp/opentelemetry-cpp/build && \
+    rm -rf /tmp/opentelemetry-cpp && \
+    DEBIAN_FRONTEND=noninteractive apt-get purge -y cmake && \
+    rm -rf /var/lib/apt/lists/* && \
+    ldconfig
+
+
 # workaround deepstream-app --version-all for cudnn
 RUN ln -s /usr/lib/x86_64-linux-gnu/libcudnn.so.9 /usr/lib/x86_64-linux-gnu/libcudnn.so
 
 # workaround for deepstream --version-all cuda driver
 RUN ln -s /usr/local/cuda/lib64/libcudart.so.13  /usr/local/cuda/lib64/libcudart.so
+
+# for reference apps
+RUN ln -sfn "/opt/nvidia/deepstream/deepstream-9.2/includes" "/opt/nvidia/deepstream/deepstream-9.2/sources/includes"
 
 # ENV NVIDIA_DRIVER_CAPABILITIES $NVIDIA_DRIVER_CAPABILITIES,video
 ENV NVIDIA_DRIVER_CAPABILITIES $NVIDIA_DRIVER_CAPABILITIES,video,compute,graphics,utility

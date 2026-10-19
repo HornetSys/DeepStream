@@ -21,14 +21,17 @@ DS_SRC_PATH:= /opt/nvidia/deepstream/deepstream
 LIB_INSTALL_DIR?= /opt/nvidia/deepstream/deepstream/lib/
 
 # Change to your deepstream SDK includes
-CFLAGS+= -I../../../../../includes \
+# -I../../../ is src/utils, so "ds3d/common/..." resolves from this tree first.
+CFLAGS+= -I../../../ \
+         -I../../../../../includes \
          -I/usr/local/cuda/include \
          -I../../../../../includes/nvdsinferserver \
-         -I../../../../../includes/ds3d/common/helper
+         -I../../../../../includes/ds3d/common/helper \
+         -I../../../ds3d/common/helper
 
 CFLAGS+= -Wall -std=c++14 -shared -fPIC
 
-CUFLAGS:= -I../../../../../includes -I/usr/local/cuda/include
+CUFLAGS:= -I../../../ -I../../../../../includes -I/usr/local/cuda/include
 
 LIBS+= -L/usr/local/cuda/lib64 -lcudart -lcublas -lyaml-cpp
 

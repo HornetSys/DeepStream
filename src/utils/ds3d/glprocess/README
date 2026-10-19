@@ -1,0 +1,63 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+DS3D glprocess is the OpenGL ES rendering back-end shared by the DS3D data
+render modules. It wraps GLFW window management, GLES3 shader programs, vertex
+and texture buffers, CUDA/GL interop, and pango/cairo text rasterization into
+the render-context interfaces declared in `glprocess/gl_render_ctx.h` and
+`glprocess/window.h`.
+
+DS3D is framework agnostic. There is no gstreamer/Glib dependency for the
+rendering itself; glib is pulled in only indirectly through pangocairo.
+
+`libnvds_3d_glprocess.so` is built from these source files. It is not loaded as
+a `ds3d::` custom module — it is linked directly by the data render libraries:
+
+    libnvds_3d_gl_datarender.so           datarender/gl3d
+    libnvds_3d_gles_ensemble_render.so    datarender/gl3d_ensemble
+
+The render contexts it provides are:
+
+    gl_depth_render_ctx.h        depth-image render context
+    gl_point_cloud_render_ctx.h  coloured point-cloud render context
+    gl_lidar_render_ctx.h        LiDAR point-cloud and bounding-box render context
+    gl_texture_render.h          RGB texture render context
+    gl_text.h                    pango/cairo text overlay
+
+GLFW and GLM headers are taken from the system libglfw3-dev and libglm-dev
+packages rather than being vendored in this tree.
+
+More details, refer to the DeepStream SDK documentation for section of "DeepStream 3D Custom Manual".
+https://docs.nvidia.com/deepstream/9.2/text/DS_3D_Custom_Manual
+
+--------------------------------------------------------------------------------
+Pre-requisites:
+- libnvds_3d_common.so (build and install ds3d/common first)
+- libglfw3 Development package
+- libglm Development package
+- libgles2 / libegl1 Development packages
+- libpango1.0 and libcairo2 Development packages
+- libyaml-cpp Development package
+- libx11 Development package
+- CUDA Runtime
+
+--------------------------------------------------------------------------------
+Compiling and installing this lib:
+- Export CUDA_VER, then build. sudo -E keeps the variable for make.
+  $ export CUDA_VER=13.2 # x86, Jetson and SBSA. For IGX Thor, CUDA_VER=13.0
+  $ make && sudo -E make install
+- Verify `libnvds_3d_glprocess.so` exist and installed well.
+
+NOTE: Compiling does not need root. Install with `sudo -E` so CUDA_VER is kept. Skip sudo when already root (for example inside a container).

@@ -1,6 +1,6 @@
 #!/bin/bash
 ################################################################################
-# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2024-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,9 +23,9 @@ set -e
 # debug
 # set -x
 
-NVDS_VERSION=${NVDS_VERSION:-9.1}
+NVDS_VERSION=${NVDS_VERSION:-9.2}
 DEFAULT_CONFIG_FILE="ds3d_lidar_video_sensor_v2x_fusion.yaml"
-TARGET_IMAGE="nvcr.io/nvidia/deepstream:${NVDS_VERSION}-triton-multiarch"
+TARGET_IMAGE="ghcr.io/nvidia/deepstream:${NVDS_VERSION}-triton-multiarch"
 TARGET_DEVICE=$(uname -m)
 TARGET_WORKSPACE=/opt/nvidia/deepstream/deepstream/sources/apps/sample_apps/deepstream-3d-lidar-sensor-fusion
 TARGET_MODEL_ROOT=/opt/nvidia/deepstream/deepstream/samples/triton_model_repo/v2xfusion
@@ -35,8 +35,9 @@ function usage() {
     echo "CONFIGFILE, optional, default: ${DEFAULT_CONFIG_FILE}"
 }
 
-function echoRed() {
-    echo -e "\033[31m $1 \033[0m"
+function echo_red() {
+    local msg="$1"
+    echo -e "\033[31m ${msg} \033[0m"
 }
 
 CONFIG_FILE="ds3d_lidar_video_sensor_v2x_fusion.yaml"
@@ -49,14 +50,14 @@ else
 fi
 
 if [[ ! -d ./v2xfusion/models/v2xfusion/ ]];then
-    echoRed "Please run sudo v2xfusion/scripts/docker_run_generate_v2x_trt_engine_model.sh to build model first"
+    echo_red "Please run sudo v2xfusion/scripts/docker_run_generate_v2x_trt_engine_model.sh to build model first"
     exit 1
 fi
 
 if [[ ! -d ./v2xfusion/example-data ]];then
-    echoRed "Please download V2X-Seq-SPD-Example.zip from https://github.com/AIR-THU/DAIR-V2X?tab=readme-ov-file#dataset"
-    echoRed "Put it to v2xfusion/scripts"
-    echoRed "Then cd v2xfusion/scripts;./prepare.sh dataset"
+    echo_red "Please download V2X-Seq-SPD-Example.zip from https://github.com/AIR-THU/DAIR-V2X?tab=readme-ov-file#dataset"
+    echo_red "Put it to v2xfusion/scripts"
+    echo_red "Then cd v2xfusion/scripts;./prepare.sh dataset"
     exit 1
 fi
 

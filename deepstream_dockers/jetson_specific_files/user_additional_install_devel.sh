@@ -22,7 +22,7 @@ apt-get install --reinstall -y gstreamer1.0-plugins-good gstreamer1.0-plugins-ba
 # new since DS 7.1
 apt-get install --reinstall -y libflac12t64 libmp3lame0 libxvidcore4 ffmpeg libfaad2 mjpegtools libvo-aacenc0 libdca0 libdvdnav4 libdvdread8t64
 # new for dev-main 8.0 ubuntu 24.04
-apt-get install --reinstall -y libvpx9 libavfilter-dev libflac++10 libmjpegutils-2.1-0t64 libopenh264-7 libx264-164 libmplex2-2.1-0t64 libjbig0
+apt-get install --reinstall -y libvpx9 libavfilter-dev libflac++10 libmjpegutils-2.1-0t64 libopenh264-7 libx264-164 libmplex2-2.1-0t64 libjbig0 libswresample4
 
 # gstreamer1.0-plugins-good fix
 cp /tmp99/libgstrtpmanager.so /usr/lib/aarch64-linux-gnu/gstreamer-1.0/libgstrtpmanager.so

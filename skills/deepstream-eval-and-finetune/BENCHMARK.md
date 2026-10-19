@@ -9,8 +9,8 @@ Recommended for publication based on the completed evaluation evidence in this r
 ## Evaluation Metadata
 
 - Skill: `deepstream-eval-and-finetune`
-- Evaluation date: 2026-08-13
-- Evaluator version: `1.2.4`
+- Evaluation date: 2026-09-01
+- Evaluator version: `1.3.2`
 - Agents: Claude Code (`aws/anthropic/bedrock-claude-opus-4-8`), Codex (`openai/openai/gpt-5.5`)
 - Tasks: 12 evaluation tasks (12 positive)
 - Dataset digest: `sha256:f0574da1dcd519928f8848eadd229cc1ed2374116969395070a1146e943a9605` (skill-evaluator-dataset-snapshot/1)
@@ -19,6 +19,16 @@ Recommended for publication based on the completed evaluation evidence in this r
 - Tier 3 evidence: required for publication
 
 Each task attempt ran in its own isolated sandbox pod.
+
+## Execution and Provenance
+
+- Validation status: `passed`
+- Report generation: `complete`
+- Evaluator version: `1.3.2`
+- Git commit: `fed6620cbc44a5e8d7e78ab0dd044258b667efc7`
+- Content type: requested `auto`, detected `skill`
+- Container image digest: `not recorded`
+- Tier 3: requested `true`, executed `true`, status `succeeded`
 
 ## What This Report Answers
 
@@ -34,12 +44,12 @@ The three-tier evaluation checks whether the skill:
 
 | Measure | Claude Code (Baseline → Skill Uplift) | Codex (Baseline → Skill Uplift) |
 |---|---:|---:|
-| Overall | Not available | 53% → 76% (+23 points) |
-| Security | Not available | 71% → 83% (+12 points) |
-| Correctness | Not available | 47% → 82% (+35 points) |
-| Discoverability | Not available | 55% → 77% (+22 points) |
-| Effectiveness | Not available | 37% → 47% (+10 points) |
-| Efficiency | Not available | 54% → 91% (+37 points) |
+| Overall | Not available | 53% → 78% (+25 points) |
+| Security | Not available | 67% → 75% (+8 points) |
+| Correctness | Not available | 48% → 92% (+43 points) |
+| Discoverability | Not available | 53% → 79% (+26 points) |
+| Effectiveness | Not available | 38% → 52% (+14 points) |
+| Efficiency | Not available | 59% → 92% (+33 points) |
 
 **How to read this table:** baseline is the same task attempted without the target skill. Uplift is `skill score - baseline score`, shown in percentage points.
 
@@ -59,10 +69,10 @@ Example: `47% → 92% (+45 points)` means the skill-assisted run scored 92%, 45 
 <summary>Show detailed findings and successful checks</summary>
 
 - **MEDIUM** SCHEMA/body_recommended_section: Missing recommended section: '## Examples' (`skills/deepstream-eval-and-finetune/SKILL.md`)
-- **LOW** SCHEMA/unexpected_file: Unexpected 'examples' in skill root (`skills/deepstream-eval-and-finetune/examples`)
 - **LOW** SCHEMA/unexpected_file: Unexpected 'NEW_MACHINE_SETUP.md' in skill root (`skills/deepstream-eval-and-finetune/NEW_MACHINE_SETUP.md`)
-- **LOW** SCHEMA/unexpected_file: Unexpected 'install.ps1' in skill root (`skills/deepstream-eval-and-finetune/install.ps1`)
 - **LOW** SCHEMA/unexpected_file: Unexpected 'app' in skill root (`skills/deepstream-eval-and-finetune/app`)
+- **LOW** SCHEMA/unexpected_file: Unexpected 'examples' in skill root (`skills/deepstream-eval-and-finetune/examples`)
+- **LOW** SCHEMA/unexpected_file: Unexpected 'install.ps1' in skill root (`skills/deepstream-eval-and-finetune/install.ps1`)
 - 2 additional finding(s) are available in the full evaluation artifacts.
 
 </details>

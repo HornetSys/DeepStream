@@ -14,8 +14,17 @@
 # limitations under the License.
 
 CUDA_VER?=
+# Require CUDA_VER for every goal except a clean-only invocation.
+# A bare `make` has empty MAKECMDGOALS and still checks.
+ifneq ($(filter-out clean,$(MAKECMDGOALS)),)
+  _DS_NEED_CUDA_VER := 1
+else ifeq ($(MAKECMDGOALS),)
+  _DS_NEED_CUDA_VER := 1
+endif
+ifeq ($(_DS_NEED_CUDA_VER),1)
 ifeq ($(CUDA_VER),)
   $(error "CUDA_VER is not set")
+endif
 endif
 
 TARGET_DEVICE = $(shell g++ -dumpmachine | cut -f1 -d -)
@@ -29,7 +38,7 @@ LIB:=libnvdsgst_nvurisrcbin.so
 LIB_INSTALL_DIR?=/opt/nvidia/deepstream/deepstream/lib/
 GST_INSTALL_DIR?=/opt/nvidia/deepstream/deepstream/lib/gst-plugins/
 
-CFLAGS+= -fPIC -DDS_VERSION=\"9.1.0\" \
+CFLAGS+= -fPIC -DDS_VERSION=\"9.2.0\" \
      -I../../../includes \
      -I../../apps/common/includes/ \
  	 -I/usr/local/cuda-$(CUDA_VER)/include \

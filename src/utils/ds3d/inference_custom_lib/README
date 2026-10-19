@@ -1,0 +1,50 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+This directory groups the custom pre- and post-processing libraries that the
+DS3D inference filters load through nvdsinferserver. Each subdirectory builds
+one shared library and has its own README:
+
+    ds3d_lidar_detection_postprocess/
+        libnvds_3d_infer_postprocess_lidar_detection.so — parses LiDAR object
+        detection output tensors into ds3d 3D bounding boxes.
+
+    ds3d_v2x_infer_custom_preprocess/
+        libnvds_3d_v2x_infer_custom_preprocess.so — voxelization, pillar
+        scatter and BEV pooling for the V2X fusion model.
+
+    ds3d_v2x_infer_custom_postprocess/
+        libnvds_3d_v2x_infer_custom_postprocess.so — decodes the V2X fusion
+        model output into ds3d 3D bounding boxes.
+
+This Makefile is an aggregator only; it forwards `all`, `install` and `clean`
+to each subdirectory.
+
+More details, refer to the DeepStream SDK documentation for section of "DeepStream 3D Custom Manual".
+https://docs.nvidia.com/deepstream/9.2/text/DS_3D_Custom_Manual
+
+--------------------------------------------------------------------------------
+Pre-requisites:
+- libnvds_3d_common.so (build and install ds3d/common first)
+- libyaml-cpp Development package
+- CUDA Runtime and nvcc
+
+--------------------------------------------------------------------------------
+Compiling and installing these libs:
+- Export CUDA_VER, then build. sudo -E keeps the variable for make.
+  $ export CUDA_VER=13.2 # x86, Jetson and SBSA. For IGX Thor, CUDA_VER=13.0
+  $ make && sudo -E make install
+
+NOTE: Compiling does not need root. Install with `sudo -E` so CUDA_VER is kept. Skip sudo when already root (for example inside a container).

@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -33,6 +33,9 @@ For build and installation instructions, see [build/BUILD.md](../../build/BUILD.
 | `gst-nvinferserver` | `nvinferserver` | Triton Inference Server-based inference. Supports TensorRT, ONNX, TF, PyTorch backends. See [README](gst-nvinferserver/README). |
 | `gst-nvdspreprocess` | `nvdspreprocess` | Custom pre-processing (resize, normalize, crop) on batched frames before inference. See [README](gst-nvdspreprocess/README). |
 | `gst-nvdspostprocess` | `nvdspostprocess` | Custom post-processing on inference output tensors. See [README](gst-nvdspostprocess/README). |
+| `gst-nvdsvisionencoder-c` | `nvdsvisionencoder` | C plugin that generates ReID embeddings for tracked objects (TensorRT; Triton client optional) and attaches `NVDS_TRACKER_OBJ_REID_META`. See [README](gst-nvdsvisionencoder-c/README.md). |
+| `gst-nvdstextembedder` | `nvdstextembedder` | Python plugin that generates DFN5B-CLIP text embeddings for use with `nvdsvisionencoder`. Not compiled by `build/build.sh`. See [README](gst-nvdstextembedder/README.md). |
+| `ds-sparse4d` *(via nvdsvideotemplate)* | — | Sparse4D multi-camera 3D detection and tracking custom lib (`libnvdsgst_sparse4d.so`). Requires PyTorch 2.9.0+cu130. See [README](gst-nvdsvideotemplate/ds-sparse4d/README). |
 
 ### Stream Input / Multiplexing
 
@@ -51,6 +54,9 @@ For build and installation instructions, see [build/BUILD.md](../../build/BUILD.
 | `gst-nvtracker` | `nvtracker` | Multi-object tracker. Supports NvDCF, DeepSORT, IOU, and custom tracker libraries. See [README](gst-nvtracker/README). |
 | `gst-nvdsanalytics` | `nvdsanalytics` | Line-crossing counting, ROI filtering, and direction detection analytics. See [README](gst-nvdsanalytics/README). |
 | `gst-nvdewarper` | `nvdewarper` | Dewarps fisheye and 360° camera feeds into perspective or panoramic views. See [README](gst-nvdewarper/README). |
+| `gst-nvdsframeselector` | `nvdsframeselector` | Selects representative frames using optical flow, SAD, or equidistant selection. See [README](gst-nvdsframeselector/README.md). |
+| `gst-nvmodelmux` | `nvmodelmux` | Routes streams to per-stream primary and shadow inference models. See [README](gst-nvmodelmux/README.md). |
+| `gst-nvinfereval` | `nvinfereval` | Live inference accuracy evaluator with A/B promotion gating. See [configs](gst-nvinfereval/configs). |
 | `gst-nvof` *(via nvdsvideotemplate)* | — | NVIDIA Optical Flow SDK integration for motion estimation. |
 
 ### On-Screen Display and Metadata
@@ -79,7 +85,7 @@ For build and installation instructions, see [build/BUILD.md](../../build/BUILD.
 
 | Plugin | Element Name | Description |
 |---|---|---|
-| `gst-nvdsvideotemplate` | `nvdsvideotemplate` | Template plugin for custom video processing; ships with example custom libs. See [README](gst-nvdsvideotemplate/README). |
+| `gst-nvdsvideotemplate` | `nvdsvideotemplate` | Template plugin for custom video processing; ships with example custom libs including Sparse4D (`ds-sparse4d`). See [README](gst-nvdsvideotemplate/README) and [ds-sparse4d/README](gst-nvdsvideotemplate/ds-sparse4d/README). |
 | `gst-dsexample` | `dsexample` | Reference example plugin demonstrating CPU-based custom processing. See [README](gst-dsexample/README). |
 | `gst-dsexample-cuda` | `dsexample` (CUDA) | Reference example plugin demonstrating GPU-based custom processing with CUDA. Requires OpenCV 4.x with CUDA. See [README](gst-dsexample-cuda/README). |
 

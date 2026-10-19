@@ -15,29 +15,38 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-NVDS_VERSION=${NVDS_VERSION:-9.1}
-# update-alternatives priority derived from DeepStream major+minor version (e.g. 9.1 -> 91)
+NVDS_VERSION=${NVDS_VERSION:-9.2.0}
+# NVDS_VERSION must be MAJOR.MINOR.PATCH (default: 9.2.0). Install tree still
+# uses MAJOR.MINOR for now (e.g. deepstream-9.2/); strip the patch for paths.
+if [[ ! "$NVDS_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  echo "error: invalid NVDS_VERSION='$NVDS_VERSION' (expected MAJOR.MINOR.PATCH, e.g. 9.2.0)" >&2
+  exit 1
+fi
+# update-alternatives priority: MAJOR*10000 + MINOR*100 + PATCH
+# (zero-pads minor/patch to 2 digits so 9.2.10 != 9.21.0 and 10.0.0 > 9.10.0)
 NVDS_MAJOR=${NVDS_VERSION%%.*}
 NVDS_VERSION_REST=${NVDS_VERSION#*.}
 NVDS_MINOR=${NVDS_VERSION_REST%%.*}
-NVDS_PRIORITY="${NVDS_MAJOR}${NVDS_MINOR}"
+NVDS_PATCH=${NVDS_VERSION##*.}
+NVDS_PRIORITY=$((NVDS_MAJOR * 10000 + NVDS_MINOR * 100 + NVDS_PATCH))
+NVDS_VERSION="${NVDS_VERSION%.*}"
 TARGET_DEVICE=$(uname -m)
 OS=$(cat /etc/os-release | awk -F= '$1=="ID"{print $2}' | sed 's/"//g')
 
-if [ "${TARGET_DEVICE}" = "x86_64" ]; then
-    if [ "${OS}" = "rhel" ]; then
+if [[ "${TARGET_DEVICE}" = "x86_64" ]]; then
+    if [[ "${OS}" = "rhel" ]]; then
         mkdir -p /usr/lib/x86_64-linux-gnu/libv4l/plugins/
         ln -sf /opt/nvidia/deepstream/deepstream-${NVDS_VERSION}/lib/libv4l/plugins/libcuvidv4l2_plugin.so /usr/lib/x86_64-linux-gnu/libv4l/plugins/libcuvidv4l2_plugin.so
         BASE_LIB_DIR="/usr/lib64/"
-    elif [ "${OS}" = "ubuntu" ]; then
+    elif [[ "${OS}" = "ubuntu" ]]; then
         BASE_LIB_DIR="/usr/lib/x86_64-linux-gnu/"
     else
         echo "Unsupported OS" 2>&1
         exit 1
     fi
-elif [ "${TARGET_DEVICE}" = "aarch64" ]; then
+elif [[ "${TARGET_DEVICE}" = "aarch64" ]]; then
     BASE_LIB_DIR="/usr/lib/aarch64-linux-gnu"
-    if [ -f "$BASE_LIB_DIR/nvidia/libnvbufsurface.so" ]; then
+    if [[ -f "$BASE_LIB_DIR/nvidia/libnvbufsurface.so" ]]; then
         NVIDIA_LIB_DIR="$BASE_LIB_DIR/nvidia"
     else
         NVIDIA_LIB_DIR="$BASE_LIB_DIR/tegra"
@@ -50,14 +59,14 @@ while getopts "d:" option; do
         BASE_LIB_DIR="${OPTARG}"
         ;;
     *)
-        echo "ERROR! Unsupported option!"
+        echo "ERROR! Unsupported option!" >&2
         exit 1
         ;;
     esac
 done
 
-if [ -n "$TARGET_DEVICE" ]; then
-    if [ "${TARGET_DEVICE}" = "x86_64" ]; then
+if [[ -n "$TARGET_DEVICE" ]]; then
+    if [[ "${TARGET_DEVICE}" = "x86_64" ]]; then
         update-alternatives --install $BASE_LIB_DIR/gstreamer-1.0/deepstream deepstream-plugins /opt/nvidia/deepstream/deepstream-${NVDS_VERSION}/lib/gst-plugins ${NVDS_PRIORITY}
         update-alternatives --install $BASE_LIB_DIR/libv4l/plugins/libcuvidv4l2_plugin.so deepstream-v4l2plugin /opt/nvidia/deepstream/deepstream-${NVDS_VERSION}/lib/libv4l/plugins/libcuvidv4l2_plugin.so ${NVDS_PRIORITY}
         update-alternatives --install /usr/bin/deepstream-appsrc-cuda-test deepstream-appsrc-cuda-test /opt/nvidia/deepstream/deepstream-${NVDS_VERSION}/bin/deepstream-appsrc-cuda-test ${NVDS_PRIORITY}
@@ -67,17 +76,13 @@ if [ -n "$TARGET_DEVICE" ]; then
         update-alternatives --install /usr/bin/deepstream-ucx-test-app deepstream-ucx-test-app /opt/nvidia/deepstream/deepstream-${NVDS_VERSION}/bin/deepstream-ucx-test-app ${NVDS_PRIORITY}
         echo "/opt/nvidia/deepstream/deepstream-${NVDS_VERSION}/lib" > /etc/ld.so.conf.d/deepstream.conf
         echo "/opt/nvidia/deepstream/deepstream-${NVDS_VERSION}/lib/gst-plugins" >> /etc/ld.so.conf.d/deepstream.conf
-    elif [ "${TARGET_DEVICE}" = "aarch64" ]; then
+    elif [[ "${TARGET_DEVICE}" = "aarch64" ]]; then
         update-alternatives --install $BASE_LIB_DIR/gstreamer-1.0/deepstream deepstream-plugins /opt/nvidia/deepstream/deepstream-${NVDS_VERSION}/lib/gst-plugins ${NVDS_PRIORITY}
         for lib in libnvbufsurface.so libnvbufsurftransform.so libnvdsbufferpool.so libgstnvcustomhelper.so; do
-            if [ ! -f "$NVIDIA_LIB_DIR/$lib" ]; then
-                echo "ERROR: required library $NVIDIA_LIB_DIR/$lib not found; cannot create symlink" >&2
-                exit 1
-            fi
             ln -sf "$NVIDIA_LIB_DIR/$lib" "/opt/nvidia/deepstream/deepstream-${NVDS_VERSION}/lib/$lib"
         done
         # deepstream-ipc-test is Jetson-only; not built on SBSA (both report uname -m as aarch64)
-        if [ -f /etc/nv_tegra_release ]; then
+        if [[ -f /etc/nv_tegra_release ]]; then
             update-alternatives --install /usr/bin/deepstream-ipc-test-app deepstream-ipc-test-app /opt/nvidia/deepstream/deepstream-${NVDS_VERSION}/bin/deepstream-ipc-test-app ${NVDS_PRIORITY}
         fi
         echo "/opt/nvidia/deepstream/deepstream-${NVDS_VERSION}/lib" > /etc/ld.so.conf.d/deepstream.conf
@@ -113,6 +118,7 @@ update-alternatives --install /usr/bin/deepstream-nmos-app deepstream-nmos-app /
 update-alternatives --install /usr/bin/deepstream-server-app deepstream-server-app /opt/nvidia/deepstream/deepstream-${NVDS_VERSION}/bin/deepstream-server-app ${NVDS_PRIORITY}
 update-alternatives --install /usr/bin/deepstream-demuxer-static deepstream-demuxer-static /opt/nvidia/deepstream/deepstream-${NVDS_VERSION}/bin/deepstream-demuxer-static ${NVDS_PRIORITY}
 update-alternatives --install /usr/bin/deepstream-demuxer-dynamic deepstream-demuxer-dynamic /opt/nvidia/deepstream/deepstream-${NVDS_VERSION}/bin/deepstream-demuxer-dynamic ${NVDS_PRIORITY}
+update-alternatives --install /usr/bin/deepstream-kitti-overlay deepstream-kitti-overlay /opt/nvidia/deepstream/deepstream-${NVDS_VERSION}/bin/deepstream-kitti-overlay ${NVDS_PRIORITY}
 update-alternatives --install /usr/bin/service-maker-3d-action-recognition-app service-maker-3d-action-recognition-app /opt/nvidia/deepstream/deepstream-${NVDS_VERSION}/bin/service-maker-3d-action-recognition-app ${NVDS_PRIORITY}
 update-alternatives --install /usr/bin/service-maker-appsrc-test service-maker-appsrc-test /opt/nvidia/deepstream/deepstream-${NVDS_VERSION}/bin/service-maker-appsrc-test ${NVDS_PRIORITY}
 update-alternatives --install /usr/bin/service-maker-sr-test-app service-maker-sr-test-app /opt/nvidia/deepstream/deepstream-${NVDS_VERSION}/bin/service-maker-sr-test-app ${NVDS_PRIORITY}
@@ -121,7 +127,15 @@ update-alternatives --install /usr/bin/service-maker-test2-app service-maker-tes
 update-alternatives --install /usr/bin/service-maker-test3-app service-maker-test3-app /opt/nvidia/deepstream/deepstream-${NVDS_VERSION}/bin/service-maker-test3-app ${NVDS_PRIORITY}
 update-alternatives --install /usr/bin/service-maker-test4-app service-maker-test4-app /opt/nvidia/deepstream/deepstream-${NVDS_VERSION}/bin/service-maker-test4-app ${NVDS_PRIORITY}
 update-alternatives --install /usr/bin/service-maker-test5-app service-maker-test5-app /opt/nvidia/deepstream/deepstream-${NVDS_VERSION}/bin/service-maker-test5-app ${NVDS_PRIORITY}
-pip install /opt/nvidia/deepstream/deepstream-${NVDS_VERSION}/service-maker/python/pyservicemaker*.whl --force-reinstall --break-system-packages
+update-alternatives --install /usr/bin/ds-launch ds-launch /opt/nvidia/deepstream/deepstream-${NVDS_VERSION}/bin/ds-launch ${NVDS_PRIORITY}
+# The service-maker build stage builds this wheel from
+# src/service-maker/sources/python and drops it here, overwriting the prebuilt
+# one installed earlier by the artifacts stage. A source build therefore always
+# installs bindings matching the libnvds_service_maker.so it was built against.
+# Install with python3 -m pip rather than a bare pip: the wheel carries the ABI
+# tag of the interpreter that built it (cp312 here), and a 'pip' picked up from
+# PATH may belong to a different Python, which rejects the wheel outright.
+python3 -m pip install /opt/nvidia/deepstream/deepstream-${NVDS_VERSION}/service-maker/python/pyservicemaker*.whl --force-reinstall --break-system-packages
 ldconfig
 rm -rf /home/*/.cache/gstreamer-1.0/
 rm -rf /root/.cache/gstreamer-1.0/

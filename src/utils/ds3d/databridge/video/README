@@ -1,0 +1,68 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+DS3D video databridge is an implementation of `ds3d::databridge` which connects
+a standard DeepStream 2D video pipeline to a DS3D 3D pipeline. It takes the
+`NvBufSurface` and `NvDsBatchMeta` of an incoming video batch and exposes them
+as 2D frames and object metadata inside a `ds3d::datamap`, so a 3D filter can
+consume camera images and 2D detections alongside LiDAR data.
+
+Unlike the other DS3D modules this one does depend on GStreamer, because it
+reads DeepStream video buffers and batch metadata directly.
+
+`libnvds_3d_video_databridge.so` is built from these source files. and the video
+databridge is created through API `createVideoBridge2d3d`. Application users can
+call this API to instantiate this databridge.
+
+The config content shall as:
+
+    type: ds3d::databridge
+    out_caps: ds3d/datamap
+    custom_lib_path: libnvds_3d_video_databridge.so
+    custom_create_function: createVideoBridge2d3d
+    config_body:
+       ...
+
+Any custom `ds3d::databridge` must derive from `ds3d::BaseImplDataBridge` for data bridging
+And implement the following interfaces:
+
+    ErrCode startImpl(const std::string& content, const std::string& path) override;
+    ErrCode processImpl(
+        const struct VideoBridge2dInput* inputData, OnGuardDataCBImpl outputDataCb,
+        OnGuardBridgeDataCBImpl inputConsumedCb) override;
+    ErrCode stopImpl() override;
+    ErrCode flushImpl() override;
+
+In addition, users also need export a C-API for application to intiate this databridge.
+The exported C-API name is not limited. In this sample, it is `createVideoBridge2d3d`.
+
+More details, refer to the DeepStream SDK documentation for section of "DeepStream 3D Custom Manual".
+https://docs.nvidia.com/deepstream/9.2/text/DS_3D_Custom_Manual
+
+--------------------------------------------------------------------------------
+Pre-requisites:
+- libnvds_3d_common.so (build and install ds3d/common first)
+- libgstreamer1.0 Development package
+- libyaml-cpp Development package
+- CUDA Runtime
+
+--------------------------------------------------------------------------------
+Compiling and installing this `ds3d::databridge` lib:
+- Export CUDA_VER, then build. sudo -E keeps the variable for make.
+  $ export CUDA_VER=13.2 # x86, Jetson and SBSA. For IGX Thor, CUDA_VER=13.0
+  $ make && sudo -E make install
+- Verify `libnvds_3d_video_databridge.so` exist and installed well.
+
+NOTE: Compiling does not need root. Install with `sudo -E` so CUDA_VER is kept. Skip sudo when already root (for example inside a container).

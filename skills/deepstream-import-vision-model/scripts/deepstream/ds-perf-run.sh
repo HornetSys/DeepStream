@@ -36,6 +36,10 @@
 #     deepstream-app handles the file-loop / EOS bookkeeping.
 #   - The nvinfer config must already point at the engine, parser, and labels.
 #     This script does NOT mutate the nvinfer config.
+#   - Writes ${log_path}.json using the canonical per-source parser. Every
+#     source must sustain DS_TARGET_FPS (default 30) in the final five windows.
+#     DS_TASK (default detection) and DS_CAMPAIGN_ID label the result.
+#   - Existing log/JSON outputs are never overwritten; choose a fresh path.
 ################################################################################
 set -euo pipefail
 
@@ -49,14 +53,37 @@ if [ -z "$NVINFER_CONFIG" ] || [ -z "$NUM_STREAMS" ] || [ -z "$LOG_PATH" ]; then
     exit 1
 fi
 
+[[ "$NUM_STREAMS" =~ ^[1-9][0-9]*$ ]] || {
+    echo "ERROR: num_streams must be a positive integer" >&2
+    exit 1
+}
+
 [ -f "$NVINFER_CONFIG" ] || { echo "ERROR: nvinfer config not found: $NVINFER_CONFIG"; exit 1; }
 [ -f "$VIDEO" ] || { echo "ERROR: video file not found: $VIDEO"; exit 1; }
 command -v deepstream-app >/dev/null 2>&1 || { echo "ERROR: deepstream-app not on PATH"; exit 1; }
 
 NVINFER_CONFIG="$(realpath "$NVINFER_CONFIG")"
 VIDEO="$(realpath "$VIDEO")"
-LOG_PATH="$(realpath -m "$LOG_PATH")"
+# Resolve the parent, not the final component: even dangling output symlinks
+# must be rejected rather than followed to a new target.
+LOG_PATH="$(realpath -m "$(dirname "$LOG_PATH")")/$(basename "$LOG_PATH")"
+JSON_PATH="${LOG_PATH}.json"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+for OUTPUT_PATH in "$LOG_PATH" "$JSON_PATH"; do
+    if [ -e "$OUTPUT_PATH" ] || [ -L "$OUTPUT_PATH" ]; then
+        echo "ERROR: output already exists: $OUTPUT_PATH" >&2
+        exit 1
+    fi
+done
 mkdir -p "$(dirname "$LOG_PATH")"
+# Atomically reserve the log and retain its descriptor so tee never reopens
+# the caller's path. The parser independently creates the JSON exclusively.
+set -o noclobber
+if ! exec {LOG_FD}>"$LOG_PATH"; then
+    echo "ERROR: cannot exclusively create log: $LOG_PATH" >&2
+    exit 1
+fi
+set +o noclobber
 
 N="$NUM_STREAMS"
 MUXER_W=1280
@@ -118,9 +145,16 @@ echo "Running deepstream-app..."
 set +o pipefail
 # file-loop=1 has no built-in stop condition; timeout(1) kills deepstream-app
 # after 60 s and returns exit 124 — treated as success below.
-timeout 60s deepstream-app -c "$TMPCONFIG" 2>&1 | tee "$LOG_PATH"
-DS_EXIT_CODE=${PIPESTATUS[0]}
+timeout 60s deepstream-app -c "$TMPCONFIG" 2>&1 | tee "/dev/fd/$LOG_FD"
+PIPE_EXIT_CODES=("${PIPESTATUS[@]}")
+DS_EXIT_CODE=${PIPE_EXIT_CODES[0]}
 set -o pipefail
+exec {LOG_FD}>&-
+
+if [ "${PIPE_EXIT_CODES[1]}" -ne 0 ]; then
+    echo "ERROR: failed to write log: $LOG_PATH" >&2
+    exit "${PIPE_EXIT_CODES[1]}"
+fi
 
 # exit 124 = timeout fired as expected (file-loop=1, 60 s cap)
 if [ $DS_EXIT_CODE -ne 0 ] && [ $DS_EXIT_CODE -ne 124 ]; then
@@ -128,27 +162,11 @@ if [ $DS_EXIT_CODE -ne 0 ] && [ $DS_EXIT_CODE -ne 124 ]; then
     exit "$DS_EXIT_CODE"
 fi
 
-# Average stream-0 instantaneous FPS across the last 10 **PERF: lines.
-# Using stream 0 (the \K capture after `**PERF:`) gives exactly 1 value per
-# measurement window so tail -10 always covers 10 windows regardless of N.
-# Multiply by N for total throughput.
-PERF_FPS=$(grep -oP '\*\*PERF:\s*\K[0-9.]+' "$LOG_PATH" | tail -10 | python3 -c "
-import sys
-vals = [float(line) for line in sys.stdin if line.strip()]
-print(round(sum(vals)/len(vals), 2) if vals else 0)
-")
-
-if [ -z "$PERF_FPS" ] || [ "$PERF_FPS" = "0" ]; then
-    echo "ERROR: no **PERF: lines parsed from $LOG_PATH" >&2
-    exit 1
-fi
-
-TOTAL_FPS=$(python3 -c "print(round(float('$PERF_FPS') * $N, 2))")
-
 echo ""
-echo "=== Perf Summary ==="
-echo "Streams:        $N"
-echo "FPS/stream:     $PERF_FPS"
-echo "Total imgs/sec: $TOTAL_FPS"
-echo "Log:            $LOG_PATH"
-echo "===================="
+echo "=== Per-source Perf Summary ==="
+python3 "$SCRIPT_DIR/parse-perf.py" "$LOG_PATH" "$N" \
+    --minimum-fps "${DS_TARGET_FPS:-30}" \
+    --minimum-windows 5 \
+    --task "${DS_TASK:-detection}" \
+    --campaign-id "${DS_CAMPAIGN_ID:-}" \
+    --output "$JSON_PATH"

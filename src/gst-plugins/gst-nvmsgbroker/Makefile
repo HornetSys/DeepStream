@@ -18,9 +18,9 @@ SRCS:= gstnvmsgbroker.cpp
 INCS:= gstnvmsgbroker.h
 LIB:=libnvdsgst_msgbroker.so
 
-NVDS_VERSION:=9.1
+NVDS_VERSION:=9.2
 
-CFLAGS+= -fPIC -DDS_VERSION=\"9.1.0\" \
+CFLAGS+= -fPIC -DDS_VERSION=\"9.2.0\" \
 	 -I../../../includes
 
 GST_INSTALL_DIR?=/opt/nvidia/deepstream/deepstream-$(NVDS_VERSION)/lib/gst-plugins/

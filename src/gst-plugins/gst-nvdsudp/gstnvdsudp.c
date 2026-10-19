@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -38,5 +38,5 @@ plugin_init (GstPlugin * plugin)
 #define PACKAGE_ORIGIN "http://nvidia.com"
 
 GST_PLUGIN_DEFINE (GST_VERSION_MAJOR, GST_VERSION_MINOR,
-    nvdsgst_udp, DESCRIPTION, plugin_init, "9.1",
+    nvdsgst_udp, DESCRIPTION, plugin_init, "9.2",
     "Proprietary", PACKAGE_NAME, PACKAGE_ORIGIN)

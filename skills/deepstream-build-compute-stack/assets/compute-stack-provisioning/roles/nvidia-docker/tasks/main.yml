@@ -1,0 +1,100 @@
+################################################################################
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+################################################################################
+---
+- name: Install Docker engine
+  apt:
+    name: docker.io
+    state: present
+    update_cache: yes
+
+- name: Ensure Docker is started and enabled
+  ansible.builtin.service:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Download NVIDIA GPG key
+  ansible.builtin.get_url:
+    url: https://nvidia.github.io/libnvidia-container/gpgkey
+    dest: /tmp/nvidia-gpgkey
+    mode: '0644'
+    checksum: "sha256:{{ nvidia_gpg_key_sha256 }}"
+  register: nvidia_gpg_key_download
+
+# apt_key is deprecated (removed in ansible-core 2.25); dearmor the ASCII-armored key
+# directly into the signed-by keyring the repo .list references below.
+- name: Check installed NVIDIA keyring
+  ansible.builtin.stat:
+    path: /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+  register: nvidia_keyring
+
+- name: Add NVIDIA GPG key to keyring
+  ansible.builtin.command:
+    cmd: gpg --dearmor --yes -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg /tmp/nvidia-gpgkey
+  when: nvidia_gpg_key_download.changed or not nvidia_keyring.stat.exists
+
+- name: Download NVIDIA repository list
+  ansible.builtin.get_url:
+    url: https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list
+    dest: /tmp/nvidia-container-toolkit.list
+    mode: '0644'
+
+- name: Modify repository list to use the saved keyring
+  ansible.builtin.replace:
+    path: /tmp/nvidia-container-toolkit.list
+    regexp: 'deb https://'
+    replace: 'deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://'
+
+- name: Save modified repository list to sources.list.d
+  ansible.builtin.copy:
+    src: /tmp/nvidia-container-toolkit.list
+    dest: /etc/apt/sources.list.d/nvidia-container-toolkit.list
+    mode: '0644'
+    remote_src: yes
+
+- name: Update APT package cache
+  ansible.builtin.apt:
+    update_cache: yes
+
+- name: Install NVIDIA Container Toolkit
+  apt:
+    name:
+      - nvidia-container-toolkit
+    state: present
+
+- name: docker runtime configuration
+  command: nvidia-ctk runtime configure
+
+- name: Report Docker access granted to the connecting user
+  ansible.builtin.debug:
+    msg: "Adding {{ ansible_user }} to the docker group grants root-equivalent host access."
+
+- name: add user to docker group
+  user:
+    name: "{{ ansible_user }}"
+    groups: docker
+    append: yes
+
+
+- name: Report Docker daemon restart
+  ansible.builtin.debug:
+    msg: "Restarting the Docker daemon may interrupt running containers."
+
+- name: restart the dockerd daemon
+  ansible.builtin.service:
+    name: docker
+    state: restarted

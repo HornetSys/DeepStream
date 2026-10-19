@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -2845,4 +2845,4 @@ gst_nvinfer_parse_dynamic_properties(GstNvInfer *nvinfer, const gchar *propertie
 }
 
 GST_PLUGIN_DEFINE (GST_VERSION_MAJOR, GST_VERSION_MINOR, nvdsgst_infer,
-    DESCRIPTION, nvinfer_plugin_init, "9.1", LICENSE, BINARY_PACKAGE, URL)
+    DESCRIPTION, nvinfer_plugin_init, "9.2", LICENSE, BINARY_PACKAGE, URL)

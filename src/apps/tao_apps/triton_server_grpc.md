@@ -20,23 +20,23 @@ limitations under the License.
 
 DeepStream applications can work as Triton Inference client. So the corresponding Triton Inference Server should be started before the Triton client start to work.
 
-An immediate way to start a corresponding Triton Server is to use Triton containers provided in [NGC](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver). Since every DeepStream version has its corresponding Triton Server version, so the reliable way is to use the [DeepStream Triton container](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/deepstream).
+An immediate way to start a corresponding Triton Server is to use Triton containers provided in [NGC](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/tritonserver). Since every DeepStream version has its corresponding Triton Server version, so the reliable way is to use the [DeepStream Triton container](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/deepstream). Latest versions are available at ghcr.io/nvidia/deepstream:[tag]
 
 * The Triton Server can be started in the same machine which the DeepStream application works in, please make sure the Triton Server is started in a new terminal.
 
 * The Triton Server can be started in another machine as the server which is coonected to the machine for DeepStream applications through ehternet. 
 
 ## Prepare Triton Server For gRPC Connection
-The following steps take the DeepStream 9.1 GA as an example, if you use other DeepStream versions, the corresponding DeepStream Triton [image](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/deepstream) can be used.
+The following steps take the DeepStream 9.2 GA as an example, if you use other DeepStream versions, the corresponding DeepStream Triton (e.g. the SBSA version).
 
 To start Triton Server with DeepStream Triton container, the docker should be run in a new terminal and the following commands should be run in the same path as the deepstream_app_tao_configs codes are downloaded:
 * Start the Triton Inference Server with DeepStream Triton docker under src/apps/tao_apps/ directory
 ```
     //start Triton docker, 10001:8001 is used to map docker container's 8000 port to host's 10000 port, these ports can be changed.
-    docker run --gpus all -it  --ipc=host --rm --privileged -v /tmp/.X11-unix:/tmp/.X11-unix  -p 10000:8000 -p 10001:8001 -p 10002:8002  -v $(pwd):/samples   -e DISPLAY=$DISPLAY -w /samples nvcr.io/nvidia/deepstream:9.1-triton-devel
+    docker run --gpus all -it  --ipc=host --rm --privileged -v /tmp/.X11-unix:/tmp/.X11-unix  -p 10000:8000 -p 10001:8001 -p 10002:8002  -v $(pwd):/samples   -e DISPLAY=$DISPLAY -w /samples ghcr.io/nvidia/deepstream:9.2-triton-multiarch
 ```
 
-For DGX Spark platform, please refer to [DGX Spark Triton docker](https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_Installation.html#run-dgx-spark-docker) to run Triton docker on DGX Spark. 
+For DGX Spark platform, please refer to [DGX Spark Triton docker](https://docs.nvidia.com/deepstream/9.2/text/DS_Installation#run-dgx-spark-docker) to run Triton docker on DGX Spark. 
 
 Then the model engines should be generated in the server:
 

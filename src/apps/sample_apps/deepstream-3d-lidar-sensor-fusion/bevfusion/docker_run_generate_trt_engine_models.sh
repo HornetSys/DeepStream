@@ -1,6 +1,6 @@
 #!/bin/bash
 ################################################################################
-# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2024-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,7 +23,7 @@ set -e
 # debug
 # set -x
 
-NVDS_VERSION=${NVDS_VERSION:-9.1}
+NVDS_VERSION=${NVDS_VERSION:-9.2}
 DEFAULT_TARGET_IMAGE="deepstream-triton-bevfusion:${NVDS_VERSION}"
 
 function usage() {

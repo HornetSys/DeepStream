@@ -49,8 +49,14 @@ Supported models include: PeopleNet Transformer, CitySemSegFormer, Mask2Former, 
 
 Located in `service-maker/`. A C++ and Python SDK that abstracts GStreamer/GLib APIs for building DeepStream applications declaratively.
 
-See [`service-maker/README.md`](service-maker/README.md) for build instructions, API overview, and app list. See also the [Service Maker introduction](https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_service_maker_intro.html).
+See [`service-maker/README.md`](service-maker/README.md) for build instructions, API overview, and app list. See also the [Service Maker introduction](https://docs.nvidia.com/deepstream/9.2/text/DS_service_maker_intro).
 
+- **Core** — `service-maker/sources/core/` — the runtime library (`libnvds_service_maker.so`)
+  and its static helper archive (`libnvds_service_maker_utils.a`)
+- **Engine** — `service-maker/sources/engine/` — `ds-launch`, which runs a pipeline
+  described by a YAML graph file
+- **Python bindings** — `service-maker/sources/python/` — the `pyservicemaker`
+  wheel (pybind11 extension plus the pure-Python package)
 - **C++ apps** — `service-maker/sources/apps/cpp/`
 - **Python apps** — `service-maker/sources/apps/python/` (flow API and pipeline API)
 - **Modules** — reusable signal handlers, probes, video sinks/sources, and more
@@ -59,7 +65,7 @@ See [`service-maker/README.md`](service-maker/README.md) for build instructions,
 
 Located in `gst-plugins/`. Source for all DeepStream GStreamer plugins.
 
-See [`gst-plugins/README.md`](gst-plugins/README.md) for the full list. Each plugin has its own `README` at `gst-plugins/<plugin>/README` with properties and usage. See also the [DeepStream Plugins introduction](https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_plugin_Intro.html).
+See [`gst-plugins/README.md`](gst-plugins/README.md) for the full list. Each plugin has its own `README` at `gst-plugins/<plugin>/README` with properties and usage. See also the [DeepStream Plugins introduction](https://docs.nvidia.com/deepstream/9.2/text/DS_plugin_Intro).
 
 ### GStreamer Utilities
 
@@ -67,6 +73,11 @@ Located in `gst-utils/`. Each utility has its own `README` at `gst-utils/<utilit
 
 - [`gstnvcustomhelper`](gst-utils/gstnvcustomhelper/README)
 - [`gstnvdscustomhelper`](gst-utils/gstnvdscustomhelper/README)
+- [`gstnvdshelper`](gst-utils/gstnvdshelper/README)
+- [`gst-nvdstensor`](gst-utils/gst-nvdstensor/README)
+- [`gst-nvdsinferbase`](gst-utils/gst-nvdsinferbase/README)
+- [`gst-nvdsmeta`](gst-utils/gst-nvdsmeta/README)
+- [`gst-nvipcmeta`](gst-utils/gst-nvipcmeta/README)
 - [`gst-nvdssr`](gst-utils/gst-nvdssr/README)
 
 ### Utility Libraries
@@ -94,6 +105,8 @@ The following components build successfully only when the listed external SDK is
 | `gst-dsexample-cuda` | OpenCV 4.x built with CUDA support | [gst-plugins/gst-dsexample-cuda/README](gst-plugins/gst-dsexample-cuda/README) |
 | `gst-nvdsudp` | Rivermax SDK (`rivermax_api.h`) | [gst-plugins/gst-nvdsudp/README](gst-plugins/gst-nvdsudp/README) |
 | `libnvdsgst_inferserver` | Triton Inference Server client | [gst-plugins/gst-nvinferserver/README](gst-plugins/gst-nvinferserver/README) |
+| `ds-sparse4d` | PyTorch 2.9.0+cu130 | [gst-plugins/gst-nvdsvideotemplate/ds-sparse4d/README](gst-plugins/gst-nvdsvideotemplate/ds-sparse4d/README) |
+| `gst-nvdstextembedder` | Python (`torch`, `open-clip-torch`); not compiled by `build/build.sh` | [gst-plugins/gst-nvdstextembedder/README.md](gst-plugins/gst-nvdstextembedder/README.md) |
 
 ---
 
@@ -108,7 +121,7 @@ On x86 dGPU platforms, run these components inside DeepStream's Triton Inference
 1. Pull the container (`[version]` is the DeepStream version, e.g. `9.1`):
 
 ```bash
-docker pull nvcr.io/nvidia/deepstream:[version]-triton
+docker pull ghcr.io/nvidia/deepstream:[version]-triton-multiarch
 ```
 
 2. Allow applications to connect to the host X display and start the container with the correct GPU id:
@@ -116,7 +129,7 @@ docker pull nvcr.io/nvidia/deepstream:[version]-triton
 ```bash
 xhost +
 docker run --gpus '"device=0"' -it --rm -v /tmp/.X11-unix:/tmp/.X11-unix \
-  -e DISPLAY=$DISPLAY --net=host nvcr.io/nvidia/deepstream:[version]-triton
+  -e DISPLAY=$DISPLAY --net=host ghcr.io/nvidia/deepstream:[version]-triton-multiarch
 ```
 
 ### Jetson (bare-metal)
@@ -209,4 +222,4 @@ The following components are **legacy and no longer maintained**. They are still
 - `gst-nvdsspeech`
 - `gst-nvdstexttospeech`
 
-For component details, source, and configuration, refer to the [DeepStream 9.1 public release documentation](https://docs.nvidia.com/metropolis/deepstream/dev-guide/).
+For component details, source, and configuration, refer to the [DeepStream 9.2 public release documentation](https://docs.nvidia.com/deepstream/9.2).

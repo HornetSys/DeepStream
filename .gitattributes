@@ -1,1 +1,7 @@
 src/apps/sample_apps/deepstream-3d-lidar-sensor-fusion/data/nuscene.tar.gz filter=lfs diff=lfs merge=lfs -text
+src/apps/reference_apps/deepstream-tracker-3d-multi-view/figures/MV3DT_12cam_live.gif filter=lfs diff=lfs merge=lfs -text
+docs/content/DS3D_sensor_fusion_v2xfusion_snapshot.png filter=lfs diff=lfs merge=lfs -text
+docs/content/NvDCF_*.gif filter=lfs diff=lfs merge=lfs -text
+docs/fern/assets/images/content/NvDCF_*.gif filter=lfs diff=lfs merge=lfs -text
+docs/content/DS_inference_builder_mcp_expectation_2.gif filter=lfs diff=lfs merge=lfs -text
+docs/fern/assets/images/content/DS_inference_builder_mcp_expectation_2.gif filter=lfs diff=lfs merge=lfs -text

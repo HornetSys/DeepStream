@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -47,7 +47,7 @@ The `nvvllmvlm` plugin enables integration of vision-language models (Cosmos-Rea
 ## Requirements
 
 - NVIDIA GPU with CUDA support
-- NVIDIA DeepStream SDK 9.1.0+
+- NVIDIA DeepStream SDK 9.2.0+
 - Docker with NVIDIA Container Runtime
 - Python 3.12+
 - VLLM 0.21.0 with PyTorch 2.11.0 (installed by `./install.sh`)
@@ -62,7 +62,7 @@ The `nvvllmvlm` plugin enables integration of vision-language models (Cosmos-Rea
 # Launch DeepStream container
 sudo docker run -it --rm --runtime=nvidia --gpus all --network=host \
   -v $(pwd):/home/vllm_ds_plugin \
-  nvcr.io/nvidia/deepstream:9.1-triton-multiarch
+  ghcr.io/nvidia/deepstream:9.2-triton-multiarch
 
 # Inside DeepStream container install dependencies
 cd /home/vllm_ds_plugin/deepstream-vllm-plugin

@@ -18,10 +18,10 @@
 TARGET_DEVICE=$(uname -m)
 OS=$(cat /etc/os-release | awk -F= '$1=="ID"{print $2}' | sed 's/"//g')
 
-if [ "${TARGET_DEVICE}" = "x86_64" ]; then
-    if [ "${OS}" = "rhel" ]; then
+if [[ "${TARGET_DEVICE}" = "x86_64" ]]; then
+    if [[ "${OS}" = "rhel" ]]; then
         BASE_LIB_DIR="/usr/lib64/"
-    elif [ "${OS}" = "ubuntu" ]; then
+    elif [[ "${OS}" = "ubuntu" ]]; then
         BASE_LIB_DIR="/usr/lib/x86_64-linux-gnu/"
     else
         echo "Unsupported OS" 2>&1
@@ -29,23 +29,31 @@ if [ "${TARGET_DEVICE}" = "x86_64" ]; then
     fi
 fi
 
-# DeepStream version to remove. Override via the first argument or the
-# PREV_DS_VER environment variable; defaults to 9.1.
-#   sudo ./uninstall.sh 9.0
-#   sudo PREV_DS_VER=9.0 ./uninstall.sh
-PREV_DS_VER="${1:-${PREV_DS_VER:-9.1}}"
-if [ -z "${PREV_DS_VER}" ]; then
-  echo "PREV_DS_VER not set (usage: $0 [version], e.g. $0 9.1)"
+# DeepStream version to remove. Override via the first argument, PREV_DS_VER,
+# or NVDS_VERSION; defaults to 9.2.0. Must be MAJOR.MINOR.PATCH.
+#   sudo ./uninstall.sh 9.2.0
+#   sudo PREV_DS_VER=9.2.0 ./uninstall.sh
+#   sudo NVDS_VERSION=9.2.0 ./uninstall.sh
+PREV_DS_VER="${1:-${PREV_DS_VER:-${NVDS_VERSION:-9.2.0}}}"
+if [[ -z "${PREV_DS_VER}" ]]; then
+  echo "PREV_DS_VER not set (usage: $0 [version], e.g. $0 9.2.0)"
   exit 1
 fi
+if [[ ! "$PREV_DS_VER" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  echo "error: invalid version '$PREV_DS_VER' (expected MAJOR.MINOR.PATCH, e.g. 9.2.0)" >&2
+  exit 1
+fi
+# Install tree still uses MAJOR.MINOR for now; strip .PATCH so 9.2.0 removes
+# deepstream-9.2/.
+PREV_DS_VER="${PREV_DS_VER%.*}"
 
-if [ ! -d /opt/nvidia/deepstream/deepstream-${PREV_DS_VER} ]; then
+if [[ ! -d /opt/nvidia/deepstream/deepstream-${PREV_DS_VER} ]]; then
     echo "This version of DeepStream is not present in the system."
     exit 1
 fi
 
-if [ -n "$TARGET_DEVICE" ]; then
-  if [ "${TARGET_DEVICE}" = "x86_64" ]; then
+if [[ -n "$TARGET_DEVICE" ]]; then
+  if [[ "${TARGET_DEVICE}" = "x86_64" ]]; then
     update-alternatives --remove deepstream-v4l2plugin /opt/nvidia/deepstream/deepstream-${PREV_DS_VER}/lib/libv4l/plugins/libcuvidv4l2_plugin.so
     update-alternatives --remove deepstream-v4l2library /opt/nvidia/deepstream/deepstream-${PREV_DS_VER}/lib/libnvv4l2.so
     update-alternatives --remove deepstream-v4lconvert /opt/nvidia/deepstream/deepstream-${PREV_DS_VER}/lib/libnvv4lconvert.so
@@ -55,9 +63,9 @@ if [ -n "$TARGET_DEVICE" ]; then
     rm -rf $BASE_LIB_DIR/libv4lconvert.so.0.0.99999
     rm -rf $BASE_LIB_DIR/libv4l2.so.0.0.99999
     rm -f /etc/ld.so.conf.d/deepstream.conf
-  elif [ "${TARGET_DEVICE}" = "aarch64" ]; then
+  elif [[ "${TARGET_DEVICE}" = "aarch64" ]]; then
     # deepstream-ipc-test is Jetson-only; not installed on SBSA (both report uname -m as aarch64)
-    if [ -f /etc/nv_tegra_release ]; then
+    if [[ -f /etc/nv_tegra_release ]]; then
       update-alternatives --remove deepstream-ipc-test-app /opt/nvidia/deepstream/deepstream-${PREV_DS_VER}/bin/deepstream-ipc-test-app
     fi
   fi
@@ -91,6 +99,7 @@ update-alternatives --remove deepstream-nmos-app /opt/nvidia/deepstream/deepstre
 update-alternatives --remove deepstream-server-app /opt/nvidia/deepstream/deepstream-${PREV_DS_VER}/bin/deepstream-server-app
 update-alternatives --remove deepstream-demuxer-static /opt/nvidia/deepstream/deepstream-${PREV_DS_VER}/bin/deepstream-demuxer-static
 update-alternatives --remove deepstream-demuxer-dynamic /opt/nvidia/deepstream/deepstream-${PREV_DS_VER}/bin/deepstream-demuxer-dynamic
+update-alternatives --remove deepstream-kitti-overlay /opt/nvidia/deepstream/deepstream-${PREV_DS_VER}/bin/deepstream-kitti-overlay
 update-alternatives --remove service-maker-3d-action-recognition-app /opt/nvidia/deepstream/deepstream-${PREV_DS_VER}/bin/service-maker-3d-action-recognition-app
 update-alternatives --remove service-maker-appsrc-test /opt/nvidia/deepstream/deepstream-${PREV_DS_VER}/bin/service-maker-appsrc-test
 update-alternatives --remove service-maker-sr-test-app /opt/nvidia/deepstream/deepstream-${PREV_DS_VER}/bin/service-maker-sr-test-app
@@ -99,7 +108,12 @@ update-alternatives --remove service-maker-test2-app /opt/nvidia/deepstream/deep
 update-alternatives --remove service-maker-test3-app /opt/nvidia/deepstream/deepstream-${PREV_DS_VER}/bin/service-maker-test3-app
 update-alternatives --remove service-maker-test4-app /opt/nvidia/deepstream/deepstream-${PREV_DS_VER}/bin/service-maker-test4-app
 update-alternatives --remove service-maker-test5-app /opt/nvidia/deepstream/deepstream-${PREV_DS_VER}/bin/service-maker-test5-app
-pip uninstall pyservicemaker -y --break-system-packages
+update-alternatives --remove ds-launch /opt/nvidia/deepstream/deepstream-${PREV_DS_VER}/bin/ds-launch
+# Uninstall with python3 -m pip for the same reason install.sh installs with it:
+# a 'pip' resolved from PATH may belong to a different interpreter than the one
+# the wheel was installed for, in which case the uninstall removes nothing and
+# reports the package as absent.
+python3 -m pip uninstall pyservicemaker -y --break-system-packages
 
 # Delete the installed files first, then deregister the Debian packages. Doing
 # the rm -rf up front leaves dpkg nothing to complain about (e.g. "directory not
@@ -115,10 +129,10 @@ rm -rf /opt/nvidia/deepstream/deepstream-${PREV_DS_VER}/service-maker/
 
 # Deregister artifacts that were installed via Debian packages
 # (INSTALL_METHOD=deb). Only deb installs are recorded in the dpkg database.
-if [ "${TARGET_DEVICE}" = "x86_64" ]; then
+if [[ "${TARGET_DEVICE}" = "x86_64" ]]; then
   PLATFORM=x86
-elif [ "${TARGET_DEVICE}" = "aarch64" ]; then
-  if [ -f /etc/nv_tegra_release ]; then
+elif [[ "${TARGET_DEVICE}" = "aarch64" ]]; then
+  if [[ -f /etc/nv_tegra_release ]]; then
     PLATFORM=aarch64
   else
     PLATFORM=sbsa
@@ -131,10 +145,11 @@ remove_if_deb() {
     echo "Removing Debian package: $pkg"
     dpkg -r "$pkg" || apt-get remove -y "$pkg" || true
   fi
+  return 0
 }
 
 remove_if_deb "deepstream-sample-data"
-if [ -n "${PLATFORM}" ]; then
+if [[ -n "${PLATFORM}" ]]; then
   remove_if_deb "deepstream-binaries-${PLATFORM}"
 fi
 
@@ -144,7 +159,7 @@ fi
 # versions are left untouched. The sources/includes and samples/trtis_model_repo
 # symlinks are already removed by the rm -rf of sources/ and samples/ above.
 DS_BASE_LINK=/opt/nvidia/deepstream/deepstream
-if [ -L "${DS_BASE_LINK}" ] && [ "$(readlink "${DS_BASE_LINK}")" = "deepstream-${PREV_DS_VER}" ]; then
+if [[ -L "${DS_BASE_LINK}" ]] && [[ "$(readlink "${DS_BASE_LINK}")" = "deepstream-${PREV_DS_VER}" ]]; then
   rm -f "${DS_BASE_LINK}"
 fi
 

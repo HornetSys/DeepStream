@@ -1,0 +1,70 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+DS3D multi-sensor mixer is an implementation of `ds3d::datamixer` which combines
+several input streams into one `ds3d::datamap`. It matches the frames arriving
+from multiple cameras and LiDARs on their timestamps and emits a single
+synchronized datamap per fused frame, which is what a sensor-fusion inference
+filter expects on its input.
+
+Unlike the other DS3D modules this one does depend on GStreamer, because it
+handles DeepStream video buffers and batch metadata on its video input pads.
+
+`libnvds_3d_multisensor_mixer.so` is built from these source files. and the
+mixer is created through API `createMultiSensorMixer`. Application users can
+call this API to instantiate this datamixer.
+
+The config content shall as:
+
+    type: ds3d::datamixer
+    out_caps: ds3d/datamap
+    custom_lib_path: libnvds_3d_multisensor_mixer.so
+    custom_create_function: createMultiSensorMixer
+    config_body:
+       ...
+
+Any custom `ds3d::datamixer` must derive from `ds3d::BaseImplDataMixer` for data mixing
+And implement the following interfaces:
+
+    ErrCode startImpl(const std::string& content, const std::string& path) override;
+    ErrCode processImpl(
+        const int portId, GuardDataMap datamap,
+        OnGuardDataCBImpl inputConsumedCb) override;
+    ErrCode setOutputCbImpl(OnGuardDataCBImpl outputDataCb) override;
+    ErrCode updateInputImpl(int portId, MixerUpdate updateType) override;
+    ErrCode stopImpl() override;
+    ErrCode flushImpl() override;
+
+In addition, users also need export a C-API for application to intiate this datamixer.
+The exported C-API name is not limited. In this sample, it is `createMultiSensorMixer`.
+
+More details, refer to the DeepStream SDK documentation for section of "DeepStream 3D Custom Manual".
+https://docs.nvidia.com/deepstream/9.2/text/DS_3D_Custom_Manual
+
+--------------------------------------------------------------------------------
+Pre-requisites:
+- libnvds_3d_common.so (build and install ds3d/common first)
+- libgstreamer1.0 Development package
+- libyaml-cpp Development package
+- CUDA Runtime
+
+--------------------------------------------------------------------------------
+Compiling and installing this `ds3d::datamixer` lib:
+- Export CUDA_VER, then build. sudo -E keeps the variable for make.
+  $ export CUDA_VER=13.2 # x86, Jetson and SBSA. For IGX Thor, CUDA_VER=13.0
+  $ make && sudo -E make install
+- Verify `libnvds_3d_multisensor_mixer.so` exist and installed well.
+
+NOTE: Compiling does not need root. Install with `sudo -E` so CUDA_VER is kept. Skip sudo when already root (for example inside a container).

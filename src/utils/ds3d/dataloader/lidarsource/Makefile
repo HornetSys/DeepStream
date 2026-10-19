@@ -53,8 +53,10 @@ endif
 
 PKGS:= yaml-cpp
 
-CFLAGS+= -I $(DS_HOME)/sources/includes \
+CFLAGS+= -I../../.. \
+	 -I $(DS_HOME)/sources/includes \
 	 -I $(DS_HOME)/sources/libs \
+	 -I../../../../../includes \
 	 -I $(CUDA_HOME)/include \
 	 -fPIC -std=c++14
 

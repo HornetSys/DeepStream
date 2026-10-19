@@ -15,7 +15,7 @@
 
 CC:= g++
 
-NVDS_VERSION:=9.1
+NVDS_VERSION:=9.2
 
 LIB_INSTALL_DIR?=/opt/nvidia/deepstream/deepstream-$(NVDS_VERSION)/lib/
 

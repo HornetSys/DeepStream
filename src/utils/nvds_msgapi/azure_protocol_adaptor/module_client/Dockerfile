@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,10 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM nvcr.io/nvidia/deepstream:<ds-version>-<tag>
+FROM ghcr.io/nvidia/deepstream:<ds-version>-<tag>
 
 # Jetson deepstream-<ds-version> image
-#FROM nvcr.io/nvidia/deepstream-l4t:<ds-version>-<tag>
+#FROM ghcr.io/nvidia/deepstream:<ds-version>-<tag>
 
 # copy the compiled sample test applications
 COPY test_azure_iotedge_sync /root

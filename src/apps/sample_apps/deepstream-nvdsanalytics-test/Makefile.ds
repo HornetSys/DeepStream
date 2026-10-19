@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,8 +14,17 @@
 # limitations under the License.
 
 CUDA_VER?=
+# Require CUDA_VER for every goal except a clean-only invocation.
+# A bare `make` has empty MAKECMDGOALS and still checks.
+ifneq ($(filter-out clean,$(MAKECMDGOALS)),)
+  _DS_NEED_CUDA_VER := 1
+else ifeq ($(MAKECMDGOALS),)
+  _DS_NEED_CUDA_VER := 1
+endif
+ifeq ($(_DS_NEED_CUDA_VER),1)
 ifeq ($(CUDA_VER),)
   $(error "CUDA_VER is not set")
+endif
 endif
 
 APP:= deepstream-app
@@ -24,7 +33,7 @@ CXX=g++
 
 TARGET_DEVICE = $(shell gcc -dumpmachine | cut -f1 -d -)
 
-NVDS_VERSION:=9.1
+NVDS_VERSION:=9.2
 
 LIB_INSTALL_DIR?=/opt/nvidia/deepstream/deepstream-$(NVDS_VERSION)/lib/
 APP_INSTALL_DIR?=/opt/nvidia/deepstream/deepstream-$(NVDS_VERSION)/bin/
@@ -34,6 +43,7 @@ ifeq ($(TARGET_DEVICE),aarch64)
 endif
 
 COMMON_SRCS:= $(wildcard ../../common/src/*.c)
+FRAME_DUMP_SRC:= ../../common/src/frame_dump.cpp
 DSAPP_SRCS:= $(wildcard ../deepstream-app/deepstream_app.c ../deepstream-app/deepstream_app_config_parser.c)
 NVDS_UTILS_CPP_PATH:= /opt/nvidia/deepstream/deepstream/sources/libs/nvds_msgapi_common_src/nvds_utils.cpp
 SRCS_CPP:= $(shell if [ -f $(NVDS_UTILS_CPP_PATH) ]; then echo $(NVDS_UTILS_CPP_PATH); fi)
@@ -51,6 +61,7 @@ ifneq ($(SRCS_CPP),)
 OBJS_CPP:= $(SRCS_CPP:.cpp=.o)
 endif
 OBJS+= deepstream_nvdsanalytics_meta.o deepstream_app_main.o
+OBJS+= frame_dump.o
 
 CFLAGS+= -I./ -I../../common/includes -I../../../../includes  -I../deepstream-app/ -DDS_VERSION_MINOR=0 -DDS_VERSION_MAJOR=5 \
 		 -I /usr/local/cuda-$(CUDA_VER)/include
@@ -59,7 +70,7 @@ LIBS+= -L$(LIB_INSTALL_DIR) -lnvdsgst_meta -lnvds_meta -lnvdsgst_helper -lnvdsgs
        -lnvdsgst_smartrecord -lnvds_utils -lnvds_msgbroker -lm \
        -lgstrtspserver-1.0 -ldl -Wl,-rpath,$(LIB_INSTALL_DIR) \
 	   -L/usr/local/cuda-$(CUDA_VER)/lib64/ -lcudart \
-	   -lcuda -lnvds_logger -lcrypto -lnvbufsurface
+	   -lcuda -lnvds_logger -lcrypto -lnvbufsurface -lnvds_batch_jpegenc -lpthread
 
 CFLAGS+= $(shell pkg-config --cflags $(PKGS))
 
@@ -72,6 +83,9 @@ all: $(APP)
 
 %.o: ../deepstream-app/%.c $(INCS) Makefile.ds
 	$(CC) -c -o $@ $(CFLAGS) $<
+
+frame_dump.o: $(FRAME_DUMP_SRC) $(INCS) Makefile.ds
+	$(CXX) -c -o $@ $(CFLAGS) $<
 
 deepstream_app_main.o: deepstream_app_main.c $(INCS) Makefile.ds
 	$(CXX) -c -o $@ -fpermissive -Wall -Werror $(CFLAGS) $<

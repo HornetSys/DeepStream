@@ -1,0 +1,12 @@
+# Jetson CSI camera source.
+
+[source0]
+enable=1
+type=5
+camera-width=1920
+camera-height=1080
+camera-fps-n=30
+camera-fps-d=1
+camera-csi-sensor-id=0
+num-sources=1
+gpu-id=0

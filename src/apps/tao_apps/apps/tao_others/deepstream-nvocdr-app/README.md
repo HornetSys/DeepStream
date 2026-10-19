@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -40,6 +40,9 @@ Refer to [NVIDIA-Optical-Character-Detection-and-Recognition-Solution](https://g
 $ git submodule update --init --recursive
 $ export CUDA_VER=<cuda_version>
     CUDA_VER=13.2
+# If building from the DeepStream repository, copy the repository makefile into the nvocdr folder
+$ sudo cp Makefile.nvocdr nvocdr/deepstream/Makefile
+
 $ make -C nvocdr
 $ make -C nvocdr/deepstream
 $ cp nvocdr/libnvocdr.so /opt/nvidia/deepstream/deepstream/lib/

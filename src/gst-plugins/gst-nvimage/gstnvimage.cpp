@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2023-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -61,7 +61,7 @@ GST_PLUGIN_DEFINE (GST_VERSION_MAJOR,
     nvdsgst_image,
     PACKAGE_DESCRIPTION,
     plugin_init,
-    DS_VERSION_STR("9.1"),
+    DS_VERSION_STR("9.2"),
     PACKAGE_LICENSE,
     PACKAGE_NAME,
     PACKAGE_URL)

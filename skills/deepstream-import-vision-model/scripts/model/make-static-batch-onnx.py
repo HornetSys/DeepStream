@@ -70,6 +70,8 @@ for out in graph.output:
 # Fix Reshape nodes that reference batch=1
 for node in graph.node:
     if node.op_type == "Reshape":
+        if len(node.input) < 2:
+            continue
         shape_input = node.input[1]
         for init in graph.initializer:
             if init.name == shape_input:

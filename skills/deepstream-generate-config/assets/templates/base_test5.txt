@@ -1,0 +1,37 @@
+# Base fragment: deepstream-test5-app
+# Same as classic plus disabled [message-converter] / [message-consumer0]
+# scaffolds so the user can flip enable=1 without re-rendering.
+
+[application]
+enable-perf-measurement=1
+perf-measurement-interval-sec=5
+
+[osd]
+enable=1
+gpu-id=0
+border-width=1
+text-size=15
+text-color=1;1;1;1;
+text-bg-color=0.3;0.3;0.3;1
+font=Arial
+show-clock=0
+clock-x-offset=800
+clock-y-offset=820
+clock-text-size=12
+clock-color=1;0;0;0
+nvbuf-memory-type=0
+
+[message-converter]
+enable=0
+msg-conv-config=dstest5_msgconv_sample_config.txt
+msg-conv-payload-type=0
+
+[message-consumer0]
+enable=0
+proto-lib=/opt/nvidia/deepstream/deepstream/lib/libnvds_kafka_proto.so
+conn-str=<host>;<port>
+config-file=<broker config file e.g. cfg_kafka.txt>
+subscribe-topic-list=<topic1>;<topic2>;<topicN>
+
+[tests]
+file-loop=0

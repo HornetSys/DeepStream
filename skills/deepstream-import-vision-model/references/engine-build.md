@@ -1,15 +1,24 @@
+<!--
+SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-License-Identifier: Apache-2.0
+-->
+
 
 # NV Engine Build -- Steps 4-5
 
 Build a TensorRT engine from ONNX and derive PEAK_GPU_STREAMS for DeepStream sizing.
 
-The ONNX model path is: `$ARGUMENTS`
+Pass the ONNX model path explicitly through `ONNX_PATH`. Example:
+
+```bash
+ONNX_PATH="models/<model_name>/model/<model>.onnx"
+```
 
 ## Pre-flight: Validate Inputs and Extract Variables
 
-Before anything else, derive all variables from `$ARGUMENTS` and verify the environment:
+Before anything else, validate `ONNX_PATH` and derive the remaining variables:
 ```bash
-ONNX_PATH="$ARGUMENTS"
+: "${ONNX_PATH:?set ONNX_PATH to the exact local .onnx artifact}"
 
 # Derive MODEL_NAME from directory structure: models/{MODEL_NAME}/model/...
 MODEL_NAME=$(echo "$ONNX_PATH" | sed 's|models/\([^/]*\)/.*|\1|')
@@ -56,11 +65,13 @@ W=$(echo "$INSPECT_OUT"          | grep -oP 'width:\s*\K[0-9]+')
 
 echo "INPUT_NAME=$INPUT_NAME  H=$H  W=$W"
 [ -z "$INPUT_NAME" ] && { echo "ERROR: could not parse INPUT_NAME from inspect output"; exit 1; }
-# If H/W are empty (dynamic spatial dims), set them manually before proceeding:
-#   H=640; W=640   # or whatever the model's expected input resolution is
-#   Check the model card on HuggingFace or config.json image_size field
-[ -z "$H" ] && { echo "ERROR: H not detected — model has dynamic spatial dims. Set H manually: H=<height>"; exit 1; }
-[ -z "$W" ] && { echo "ERROR: W not detected — model has dynamic spatial dims. Set W manually: W=<width>";  exit 1; }
+# Dynamic spatial dimensions must resolve from the supplied task contract,
+# pinned config.json/model card, or caller-declared MODEL_INPUT_H/W. Try only
+# the explicitly declared candidate(s); never guess a common resolution.
+H="${H:-${MODEL_INPUT_H:-}}"
+W="${W:-${MODEL_INPUT_W:-}}"
+[ -z "$H" ] && { echo "BLOCKED: dynamic H is unresolved; supply MODEL_INPUT_H from pinned metadata" >&2; exit 5; }
+[ -z "$W" ] && { echo "BLOCKED: dynamic W is unresolved; supply MODEL_INPUT_W from pinned metadata" >&2; exit 5; }
 ```
 
 ## Step 4: Build TensorRT Engine
@@ -71,25 +82,44 @@ the exact batch size used for benchmarking and DeepStream. `min=1` handles singl
 ```bash
 STEP4_START=$(date +%s.%N)
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+# Validate every component before deriving artifact paths. These values must
+# never contain separators, traversal components, or shell metacharacters.
+case "$MODEL_NAME" in ""|.|..|*[!A-Za-z0-9._-]*) echo "ERROR: unsafe MODEL_NAME" >&2; exit 2;; esac
+case "$MODEL_FILENAME" in ""|.|..|*[!A-Za-z0-9._-]*) echo "ERROR: unsafe MODEL_FILENAME" >&2; exit 2;; esac
+case "$MAX_BS" in ""|*[!0-9]*) echo "ERROR: MAX_BS must be a positive integer" >&2; exit 2;; esac
+[ "$MAX_BS" -gt 0 ] || { echo "ERROR: MAX_BS must be positive" >&2; exit 2; }
 # benchmarks/engines/ already exists from model-acquire;
 # mkdir -p kept here as a safety net for standalone use
 mkdir -p models/$MODEL_NAME/benchmarks/engines models/$MODEL_NAME/benchmarks/b1 models/$MODEL_NAME/benchmarks/b${MAX_BS}
-
-$TRTEXEC \
+ENGINE_TARGET="models/$MODEL_NAME/benchmarks/engines/${MODEL_FILENAME}_dynamic_b${MAX_BS}.engine"
+ENGINE_CANDIDATE="${ENGINE_TARGET}.partial.${TIMESTAMP}.$$"
+BUILD_LOG="models/$MODEL_NAME/benchmarks/engines/${MODEL_FILENAME}_dynamic_build_${TIMESTAMP}.log"
+[ ! -e "$ENGINE_CANDIDATE" ] || { echo "ERROR: candidate engine path already exists: $ENGINE_CANDIDATE" >&2; exit 2; }
+set -o pipefail
+if $TRTEXEC \
   --onnx="$ONNX_PATH" \
   --minShapes=$INPUT_NAME:1x3x${H}x${W} \
   --optShapes=$INPUT_NAME:${MAX_BS}x3x${H}x${W} \
   --maxShapes=$INPUT_NAME:${MAX_BS}x3x${H}x${W} \
-  --fp16 \
-  --skipInference \
+  --fp16 --skipInference \
   --memPoolSize=workspace:32768M \
   --timingCacheFile=models/$MODEL_NAME/benchmarks/engines/timing.cache \
-  --saveEngine="models/$MODEL_NAME/benchmarks/engines/${MODEL_FILENAME}_dynamic_b${MAX_BS}.engine" \
-  2>&1 | tee models/$MODEL_NAME/benchmarks/engines/${MODEL_FILENAME}_dynamic_build_${TIMESTAMP}.log
-
-# Verify engine was created — trtexec exit code is lost through the pipe, so check the file
-[ -f "models/$MODEL_NAME/benchmarks/engines/${MODEL_FILENAME}_dynamic_b${MAX_BS}.engine" ] || \
-  { echo "ERROR: Engine file not created — check build log for errors"; exit 1; }
+  --saveEngine="$ENGINE_CANDIDATE" 2>&1 | tee "$BUILD_LOG"; then
+  BUILD_STATUS=("${PIPESTATUS[@]}")
+else
+  BUILD_STATUS=("${PIPESTATUS[@]}")
+fi
+if [ "${BUILD_STATUS[0]:-1}" -ne 0 ] || [ "${BUILD_STATUS[1]:-1}" -ne 0 ] || [ ! -s "$ENGINE_CANDIDATE" ]; then
+  echo "ERROR: TensorRT engine build failed — preserved $BUILD_LOG and candidate $ENGINE_CANDIDATE" >&2
+  exit 1
+fi
+if [ -e "$ENGINE_TARGET" ]; then
+  ENGINE_BACKUP="${ENGINE_TARGET}.previous.${TIMESTAMP}"
+  [ ! -e "$ENGINE_BACKUP" ] || { echo "ERROR: backup path already exists: $ENGINE_BACKUP" >&2; exit 2; }
+  mv -- "$ENGINE_TARGET" "$ENGINE_BACKUP"
+  echo "Preserved previous engine: $ENGINE_BACKUP"
+fi
+mv -- "$ENGINE_CANDIDATE" "$ENGINE_TARGET"
 
 STEP4_END=$(date +%s.%N)
 STEP4_DURATION=$(python3 -c "print(round($STEP4_END - $STEP4_START, 2))")   # bc is not in the container; python3 always is
@@ -116,11 +146,25 @@ STEP5_START=$(date +%s.%N)
 > Log filename is **fixed** — no timestamp, no variation. Always `trtexec_b1.log`. This ensures the report-generation skill can find it with an exact path, not a wildcard.
 
 ```bash
+B1_LOG="models/$MODEL_NAME/benchmarks/b1/trtexec_b1.log"
+B1_CANDIDATE="${B1_LOG}.partial.$(date +%Y%m%d_%H%M%S).$$"
 $TRTEXEC \
   --loadEngine="$ENGINE" \
   --shapes=$INPUT_NAME:1x3x${H}x${W} \
   --noDataTransfers --duration=10 --warmUp=1000 \
-  2>&1 | tee models/$MODEL_NAME/benchmarks/b1/trtexec_b1.log
+  2>&1 | tee "$B1_CANDIDATE"
+BENCH_STATUS=("${PIPESTATUS[@]}")
+if [ "${BENCH_STATUS[0]:-1}" -ne 0 ] || [ "${BENCH_STATUS[1]:-1}" -ne 0 ]; then
+  B1_FAILED="${B1_LOG}.failed.$(date +%Y%m%d_%H%M%S)"
+  mv -- "$B1_CANDIDATE" "$B1_FAILED"
+  echo "ERROR: BS=1 trtexec benchmark failed; preserved $B1_FAILED" >&2
+  exit 1
+fi
+if [ -e "$B1_LOG" ]; then
+  B1_BACKUP="${B1_LOG}.previous.$(date +%Y%m%d_%H%M%S)"
+  mv -- "$B1_LOG" "$B1_BACKUP"
+fi
+mv -- "$B1_CANDIDATE" "$B1_LOG"
 ```
 
 ### Run 5b — Peak throughput (BS=MAX_BS)
@@ -128,11 +172,25 @@ $TRTEXEC \
 > Log filename is **fixed** — always `trtexec_b${MAX_BS}.log`. Updated by the while loop if MAX_BS changes.
 
 ```bash
+BMAX_LOG="models/$MODEL_NAME/benchmarks/b${MAX_BS}/trtexec_b${MAX_BS}.log"
+BMAX_CANDIDATE="${BMAX_LOG}.partial.$(date +%Y%m%d_%H%M%S).$$"
 $TRTEXEC \
   --loadEngine="$ENGINE" \
   --shapes=$INPUT_NAME:${MAX_BS}x3x${H}x${W} \
   --noDataTransfers --duration=10 --warmUp=1000 \
-  2>&1 | tee models/$MODEL_NAME/benchmarks/b${MAX_BS}/trtexec_b${MAX_BS}.log
+  2>&1 | tee "$BMAX_CANDIDATE"
+BENCH_STATUS=("${PIPESTATUS[@]}")
+if [ "${BENCH_STATUS[0]:-1}" -ne 0 ] || [ "${BENCH_STATUS[1]:-1}" -ne 0 ]; then
+  BMAX_FAILED="${BMAX_LOG}.failed.$(date +%Y%m%d_%H%M%S)"
+  mv -- "$BMAX_CANDIDATE" "$BMAX_FAILED"
+  echo "ERROR: BS=$MAX_BS trtexec benchmark failed; preserved $BMAX_FAILED" >&2
+  exit 1
+fi
+if [ -e "$BMAX_LOG" ]; then
+  BMAX_BACKUP="${BMAX_LOG}.previous.$(date +%Y%m%d_%H%M%S)"
+  mv -- "$BMAX_LOG" "$BMAX_BACKUP"
+fi
+mv -- "$BMAX_CANDIDATE" "$BMAX_LOG"
 ```
 
 ### Parse results and compute PEAK_GPU_STREAMS
@@ -169,18 +227,51 @@ echo "[Step 5] Benchmarks completed in ${STEP5_DURATION}s"
 
 ### Iterative Engine Scaling (PEAK_GPU_STREAMS > MAX_BS)
 
-If `PEAK_GPU_STREAMS > MAX_BS`, the engine's max batch size is the bottleneck — DeepStream cannot run more streams than `MAX_BS`. **Double MAX_BS and rebuild**, then re-run trtexec and recompute `PEAK_GPU_STREAMS`. Repeat until `PEAK_GPU_STREAMS ≤ MAX_BS`.
+If `PEAK_GPU_STREAMS > MAX_BS`, the engine's max batch size is the bottleneck.
+Double and remeasure, but cap the campaign at three rebuilds and batch 512. A
+successful validated build at a cap remains usable. If the next required build
+would exceed either cap, record `BLOCKED: engine scaling limit reached` and
+stop; do not build an unbounded sequence of engines.
 
 **Why doubling, not jumping to PEAK directly**: Jumping from 64→512 based on an extrapolated projection wastes GPU memory if the projection was off. Doubling (64→128→256→512) makes incremental, verifiable steps — each trtexec run gives real throughput data before committing to a larger rebuild.
 
 ```bash
+MAX_ENGINE_REBUILDS="${MAX_ENGINE_REBUILDS:-3}"
+MAX_ENGINE_BATCH="${MAX_ENGINE_BATCH:-512}"
+case "$MAX_ENGINE_REBUILDS" in
+  ""|*[!0-9]*) echo "ERROR: MAX_ENGINE_REBUILDS must be a positive integer" >&2; exit 2 ;;
+esac
+case "$MAX_ENGINE_BATCH" in
+  ""|*[!0-9]*) echo "ERROR: MAX_ENGINE_BATCH must be a positive integer" >&2; exit 2 ;;
+esac
+[ "$MAX_ENGINE_REBUILDS" -gt 0 ] || {
+  echo "ERROR: MAX_ENGINE_REBUILDS must be positive" >&2
+  exit 2
+}
+[ "$MAX_ENGINE_BATCH" -gt 0 ] || {
+  echo "ERROR: MAX_ENGINE_BATCH must be positive" >&2
+  exit 2
+}
+ENGINE_REBUILDS=0
 while [ "$PEAK_GPU_STREAMS" -gt "$MAX_BS" ]; do
   NEW_MAX_BS=$(python3 -c "print($MAX_BS * 2)")  # STRICT DOUBLING — do not change to ceil(log2(PEAK))
   echo "Rebuilding engine: PEAK_GPU_STREAMS=$PEAK_GPU_STREAMS > MAX_BS=$MAX_BS — doubling to: $NEW_MAX_BS"
+  if [ "$ENGINE_REBUILDS" -ge "$MAX_ENGINE_REBUILDS" ] || \
+     [ "$NEW_MAX_BS" -gt "$MAX_ENGINE_BATCH" ]; then
+    echo "BLOCKED: engine scaling limit reached (rebuilds=$ENGINE_REBUILDS, next_batch=$NEW_MAX_BS)" >&2
+    echo "Successful engines and diagnostic logs are retained; no over-cap target is created." >&2
+    exit 4
+  fi
+  ENGINE_REBUILDS=$((ENGINE_REBUILDS + 1))
+
 
   mkdir -p models/$MODEL_NAME/benchmarks/b${NEW_MAX_BS}
-
-  $TRTEXEC \
+  NEW_ENGINE="models/$MODEL_NAME/benchmarks/engines/${MODEL_FILENAME}_dynamic_b${NEW_MAX_BS}.engine"
+  TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+  NEW_ENGINE_CANDIDATE="${NEW_ENGINE}.partial.${TIMESTAMP}.$$"
+  NEW_BUILD_LOG="models/$MODEL_NAME/benchmarks/engines/${MODEL_FILENAME}_dynamic_build_b${NEW_MAX_BS}_${TIMESTAMP}.log"
+  [ ! -e "$NEW_ENGINE_CANDIDATE" ] || { echo "ERROR: candidate engine path already exists: $NEW_ENGINE_CANDIDATE" >&2; exit 2; }
+  if $TRTEXEC \
     --onnx="$ONNX_PATH" \
     --minShapes=$INPUT_NAME:1x3x${H}x${W} \
     --optShapes=$INPUT_NAME:${NEW_MAX_BS}x3x${H}x${W} \
@@ -188,21 +279,45 @@ while [ "$PEAK_GPU_STREAMS" -gt "$MAX_BS" ]; do
     --fp16 --skipInference \
     --memPoolSize=workspace:32768M \
     --timingCacheFile=models/$MODEL_NAME/benchmarks/engines/timing.cache \
-    --saveEngine="models/$MODEL_NAME/benchmarks/engines/${MODEL_FILENAME}_dynamic_b${NEW_MAX_BS}.engine" \
-    2>&1 | tee models/$MODEL_NAME/benchmarks/engines/${MODEL_FILENAME}_dynamic_build_b${NEW_MAX_BS}_${TIMESTAMP}.log
-
-  [ -f "models/$MODEL_NAME/benchmarks/engines/${MODEL_FILENAME}_dynamic_b${NEW_MAX_BS}.engine" ] || \
-    { echo "ERROR: Engine b${NEW_MAX_BS} not created — check build log"; exit 1; }
+    --saveEngine="$NEW_ENGINE_CANDIDATE" 2>&1 | tee "$NEW_BUILD_LOG"; then
+    BUILD_STATUS=("${PIPESTATUS[@]}")
+  else
+    BUILD_STATUS=("${PIPESTATUS[@]}")
+  fi
+  if [ "${BUILD_STATUS[0]:-1}" -ne 0 ] || [ "${BUILD_STATUS[1]:-1}" -ne 0 ] || [ ! -s "$NEW_ENGINE_CANDIDATE" ]; then
+    echo "ERROR: TensorRT engine b${NEW_MAX_BS} failed — preserved $NEW_BUILD_LOG and $NEW_ENGINE_CANDIDATE" >&2
+    exit 1
+  fi
+  if [ -e "$NEW_ENGINE" ]; then
+    NEW_ENGINE_BACKUP="${NEW_ENGINE}.previous.${TIMESTAMP}"
+    [ ! -e "$NEW_ENGINE_BACKUP" ] || { echo "ERROR: backup path already exists: $NEW_ENGINE_BACKUP" >&2; exit 2; }
+    mv -- "$NEW_ENGINE" "$NEW_ENGINE_BACKUP"
+  fi
+  mv -- "$NEW_ENGINE_CANDIDATE" "$NEW_ENGINE"
 
   # Update ENGINE and MAX_BS — re-run trtexec at new BS and recompute PEAK_GPU_STREAMS
   ENGINE="models/$MODEL_NAME/benchmarks/engines/${MODEL_FILENAME}_dynamic_b${NEW_MAX_BS}.engine"
   MAX_BS=$NEW_MAX_BS
 
+  BMAX_LOG="models/$MODEL_NAME/benchmarks/b${MAX_BS}/trtexec_b${MAX_BS}.log"
+  BMAX_CANDIDATE="${BMAX_LOG}.partial.$(date +%Y%m%d_%H%M%S).$$"
   $TRTEXEC \
     --loadEngine="$ENGINE" \
     --shapes=$INPUT_NAME:${MAX_BS}x3x${H}x${W} \
     --noDataTransfers --duration=10 --warmUp=1000 \
-    2>&1 | tee models/$MODEL_NAME/benchmarks/b${MAX_BS}/trtexec_b${MAX_BS}.log
+    2>&1 | tee "$BMAX_CANDIDATE"
+  BENCH_STATUS=("${PIPESTATUS[@]}")
+  if [ "${BENCH_STATUS[0]:-1}" -ne 0 ] || [ "${BENCH_STATUS[1]:-1}" -ne 0 ]; then
+    BMAX_FAILED="${BMAX_LOG}.failed.$(date +%Y%m%d_%H%M%S)"
+    mv -- "$BMAX_CANDIDATE" "$BMAX_FAILED"
+    echo "ERROR: iterative trtexec benchmark failed at BS=$MAX_BS; preserved $BMAX_FAILED" >&2
+    exit 1
+  fi
+  if [ -e "$BMAX_LOG" ]; then
+    BMAX_BACKUP="${BMAX_LOG}.previous.$(date +%Y%m%d_%H%M%S)"
+    mv -- "$BMAX_LOG" "$BMAX_BACKUP"
+  fi
+  mv -- "$BMAX_CANDIDATE" "$BMAX_LOG"
 
   QPS_BS_MAX=$(grep -oP 'Throughput:\s*\K[0-9.]+' \
     models/$MODEL_NAME/benchmarks/b${MAX_BS}/trtexec_b${MAX_BS}.log | tail -1)
@@ -228,7 +343,7 @@ echo "PEAK_GPU_STREAMS ($PEAK_GPU_STREAMS) <= MAX_BS ($MAX_BS) — engine scalin
 | PEAK_GPU_STREAMS ≤ 64 (transformer/large models) | RT-DETR, OWL-ViT | **1** (`b64`) | **2** |
 | PEAK_GPU_STREAMS > 64, ≤ 128 (mid models) | TrafficCamNet | **2** (`b64` + `b128`) | **3** |
 | PEAK_GPU_STREAMS > 128, ≤ 256 (fast models) | YOLO26n | **3** (`b64`+`b128`+`b256`) | **4** |
-| PEAK_GPU_STREAMS > 256 (very fast nano models) | — | **4+** (keep doubling) | **5+** |
+| PEAK_GPU_STREAMS > 256 (very fast nano models) | — | **≤4** (through `b512`; then `BLOCKED`) | **≤5** |
 
 ## trtexec Flags Reference
 

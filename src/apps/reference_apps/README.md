@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,9 +15,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-# Reference Apps using DeepStream 9.1
+# Reference Apps using DeepStream 9.2
 
-This repository contains the reference applications for video analytics tasks using TensorRT and DeepStream SDK 9.1.
+This repository contains the reference applications for video analytics tasks using TensorRT and DeepStream SDK 9.2.
 
 ## Getting Started ##
 We currently provide different DeepStream reference applications:
@@ -53,4 +53,4 @@ For further details on each app, please see each project's README.
  A GStreamer plugin for NVIDIA DeepStream that integrates Vision-Language Models (VLM) using VLLM for real-time video understanding and analysis.
 
 ## Pyservicemaker Sample apps: [README](pyservicemaker_sample_apps/README.md)
-The apps in pyservicemaker_sample_apps are additional samples demonstrating usage of the Python API for DeepStream Service Maker, either by flow API or by pipeline API. See the [Python Service Maker documentation](https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_service_maker_python.html) for details.
+The apps in pyservicemaker_sample_apps are additional samples demonstrating usage of the Python API for DeepStream Service Maker, either by flow API or by pipeline API. See the [Python Service Maker documentation](https://docs.nvidia.com/deepstream/9.2/text/DS_service_maker_python) for details.

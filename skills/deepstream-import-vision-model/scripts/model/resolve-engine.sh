@@ -21,6 +21,7 @@
 set -euo pipefail
 
 MODEL_NAME="${1:?usage: resolve-engine.sh <MODEL_NAME>}"
+case "$MODEL_NAME" in ""|.|..|*[!A-Za-z0-9._-]*) echo "ERROR: unsafe MODEL_NAME" >&2; exit 2;; esac
 ENGINE_DIR="models/${MODEL_NAME}/benchmarks/engines"
 
 ENGINE=$(ls "${ENGINE_DIR}"/*_dynamic_b*.engine 2>/dev/null | sort -V | tail -1 || true)
@@ -31,8 +32,9 @@ fi
 
 MAX_BS=$(echo "$ENGINE" | grep -oP '_b\K[0-9]+(?=\.engine)')
 MODEL_FILENAME=$(basename "$ENGINE" | sed 's/_dynamic_b[0-9]*\.engine//')
+case "$MODEL_FILENAME" in ""|.|..|*[!A-Za-z0-9._-]*) echo "ERROR: unsafe engine filename" >&2; exit 2;; esac
 
 printf 'ENGINE=%q\n'          "$ENGINE"
 printf 'MAX_BS=%q\n'          "$MAX_BS"
 printf 'MODEL_FILENAME=%q\n'  "$MODEL_FILENAME"
-printf 'echo "Using engine: %s (MAX_BS=%s)"\n' "$ENGINE" "$MAX_BS"
+printf 'Using engine: %s (MAX_BS=%s)\n' "$ENGINE" "$MAX_BS" >&2

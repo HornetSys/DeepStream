@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 ################################################################################
-# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2024-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,24 +19,32 @@
 set -e
 
 max_batch=4
-plugins=${plugins:-/opt/nvidia/deepstream/deepstream/sources/sample_apps/deepstream-3d-lidar-sensor-fusion/lib/libnvds_3d_v2x_infer_custom_preprocess.so}
+# SDK_ROOT: installed DeepStream SDK root (deb/tar package or Docker image).
+SDK_ROOT=${SDK_ROOT:-/opt/nvidia/deepstream/deepstream}
+plugins=${plugins:-${SDK_ROOT}/lib/libnvds_3d_v2x_infer_custom_preprocess.so}
 
 MODEL_NAME=v2xfusionmodel-int8-sparsity-seq
 DATASET=v2x-seq.4scenes.10Hz.200frame
 MODEL_DOWNLOAD_URL=https://nvidia.box.com/shared/static/xqj7ob2sa3betojf1084juyrlr1eek1a
 
-function echoRed() {
-    echo -e "\033[31m $1 \033[0m"
+function echo_red() {
+    local msg="$1"
+    echo -e "\033[31m $msg \033[0m"
 }
 
-function echoGreen() {
-    echo -e "\033[32m $1 \033[0m"
+function echo_green() {
+    local msg="$1"
+    echo -e "\033[32m $msg \033[0m"
 }
 
-function prepareEngine() {
+function prepare_engine() {
     echo "PWD $(pwd)"
+    if [[ ! -f ${plugins} ]];then
+        echo_red "Plugin library not found: ${plugins}. Set SDK_ROOT or plugins=<path to libnvds_3d_v2x_infer_custom_preprocess.so>"
+        exit 1
+    fi
     if [[ ! -f ../models/v2xfusion/${MODEL_NAME}.onnx ]];then
-        echoGreen "Download ${MODEL_NAME}.onnx"
+        echo_green "Download ${MODEL_NAME}.onnx"
 		mkdir -p ../models/v2xfusion
         wget ${MODEL_DOWNLOAD_URL} -O ../models/v2xfusion/${MODEL_NAME}.onnx
     fi
@@ -45,7 +53,7 @@ function prepareEngine() {
         mkdir -p ../models/v2xfusion/1/
     fi
 
-    echoGreen "Download success. Build ${MODEL_NAME}.engine. Please wait a moment..."
+    echo_green "Download success. Build ${MODEL_NAME}.engine. Please wait a moment..."
     /usr/src/tensorrt/bin/trtexec --onnx=../models/v2xfusion/${MODEL_NAME}.onnx --plugins=${plugins} --skipInference \
         --fp16 --sparsity=enable --dumpLayerInfo --exportLayerInfo=../models/v2xfusion/${MODEL_NAME}.layer.json \
         --saveEngine=../models/v2xfusion/1/${MODEL_NAME}.engine \
@@ -53,46 +61,45 @@ function prepareEngine() {
         --optShapes=images:${max_batch}x3x864x1536,feats:${max_batch}x8000x10x9,coords:${max_batch}x8000x4,N:${max_batch}x1,intervals:${max_batch}x10499x3,geometry:${max_batch}x1086935,num_intervals:${max_batch}x1 \
         --maxShapes=images:${max_batch}x3x864x1536,feats:${max_batch}x8000x10x9,coords:${max_batch}x8000x4,N:${max_batch}x1,intervals:${max_batch}x10499x3,geometry:${max_batch}x1086935,num_intervals:${max_batch}x1 \
         --inputIOFormats=fp16:chw,fp16:chw,int32:chw,int32:chw,int32:chw,int32:chw,int32:chw --verbose > ../models/v2xfusion/${MODEL_NAME}.log 2>&1 || \
-        (echoRed "Build ${MODEL_NAME}.engine failed, Please check ../models/v2xfusion/${MODEL_NAME}.log"; exit 1)
+        (echo_red "Build ${MODEL_NAME}.engine failed, Please check ../models/v2xfusion/${MODEL_NAME}.log"; exit 1)
 
-    echoGreen "Moving the generated model engine file and configs to triton_model_repo"
-    rm -rf /opt/nvidia/deepstream/deepstream/samples/triton_model_repo/v2xfusion
+    echo_green "Moving the generated model engine file and configs to triton_model_repo"
     mkdir -p /opt/nvidia/deepstream/deepstream/samples/triton_model_repo/v2xfusion/1
     cp ../models/v2xfusion/1/*.engine /opt/nvidia/deepstream/deepstream/samples/triton_model_repo/v2xfusion/1
     cp ../models/v2xfusion/config.pbtxt /opt/nvidia/deepstream/deepstream/samples/triton_model_repo/v2xfusion/
 }
 
-function prepareDataSet() {
+function prepare_data_set() {
     if [[ ! -f V2X-Seq-SPD-Example.zip ]];then
         # https://github.com/AIR-THU/DAIR-V2X?tab=readme-ov-file#dataset
-        echoRed "Please download V2X-Seq-SPD-Example.zip from https://github.com/AIR-THU/DAIR-V2X?tab=readme-ov-file#dataset"
+        echo_red "Please download V2X-Seq-SPD-Example.zip from https://github.com/AIR-THU/DAIR-V2X?tab=readme-ov-file#dataset"
         # gdown 1gjOmGEBMcipvDzu2zOrO9ex_OscUZMYY
         exit 1
     fi
 
-    echoGreen "Unzip V2X-Seq-SPD-Example.zip"
+    echo_green "Unzip V2X-Seq-SPD-Example.zip"
     unzip -oq V2X-Seq-SPD-Example.zip
 
     if [[ ! -d ../example-data/${DATASET} ]];then
         mkdir -p ../example-data/${DATASET}
     fi
 
-    echoGreen "Precompute tensor"
+    echo_green "Precompute tensor"
     python3 v2x_data_prepare.py ./V2X-Seq-SPD-Example ../example-data/${DATASET} || \
-        (echoRed "Precompute tensor failed"; exit 1)
+        (echo_red "Precompute tensor failed"; exit 1)
     rm -rf V2X-Seq-SPD-Example
 }
 
 case "$1" in
     "")
-        prepareDataSet
-        prepareEngine
+        prepare_data_set
+        prepare_engine
     ;;
     "engine")
-        prepareEngine
+        prepare_engine
     ;;
     "dataset")
-        prepareDataSet
+        prepare_data_set
     ;;
     *)
         echo "Usage:"

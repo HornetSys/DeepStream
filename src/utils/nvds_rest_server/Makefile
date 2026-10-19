@@ -14,8 +14,17 @@
 # limitations under the License.
 
 CUDA_VER?=
+# Require CUDA_VER for every goal except a clean-only invocation.
+# A bare `make` has empty MAKECMDGOALS and still checks.
+ifneq ($(filter-out clean,$(MAKECMDGOALS)),)
+  _DS_NEED_CUDA_VER := 1
+else ifeq ($(MAKECMDGOALS),)
+  _DS_NEED_CUDA_VER := 1
+endif
+ifeq ($(_DS_NEED_CUDA_VER),1)
 ifeq ($(CUDA_VER),)
   $(error "CUDA_VER is not set")
+endif
 endif
 
 TARGET_DEVICE = $(shell g++ -dumpmachine | cut -f1 -d -)
@@ -25,14 +34,15 @@ SRCS:= nvds_dec_parse.cpp nvds_infer_parse.cpp \
        nvds_rest_server.cpp nvds_roi_parse.cpp nvds_stream_parse.cpp \
        nvds_mux_parse.cpp nvds_inferserver_parse.cpp nvds_conv_parse.cpp nvds_enc_parse.cpp \
        nvds_app_instance_parse.cpp nvds_osd_parse.cpp nvds_analytics_parse.cpp nvds_nvtracker_parse.cpp \
+	   nvds_model_parse.cpp \
 	   nvds_rest_metrics.cpp prometheus_client.cpp opentelemetry_client.cpp
 
 INCS:= $(wildcard *.h)
 LIB:=libnvds_rest_server.so
 LIB_INSTALL_DIR?=/opt/nvidia/deepstream/deepstream-$(NVDS_VERSION)/lib/
-NVDS_VERSION:=9.1
+NVDS_VERSION:=9.2
 
-CFLAGS+= -fPIC -DDS_VERSION=\"9.1.0\" \
+CFLAGS+= -fPIC -DDS_VERSION=\"9.2.0\" \
  	 -I../../../includes \
  	 -I/usr/local/cuda-$(CUDA_VER)/include \
 	 -I/usr/include/jsoncpp

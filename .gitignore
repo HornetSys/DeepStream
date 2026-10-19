@@ -41,3 +41,79 @@ artifacts/
 *.zip
 .mcp.json
 .claude/settings.local.json
+
+artifacts/samples/models/**/*.engine
+src/service-maker/sources/**/*.o
+src/service-maker/sources/engine/ds-launch
+__pycache__/
+.ipynb_checkpoints/
+
+# Docker build contexts are staged by the setup_*_build.sh scripts; the copies
+# they leave behind (scripts, licenses, libraries, SDK and BSP tarballs) are
+# build inputs, not sources.
+deepstream_dockers/sbsa_dockerfiles/*
+!deepstream_dockers/sbsa_dockerfiles/Dockerfile_SBSA_Triton
+
+# Brev code-agent launchable outputs (default OUTPUT_ROOT is deploy/brev/outputs);
+# /outputs/ + brev_agent_outputs/ are kept for older defaults / overrides.
+/deploy/brev/outputs/
+/outputs/
+brev_agent_outputs/
+
+# Generated-code download zips (served by Jupyter for download links)
+deploy/brev/_downloads/
+
+# Compiled objects, shared libraries and in-place app binaries produced by
+# build/build.sh and the per-component Makefiles (built next to their sources).
+*.o
+*.so
+
+# build/package.sh scratch staging directory
+/build/.pkg-stage/
+
+# Locally built sample / reference / TAO app executables
+/src/apps/reference_apps/anomaly/apps/deepstream-anomaly-detection-test/deepstream-anomaly-detection-app
+/src/apps/reference_apps/deepstream-bodypose-3d/sources/deepstream-pose-estimation-app
+/src/apps/reference_apps/deepstream-custom-tile-config/deepstream-custom-tile-config
+/src/apps/reference_apps/deepstream-ipc-test-sr/deepstream-ipc-test-app
+/src/apps/reference_apps/runtime_source_add_delete/deepstream-test-rt-src-add-del
+/src/apps/sample_apps/deepstream-3d-action-recognition/deepstream-3d-action-recognition
+/src/apps/sample_apps/deepstream-3d-depth-camera/deepstream-3d-depth-camera
+/src/apps/sample_apps/deepstream-3d-lidar-sensor-fusion/deepstream-3d-lidar-sensor-fusion
+/src/apps/sample_apps/deepstream-app/deepstream-app
+/src/apps/sample_apps/deepstream-appsrc-cuda-test/deepstream-appsrc-cuda-test
+/src/apps/sample_apps/deepstream-appsrc-test/deepstream-appsrc-test
+/src/apps/sample_apps/deepstream-can-orientation-app/deepstream-can-orientation-app
+/src/apps/sample_apps/deepstream-demuxer-dynamic/deepstream-demuxer-dynamic
+/src/apps/sample_apps/deepstream-demuxer-static/deepstream-demuxer-static
+/src/apps/sample_apps/deepstream-dewarper-test/deepstream-dewarper-app
+/src/apps/sample_apps/deepstream-dynamicsrcbin-test/deepstream-dynamicsrcbin-test
+/src/apps/sample_apps/deepstream-gst-metadata-test/deepstream-gst-metadata-app
+/src/apps/sample_apps/deepstream-image-decode-test/deepstream-image-decode-app
+/src/apps/sample_apps/deepstream-image-meta-test/deepstream-image-meta-test
+/src/apps/sample_apps/deepstream-infer-tensor-meta-test/deepstream-infer-tensor-meta-app
+/src/apps/sample_apps/deepstream-kitti-overlay/deepstream-kitti-overlay
+/src/apps/sample_apps/deepstream-lidar-inference-app/deepstream-lidar-inference-app
+/src/apps/sample_apps/deepstream-multigpu-nvlink-test/deepstream-multigpu-nvlink-test
+/src/apps/sample_apps/deepstream-nmos/deepstream-nmos-app
+/src/apps/sample_apps/deepstream-nvdsanalytics-test/deepstream-nvdsanalytics-test
+/src/apps/sample_apps/deepstream-nvof-test/deepstream-nvof-app
+/src/apps/sample_apps/deepstream-opencv-test/deepstream-opencv-test
+/src/apps/sample_apps/deepstream-preprocess-test/deepstream-preprocess-test
+/src/apps/sample_apps/deepstream-server/deepstream-server-app
+/src/apps/sample_apps/deepstream-test1/deepstream-test1-app
+/src/apps/sample_apps/deepstream-test2/deepstream-test2-app
+/src/apps/sample_apps/deepstream-test3/deepstream-test3-app
+/src/apps/sample_apps/deepstream-test4/deepstream-test4-app
+/src/apps/sample_apps/deepstream-test5/deepstream-test5-app
+/src/apps/sample_apps/deepstream-testsr/deepstream-testsr-app
+/src/apps/sample_apps/deepstream-transfer-learning-app/deepstream-transfer-learning-app
+/src/apps/sample_apps/deepstream-ucx-test/deepstream-ucx-test-app
+/src/apps/sample_apps/deepstream-user-metadata-test/deepstream-user-metadata-app
+/src/apps/tao_apps/apps/tao_classifier/ds-tao-classifier
+/src/apps/tao_apps/apps/tao_detection/ds-tao-detection
+/src/apps/tao_apps/apps/tao_others/deepstream_lpr_app/deepstream-lpr-app
+/src/apps/tao_apps/apps/tao_others/deepstream-mdx-perception-app/deepstream-mdx-perception-app
+/src/apps/tao_apps/apps/tao_others/deepstream-nvocdr-app/deepstream-nvocdr-app
+/src/apps/tao_apps/apps/tao_others/deepstream-pose-classification/deepstream-pose-classification-app
+/src/apps/tao_apps/apps/tao_segmentation/ds-tao-segmentation

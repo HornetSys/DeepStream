@@ -29,38 +29,53 @@ Compiling and installing the plugin:
 
 NOTE: To compile the sources, run make with "sudo" or root permission.
 
-NOTE: <DS_ROOT> is the path where the repo is cloned.
+NOTE: <DS_ROOT> is the path where the DeepStream repo is cloned.
+      $SDK_ROOT is the installed DeepStream SDK root (deb/tar package or DeepStream
+      Docker image): /opt/nvidia/deepstream/deepstream, a symlink to
+      /opt/nvidia/deepstream/deepstream-<version>. Set and verify it with:
+        $ export SDK_ROOT=/opt/nvidia/deepstream/deepstream
+        $ cat $SDK_ROOT/version
 
 Ensure below order for build
+From the repo clone:
    $ cd <DS_ROOT>/src/utils/nvstreammux
    $ Set CUDA_VER in the MakeFile as per platform.
      For x86, Jetson & SBSA, CUDA_VER=13.2
    $ sudo make
    $ cd <DS_ROOT>/src/gst-plugins/gst-nvmultistream2
    $ sudo make && sudo make install
+
+From the installed SDK (deb/tar/Docker):
+   $ ls -d $SDK_ROOT/sources/libs/nvstreammux $SDK_ROOT/sources/gst-plugins/gst-nvmultistream2
+   $ cd $SDK_ROOT/sources/libs/nvstreammux
+   $ Set CUDA_VER in the MakeFile as per platform.
+     For x86, Jetson & SBSA, CUDA_VER=13.2
+   $ sudo make
+   $ cd $SDK_ROOT/sources/gst-plugins/gst-nvmultistream2
+   $ sudo make && sudo make install
 --------------------------------------------------------------------------------
 
 How to test (Sample Pipeline):
 For X86 device:
 New Muxer
-   $ USE_NEW_NVSTREAMMUX=yes gst-launch-1.0 filesrc location=
-   ~/streams/sample_720p.mp4 ! qtdemux ! h264parse ! nvv4l2decoder \
+   $ USE_NEW_NVSTREAMMUX=yes gst-launch-1.0 filesrc location=/opt/nvidia/deepstream/deepstream/samples/streams/sample_720p.mp4 \
+   ! qtdemux ! h264parse ! nvv4l2decoder \
    ! m.sink_0 nvstreammux batch-size=1 name=m ! nvstreamdemux name=d d.src_0 \
    ! nveglglessink
 Old Muxer
-   $ gst-launch-1.0 filesrc location=~/streams/sample_720p.mp4 !
+   $ gst-launch-1.0 filesrc location=/opt/nvidia/deepstream/deepstream/samples/streams/sample_720p.mp4 !
    qtdemux ! h264parse ! nvv4l2decoder ! m.sink_0 nvstreammux \
    name=m width=720 height=480 batch-size=1 ! nvstreamdemux \
    name=d d.src_0 ! nveglglessink
 
 For Jetson device:
 New Muxer
-   $ USE_NEW_NVSTREAMMUX=yes gst-launch-1.0 filesrc location=
-   ~/streams/sample_720p.mp4 ! qtdemux ! h264parse ! nvv4l2decoder \
+   $ USE_NEW_NVSTREAMMUX=yes gst-launch-1.0 filesrc location=/opt/nvidia/deepstream/deepstream/samples/streams/sample_720p.mp4 \
+   ! qtdemux ! h264parse ! nvv4l2decoder \
    ! m.sink_0 nvstreammux batch-size=1 name=m ! nvstreamdemux name=d d.src_0 \
    ! nv3dsink
 Old Muxer
-   $ gst-launch-1.0 filesrc location=~/streams/sample_720p.mp4 !
+   $ gst-launch-1.0 filesrc location=/opt/nvidia/deepstream/deepstream/samples/streams/sample_720p.mp4 !
    qtdemux ! h264parse ! nvv4l2decoder ! m.sink_0 nvstreammux \
    name=m width=720 height=480 batch-size=1 ! nvstreamdemux \
    name=d d.src_0 ! nv3dsink

@@ -89,7 +89,7 @@ This page provides detailed step-by-step instructions for running MV3DT using th
         -v /tmp/.X11-unix/:/tmp/.X11-unix \
         -e DISPLAY=$DISPLAY \
         -w /workspace/experiments \
-        nvcr.io/nvidia/deepstream:9.1-triton-multiarch \
+        ghcr.io/nvidia/deepstream:9.2-triton-multiarch \
         deepstream-test5-app -c config_deepstream.txt
 
     # [Expected output] You should see a window named "DeepStreamTest5App" pop up and will display 4 camera views in a grid.

@@ -1,6 +1,6 @@
 #!/bin/sh
 ################################################################################
-# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,18 +16,19 @@
 # limitations under the License.
 ################################################################################
 
-echo "==================================================================="
+SEPARATOR="==================================================================="
+echo "$SEPARATOR"
 echo "begin downloading PeopleNet model "
-echo "==================================================================="
+echo "$SEPARATOR"
 mkdir -p ./models/peoplenet
 cd ./models/peoplenet
 wget --content-disposition 'https://api.ngc.nvidia.com/v2/models/org/nvidia/team/tao/peoplenet/pruned_quantized_decrypted_v2.3.4/files?redirect=true&path=resnet34_peoplenet_int8.onnx' -O resnet34_peoplenet_int8.onnx
 wget --content-disposition 'https://api.ngc.nvidia.com/v2/models/org/nvidia/team/tao/peoplenet/pruned_quantized_decrypted_v2.3.4/files?redirect=true&path=resnet34_peoplenet_int8.txt' -O resnet34_peoplenet_int8.txt
 wget --content-disposition 'https://api.ngc.nvidia.com/v2/models/org/nvidia/team/tao/peoplenet/pruned_quantized_decrypted_v2.3.4/files?redirect=true&path=labels.txt' -O labels.txt
 
-echo "==================================================================="
+echo "$SEPARATOR"
 echo "begin downloading BodyPose3DNet model "
-echo "==================================================================="
+echo "$SEPARATOR"
 cd -
 mkdir -p ./models/bodypose3dnet
 cd ./models/bodypose3dnet

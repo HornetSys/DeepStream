@@ -54,15 +54,24 @@ The following sensor fusion pipeline are integrated in this sample.
 1. Prerequisites:
 ===============================================================================
 
-Please follow instructions in the https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_Installation.html on how
+Please follow instructions in the https://docs.nvidia.com/deepstream/9.2/text/DS_Installation on how
 to install the prerequisites for the Deepstream SDK, the DeepStream SDK itself,
 and the apps.
 
 Get started from directory:
+From the repo clone:
 $ git clone https://github.com/NVIDIA/DeepStream.git
 $ cd DeepStream
 $ git lfs pull
 $ cd src/apps/sample_apps/deepstream-3d-lidar-sensor-fusion/
+
+From the installed SDK (deb/tar package or DeepStream Docker image):
+$SDK_ROOT is the installed DeepStream SDK root: /opt/nvidia/deepstream/deepstream,
+a symlink to /opt/nvidia/deepstream/deepstream-<version>. Set and verify it with:
+$ export SDK_ROOT=/opt/nvidia/deepstream/deepstream
+$ cat $SDK_ROOT/version
+$ ls -d $SDK_ROOT/sources/apps/sample_apps/deepstream-3d-lidar-sensor-fusion
+$ cd $SDK_ROOT/sources/apps/sample_apps/deepstream-3d-lidar-sensor-fusion/
 
 To make the rest of the pipeline setup easier, optionally grant read/write
 permission for all of the files in this folder:
@@ -82,10 +91,10 @@ Deepstream version number {DS_VERSION_NUM} >= 9.0
 
 Run script to build target image on top of deepstream-triton base image:
 
-$ NVDS_VERSION=xx bevfusion/docker_build_bevfusion_image.sh nvcr.io/nvidia/deepstream:{xx.xx.xx}-triton-multiarch
+$ NVDS_VERSION=xx bevfusion/docker_build_bevfusion_image.sh ghcr.io/nvidia/deepstream:{xx.xx.xx}-triton-multiarch
 
 Note: {xx.xx.xx} >= 9.0
-The latest base image nvcr.io/nvidia/deepstream:{xx.xx.xx}-triton-multiarch can be
+The latest base image ghcr.io/nvidia/deepstream:{xx.xx.xx}-triton-multiarch can be
 found from
 https://catalog.ngc.nvidia.com/orgs/nvidia/containers/deepstream
 
@@ -186,7 +195,7 @@ Then, run the script on prebuilt deepstream-triton image
 
 $ bevfusion/docker_run_ds3d_sensor_fusion_bevfusion_pipeline.sh \
   ds3d_lidar_plus_multi_cam_bev_fusion.yaml \
-  nvcr.io/nvidia/deepstream:{xx.xx.xx}triton-multiarch
+  ghcr.io/nvidia/deepstream:{xx.xx.xx}-triton-multiarch
 
 Note: nuscene dataset is under Non-Commercial Use license,
 https://www.nuscenes.org/terms-of-use

@@ -1,6 +1,6 @@
 #!/bin/sh
 ################################################################################
-# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,16 +18,18 @@
 
 #This script is to download peoplenet pretrained model and run peoplenet DeepStream application
 
-echo "==================================================================="
+SEPARATOR="==================================================================="
+
+echo "$SEPARATOR"
 echo "begin download models for peopleNet "
-echo "==================================================================="
+echo "$SEPARATOR"
 mkdir -p ../../models/tao_pretrained_models/peopleNet/
 wget --content-disposition 'https://api.ngc.nvidia.com/v2/models/org/nvidia/team/tao/peoplenet/pruned_quantized_decrypted_v2.3.4/files?redirect=true&path=labels.txt' \
 -O ../../models/tao_pretrained_models/peopleNet/labels.txt
 wget --content-disposition 'https://api.ngc.nvidia.com/v2/models/org/nvidia/team/tao/peoplenet/pruned_quantized_decrypted_v2.3.4/files?redirect=true&path=resnet34_peoplenet_int8.onnx' \
 -O ../../models/tao_pretrained_models/peopleNet/resnet34_peoplenet_int8.onnx
 
-echo "==================================================================="
+echo "$SEPARATOR"
 echo "Run deepstream-app"
-echo "==================================================================="
+echo "$SEPARATOR"
 deepstream-app -c deepstream_app_source1_peoplenet.txt

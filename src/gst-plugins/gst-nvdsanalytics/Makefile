@@ -18,12 +18,12 @@ SRCS:= gstnvdsanalytics.cpp nvdsanalytics_property_parser.cpp nvdsanalytics_prop
 INCS:= gstnvdsanalytics.h nvdsanalytics_property_parser.h nvdsanalytics_property_yaml_parser.h
 LIB:=libnvdsgst_dsanalytics.so
 
-NVDS_VERSION:=9.1
+NVDS_VERSION:=9.2
 
 GST_INSTALL_DIR?=/opt/nvidia/deepstream/deepstream-$(NVDS_VERSION)/lib/gst-plugins/
 LIB_INSTALL_DIR?=/opt/nvidia/deepstream/deepstream-$(NVDS_VERSION)/lib/
 
-CFLAGS+= -fPIC -std=c++11 -DDS_VERSION=\"9.1.0\" \
+CFLAGS+= -fPIC -std=c++11 -DDS_VERSION=\"9.2.0\" \
 	 -I ../../../includes \
 	 -I ../../../utils/nvds_analytics -DNDEBUG
 

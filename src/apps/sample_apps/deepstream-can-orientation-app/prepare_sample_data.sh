@@ -1,5 +1,5 @@
 #!/bin/bash
-# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,7 +16,7 @@
 
 set -e
 
-NVDS_VERSION=${NVDS_VERSION:-9.1}
+NVDS_VERSION=${NVDS_VERSION:-9.2}
 sample_tar=/opt/nvidia/deepstream/deepstream/samples/streams/sample_cans_jpg.tbz2
 
 echo "uncompress  ${sample_tar}"
@@ -34,7 +34,7 @@ to_dir=data/sample1
 echo "Copy and format original test image files into folder ${to_dir}"
 mkdir -p ${to_dir}
 sidx=0
-for file_name in `ls $from_dir`;
+for file_name in $(ls $from_dir);
 do
     tofile=$(printf "${to_dir}/test_sample_%04d.jpg" $sidx)
     cp -f ${from_dir}/${file_name} ${tofile}
@@ -45,7 +45,7 @@ png_dir=data/sample2
 echo "Convert JPG files into PNG into folder ${png_dir}"
 mkdir -p ${png_dir}
 sidx=0
-for file_name in `ls $from_dir`;
+for file_name in $(ls $from_dir);
 do
     png_file=$(printf "${png_dir}/test_sample_%04d.png" $sidx)
     gst-launch-1.0 -e filesrc location="${from_dir}/${file_name}" ! \

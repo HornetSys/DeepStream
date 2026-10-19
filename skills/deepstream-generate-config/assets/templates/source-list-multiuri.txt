@@ -1,0 +1,56 @@
+# nvmultiurisrcbin-based source ingestion.
+#
+# When to use this template:
+#   * File source under the latency profile  -- render.py auto-routes here so
+#     the file decoder can be paced via simulate-fps-interval-ms.
+#   * RTSP source ONLY if the user explicitly asked for one of:
+#       - dynamic stream add/remove via the REST endpoint
+#       - per-source sensor-id tagging carried in downstream metadata
+#       - a single source bin aggregating many RTSPs
+#     Otherwise default-route RTSP through source-rtsp.txt (kind=rtsp) which
+#     is simpler and has no HTTP port surface area.
+#
+# Hard requirements when use-nvmultiurisrcbin=1 (each is a crash if missing):
+#   * sensor-id-list / sensor-name-list -- semicolon-separated, count MUST
+#     equal num-source-bins ("Mismatch in Sensor IDs provided").
+#   * http-ip / http-port -- nvmultiurisrcbin always starts its REST endpoint
+#     for dynamic add/remove. Missing => std::string(nullptr) abort with
+#     "basic_string: construction from null is not valid".
+#   * max-batch-size MUST equal num-source-bins; setting it higher causes
+#     nvstreammux to wait for slots that never fill (latency cliff).
+#
+# Optional but recommended:
+#   * [source-attr-all] simulate-fps-interval-ms=N -- paces FILE URIs to one
+#     frame every N ms (e.g. 33 = ~30 fps). Required for honest latency
+#     benchmarking; ignored for live sources (rtsp/v4l2/csi).
+#     The latency profile in render.py auto-defaults this to 33 when
+#     kind=source_list AND at least one URI uses file://. RTSP sources
+#     don't need it -- the camera paces the stream.
+
+[source-list]
+num-source-bins=1
+list=file:///opt/nvidia/deepstream/deepstream/samples/streams/sample_1080p_h264.mp4
+use-nvmultiurisrcbin=1
+stream-name-display=0
+sensor-id-list=UniqueSensorId1
+sensor-name-list=UniqueSensorName1
+http-ip=localhost
+http-port=9000
+max-batch-size=1
+sgie-batch-size=0
+dummy-payload=0
+enable-error-propagation=0
+low-latency-mode=0
+
+[source-attr-all]
+enable=1
+type=3
+simulate-fps-interval-ms=0
+num-sources=1
+gpu-id=0
+cudadec-memtype=0
+sensorID-padID-mapping=0
+latency=100
+rtsp-reconnect-interval-sec=10
+init-rtsp-reconnect-interval-sec=5
+rtsp-reconnect-attempts=4

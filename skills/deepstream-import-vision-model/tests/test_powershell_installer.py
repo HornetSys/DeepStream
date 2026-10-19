@@ -58,7 +58,7 @@ REPO_SKILLS = Path(__file__).resolve().parents[2]
 PS_IMAGE = "mcr.microsoft.com/powershell:latest"
 
 # (skill dir name, expected file count key) -- both installers share the copy logic under test.
-SKILLS = ["deepstream-import-vision-model", "deepstream-eval-and-finetune"]
+SKILLS = ["deepstream-import-vision-model"]
 
 # Machine-local build artifacts each installer strips from the copy; excluded when computing the
 # expected file count. Mirrors the strip rules inside the two install.ps1 scripts.

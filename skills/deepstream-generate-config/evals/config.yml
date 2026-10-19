@@ -1,0 +1,8 @@
+schema_version: 1
+
+harbor:
+  task_source: evals_json
+  n_attempts: 3
+  n_concurrent: 1
+  max_agents: 1
+  timeout_multiplier: 2.0

@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-License-Identifier: Apache-2.0
+-->
+
 
 # NV Model Acquire — Steps 1-3
 
@@ -8,8 +13,15 @@ Acquire an ONNX model from Hugging Face, creating the mandatory model folder str
 Before Step 1, present two explicit choices:
 
 1. **Default model (recommended):** `PekingU/rtdetr_r50vd` from Hugging Face.
-2. **Custom object-detection model:** collect a Hugging Face ID/URL or a versioned NVIDIA NGC
-   catalog URL.
+2. **Custom supported vision model:** collect a Hugging Face ID/URL or a versioned NVIDIA NGC
+   catalog URL plus one of the five supported categories.
+Inspect remote metadata during acquisition, download the exact local artifact, and run
+`scripts/model/route_task.py` against that local file before selecting a category path.
+**STOP: detection-specific exporter/parser steps run only after
+`route_task.py` returns `READY` at exit `0` for object detection.**
+Continue with those sections below only for object detection;
+for classification, segmentation, 2D pose, or monocular depth, follow
+`multitask/model-formats.md` and the emitted type-level contract.
 
 Do not replace this with only an open-ended source prompt. If Default is selected, set
 `INPUT="PekingU/rtdetr_r50vd"`. If Custom is selected, require the source before continuing.
@@ -20,13 +32,19 @@ Dry runs show the choices but perform no browsing, downloads, Docker launches, o
 Create this layout at the start of Step 2 (once `$MODEL_NAME` is set by Step 1):
 ```
 models/{model_name}/
-  model/       config/       parser/       scripts/
+  model/       config/       scripts/       adapters/       structured/
   benchmarks/engines/
+  benchmarks/ds/
   reports/charts/      samples/
+
+Object detection additionally creates:
+  parser/       samples/kitti_output/
 ```
 ```bash
-mkdir -p models/$MODEL_NAME/{model,parser,config,scripts,benchmarks/engines,reports/charts,samples}
+mkdir -p models/$MODEL_NAME/{model,config,scripts,adapters,structured,benchmarks/engines,benchmarks/ds,reports/charts,samples}
 ```
+After the router returns object-detection `READY`, create the two
+detection-only directories immediately before the detection helper runs.
 Temporary staging dirs (`hf_model/`, `ngc_download/`, `build/`) are created inline where needed and cleaned up afterward — they are NOT part of this structure.
 
 ## Step 1: Parse the Model Source URL
@@ -65,7 +83,7 @@ fi
 First, create the model directory structure (required for all sources), then route by source:
 ```bash
 # Create permanent model directory structure (all sources — HF and NGC)
-mkdir -p models/$MODEL_NAME/{model,parser,config,scripts,benchmarks/engines,reports/charts,samples}
+mkdir -p models/$MODEL_NAME/{model,config,scripts,adapters,structured,benchmarks/engines,benchmarks/ds,reports/charts,samples}
 
 # Route based on MODEL_SOURCE set in Step 1
 if [ "$MODEL_SOURCE" = "ngc" ]; then
@@ -75,10 +93,14 @@ fi
 # The following HF browse, config download, and labels extraction only runs for MODEL_SOURCE=hf
 ```
 
-- Browse the HF repository and classify available model files using the vetted helper script
-  (validates inputs, uses HTTPS+TLSv1.2 only, honors `$HF_TOKEN`):
+- Resolve the selected HF branch/tag to an immutable commit before listing or downloading. Record `HF_REVISION` in the evidence manifest:
   ```bash
-  FILES="$(bash .claude/skills/deepstream-import-vision-model/scripts/model/hf-list-files.sh "$HF_ORG" "$MODEL_NAME")"
+  HF_REVISION=$(bash .claude/skills/deepstream-import-vision-model/scripts/model/hf-resolve-revision.sh \
+    "$HF_ORG" "$MODEL_NAME" "${HF_REVISION:-main}")
+  export HF_REVISION
+  echo "Pinned Hugging Face revision: $HF_REVISION"
+
+  FILES="$(bash .claude/skills/deepstream-import-vision-model/scripts/model/hf-list-files.sh "$HF_ORG" "$MODEL_NAME" "" "$HF_REVISION")"
   ONNX_FILES=$(echo "$FILES" | grep -E '\.onnx$' || true)
   ST_FILES=$(echo "$FILES" | grep -E '\.(safetensors|bin)$' || true)
   echo "ONNX files:      ${ONNX_FILES:-none}"
@@ -87,7 +109,7 @@ fi
 
   # If ONNX list is empty in root, also check /onnx subdirectory
   if [ -z "$ONNX_FILES" ]; then
-      ONNX_SUB="$(bash .claude/skills/deepstream-import-vision-model/scripts/model/hf-list-files.sh "$HF_ORG" "$MODEL_NAME" onnx | grep -E '\.onnx$' || true)"
+      ONNX_SUB="$(bash .claude/skills/deepstream-import-vision-model/scripts/model/hf-list-files.sh "$HF_ORG" "$MODEL_NAME" onnx "$HF_REVISION" | grep -E '\.onnx$' || true)"
       echo "ONNX in /onnx subdir: ${ONNX_SUB:-none}"
   fi
   ```
@@ -99,12 +121,16 @@ fi
   **Category D: NGC model (not on HuggingFace)** -> proceed to Step 2d (NGC download)
 
 - Download `config.json` — required for architecture detection and label extraction.
-  Uses the vetted helper script (validated inputs, HTTPS+TLS, honors `$HF_TOKEN`):
+  Uses the vetted helper script (validated inputs, HTTPS+TLS, honors `$HF_TOKEN`).
+  For authenticated sources, the helper reads `HF_TOKEN` from the environment
+  and sends it only to `huggingface.co` over HTTPS. NGC download helpers
+  similarly send caller-provided NGC credentials only to NVIDIA NGC over HTTPS.
+  Use least-privilege credentials and never print or pass them as command arguments:
   ```bash
   # HF: download from API via vetted helper. NGC: extracted from archive in Step 2d.
   if [ "$MODEL_SOURCE" = "hf" ]; then
     bash .claude/skills/deepstream-import-vision-model/scripts/model/hf-download-config.sh \
-        "$HF_ORG" "$MODEL_NAME" "models/$MODEL_NAME/config/config.json"
+        "$HF_ORG" "$MODEL_NAME" "models/$MODEL_NAME/config/config.json" "$HF_REVISION"
   else
     echo "NGC model — config.json will be extracted from the downloaded archive in Step 2d"
   fi
@@ -115,46 +141,66 @@ fi
   - Architecture class (e.g., `GroundingDinoForObjectDetection`)
   - Number of inputs (single input vs multi-modal)
 
-- **Reject non-detection architectures (fail fast)**: Check the `architectures` field in `config.json` before continuing. If the architecture class ends in a non-detection suffix such as `ForImageClassification`, `ForSemanticSegmentation`, `ForInstanceSegmentation`, `ForPanopticSegmentation`, `ForDepthEstimation`, `ForMaskedLM`, `ForTokenClassification`, or `ForCausalLM`, **abort the pipeline with a clear error and exit non-zero**: `"deepstream-import-vision-model currently supports object detection models only. Detected architecture: {arch_class}. Classification, segmentation, and other vision tasks are not yet supported."` Do not prompt the user. Detection architectures end in `ForObjectDetection` (or, for some DETR-family variants, `ForConditionalDetection` / `ForZeroShotObjectDetection`).
+- **Route the architecture before export or detection-only processing**: map detection, image classification,
+  semantic segmentation, 2D pose/keypoints, or monocular depth to the unified
+  task router. Reject every other architecture before downloading weights or
+  building an engine. Record the selected result as `ROUTED_TASK`. Detection
+  architectures end in `ForObjectDetection`
+  (or, for some DETR-family variants, `ForConditionalDetection` /
+  `ForZeroShotObjectDetection`). Do not infer a task from the model name.
 
-- **Validate the architecture and extract `labels.txt`** — one shared helper does both, so the
-  HF and NGC routes cannot drift apart. Run it as soon as `config.json` is in place (for HF that
-  is now; for NGC it runs at the end of Step 2d):
+- **Detection only, after routing: validate the architecture and extract `labels.txt`** —
+  one shared helper does both, so the HF and NGC detection routes cannot drift.
+  Do not call this detection helper for the other four categories; use their
+  declared task contracts and embedded multitask route instead.
   ```bash
-  build/.venv_optimum/bin/python \
-    .claude/skills/deepstream-import-vision-model/scripts/model/config-to-labels.py \
-    --config models/$MODEL_NAME/config/config.json \
-    --labels models/$MODEL_NAME/config/labels.txt
+  if [ "$ROUTED_TASK" = "object-detection" ]; then
+    mkdir -p models/$MODEL_NAME/{parser,samples/kitti_output}
+    build/.venv_optimum/bin/python \
+      .claude/skills/deepstream-import-vision-model/scripts/model/config-to-labels.py \
+      --config models/$MODEL_NAME/config/config.json \
+      --labels models/$MODEL_NAME/config/labels.txt
+  fi
   ```
-  It exits non-zero on a non-detection architecture (the fail-fast gate above) and on a missing
-  label map. **Treat either as fatal** — do not prompt the user, and never fall back to hardcoded
-  COCO, ImageNet, or any other default list.
+  It exits non-zero on a non-detection architecture and on a missing label map.
+  **Treat either as fatal for the detection path** — stop with the reported
+  cause and never fall back to a hardcoded class list.
 
 ### Step 2a: Select ONNX Variant (Category A)
 - Identify available quantization variants (fp32, fp16, int8, int4, quantized, etc.)
-- **Default preference: fp16**. Apply this logic:
-  1. If fp16 variant exists -> **select it silently**, log: `"Selected: fp16 (default). All available: [list]"`
-  2. If fp16 does NOT exist -> **auto-select deterministically** in this priority order: fp32 > int8 > int4 > quantized > first ONNX alphabetically. Log: `"Selected: {variant} (fp16 unavailable). All available: [list]"`. Do not prompt the user.
-  3. If only one ONNX file exists -> log it and proceed without asking
+- **Default preference: fp16** under the caller-approved model/task choice.
+  Apply this recorded policy:
+  1. If fp16 exists, select it and log: `"Selected: fp16 (approved default). All available: [list]"`.
+  2. If fp16 is absent, present the available variants and recommend this order:
+     fp32 > int8 > int4 > quantized > first ONNX alphabetically. Obtain
+     confirmation before downloading the fallback because precision changes
+     validation tolerances and memory behavior.
+  3. If only one ONNX exists, record it as the resolved artifact and proceed
+     under the already approved custom/default model choice.
 - **Construct the resolved download URL** for the selected variant from the tree listing:
   ```bash
   # The tree API returns entries with a "path" field (relative to repo root)
   # Construct the download URL as:
   PATH_FROM_TREE="<path field from tree listing, e.g. onnx/model_fp16.onnx>"
-  ONNX_URL="https://huggingface.co/$HF_ORG/$MODEL_NAME/resolve/main/$PATH_FROM_TREE"
-  # Example: path="onnx/model_fp16.onnx" -> URL ends in /resolve/main/onnx/model_fp16.onnx
+  ONNX_URL="https://huggingface.co/$HF_ORG/$MODEL_NAME/resolve/$HF_REVISION/$PATH_FROM_TREE"
+  # HF_REVISION is the immutable commit resolved and recorded above.
   # Store this URL for use in Step 3
   ```
 - After URL construction, proceed to **Step 3** (download ONNX)
 
 ### Step 2b: Export SafeTensors to ONNX (Category B)
 
+> **ROUTING GATE:** Run the detection exporter commands in this section only
+> after `route_task.py` returns `READY` at exit `0` for object detection.
+> For the other four supported categories, use the routed type-level export
+> contract from `multitask/model-formats.md`.
+
 When the repo only has `.safetensors` (or `.bin`) files and no ONNX export, convert to ONNX using an **isolated virtual environment** to avoid polluting the host system.
 
 #### 2b-i: Virtual Environment (already built by `setup.sh`, in-container)
 - The shared venv at **`build/.venv_optimum`** is created **inside the DeepStream container** by the
   skill's `setup.sh` (one-time bootstrap) — do **not** create it on the host. Every export command runs
-  in-container against it; use `PY=build/.venv_optimum/bin/python` and `build/.venv_optimum/bin/optimum-cli`.
+  in-container against it; use `PY=build/.venv_optimum/bin/python`. The directory name is historical.
 - It's a single shared venv across all models (`torch`/`transformers`/`onnxruntime` are heavy
   and identical model-to-model). If it's missing, run the bootstrap (from SKILL.md Pre-flight):
   ```bash
@@ -171,30 +217,45 @@ When the repo only has `.safetensors` (or `.bin`) files and no ONNX export, conv
 - Legacy per-model venvs at `build/.venv_$MODEL_NAME` from older runs are still cleaned up by `.claude/skills/deepstream-import-vision-model/scripts/model/cleanup.sh "$MODEL_NAME"` for backward compatibility
 
 #### 2b-ii: Download Required Files
-- Download from the HF repo into `models/$MODEL_NAME/hf_model/` using `-P` to avoid changing the working directory:
+- Download from the immutable HF revision with the vetted helper. It validates
+  repository paths, destination paths, HTTPS/TLS, and nonempty output and uses
+  an atomic partial file:
   ```bash
   mkdir -p models/$MODEL_NAME/hf_model
-  HF_BASE="https://huggingface.co/$HF_ORG/$MODEL_NAME/resolve/main"
-  # Download model files
-  wget -P models/$MODEL_NAME/hf_model "$HF_BASE/model.safetensors"
-  wget -P models/$MODEL_NAME/hf_model "$HF_BASE/config.json"
-  wget -P models/$MODEL_NAME/hf_model "$HF_BASE/preprocessor_config.json"
+  HF_GET=.claude/skills/deepstream-import-vision-model/scripts/model/hf-download-file.sh
+  bash "$HF_GET" "$HF_ORG" "$MODEL_NAME" model.safetensors \
+    "models/$MODEL_NAME/hf_model/model.safetensors" "$HF_REVISION"
+  bash "$HF_GET" "$HF_ORG" "$MODEL_NAME" config.json \
+    "models/$MODEL_NAME/hf_model/config.json" "$HF_REVISION"
+  bash "$HF_GET" "$HF_ORG" "$MODEL_NAME" preprocessor_config.json \
+    "models/$MODEL_NAME/hf_model/preprocessor_config.json" "$HF_REVISION"
   # For text+vision models, also download tokenizer files (failures are non-fatal):
-  wget -P models/$MODEL_NAME/hf_model "$HF_BASE/tokenizer.json"         || true
-  wget -P models/$MODEL_NAME/hf_model "$HF_BASE/tokenizer_config.json"  || true
-  wget -P models/$MODEL_NAME/hf_model "$HF_BASE/vocab.txt"              || true
-  wget -P models/$MODEL_NAME/hf_model "$HF_BASE/special_tokens_map.json" || true
+  for file in tokenizer.json tokenizer_config.json vocab.txt special_tokens_map.json; do
+    bash "$HF_GET" "$HF_ORG" "$MODEL_NAME" "$file" \
+      "models/$MODEL_NAME/hf_model/$file" "$HF_REVISION" --optional
+  done
   ```
 - For sharded models (multiple `.safetensors` files), also download `model.safetensors.index.json` and all shards
+- Pass the same immutable revision to remote export:
+  ```bash
+  bash .claude/skills/deepstream-import-vision-model/scripts/model/safetensors-to-onnx.sh "$HF_ORG/$MODEL_NAME" models/$MODEL_NAME/onnx_export --revision "$HF_REVISION"
+  ```
 
 #### 2b-iii: SafeTensors -> ONNX Export -- Max 3 Retries
+
+> **STOP:** The bundled wrapper below is detection-only. Do not execute it
+> unless the unified router returned object-detection `READY` at exit `0`.
 
 > **optimum was removed from this skill.** It pinned `transformers` below 4.54.0, which blocked the
 > releases fixing its RCE advisories (GHSA-29pf-2h5f-8g72, fixed in 5.3.0; GHSA-fgcw-684q-jj6r, fixed
 > in 5.5.0), and optimum 2.1.0 dropped the `onnx` subcommand entirely. Export now goes through
 > `torch.onnx.export` directly.
 
-- Run the export wrapper (it resolves the shared venv and calls `safetensors_to_onnx.py`):
+- For object detection, run the export wrapper (it resolves the shared venv and
+  calls `safetensors_to_onnx.py`). For the other four categories, require a
+  deterministic model-specific `torch.onnx.export` wrapper and follow
+  [multitask/model-formats.md](multitask/model-formats.md); do not call the
+  detection wrapper.
   ```bash
   bash .claude/skills/deepstream-import-vision-model/scripts/model/safetensors-to-onnx.sh \
     models/$MODEL_NAME/hf_model \
@@ -202,7 +263,7 @@ When the repo only has `.safetensors` (or `.bin`) files and no ONNX export, conv
   ```
 - It writes `models/$MODEL_NAME/onnx_export/model.onnx` and:
   - reads the export resolution from `preprocessor_config.json` (falling back to 640x640);
-  - rejects non-detection architectures before doing any work;
+  - rejects non-detection architectures because this wrapper is detection-specific;
   - **tries the dynamo backend, then falls back to TorchScript** if dynamo specialized the batch
     dimension — it prints `[export] backend=...` so you can see which one produced the graph;
   - consolidates any sidecar `model.onnx.data` back into the `.onnx`;
@@ -223,16 +284,15 @@ When the repo only has `.safetensors` (or `.bin`) files and no ONNX export, conv
   ```bash
   cp models/$MODEL_NAME/onnx_export/model.onnx models/$MODEL_NAME/model/$MODEL_NAME.onnx
   ```
-- **Retry policy**: the two-backend fallback is automatic, so a failure here means both backends
-  failed. Retry up to **3 times total** with adjustments between attempts:
-  - **Retry 1**: Set `--image-size` explicitly if the error mentions a shape or resize mismatch
-  - **Retry 2**: Try a different `--opset` (18 is the default; 17 and below fail on `Resize`)
-  - **Retry 3**: Try `--static-batch` if both backends baked in the batch dimension. The engine
-    must then be built at a fixed batch size — see `references/engine-build.md`.
-  - After 3 failed attempts, fall back to **Step 2b-iv** (hand-written export for an unusual architecture)
+- **Retry policy**: the two-backend fallback is automatic. Allow at most **3 operator attempts
+  total across Steps 2b-iii and 2b-iv**:
+  - **Attempt 1**: Run the wrapper with the declared contract.
+  - **Attempt 2**: Adjust `--image-size` or `--opset` only when the first error identifies that mismatch.
+  - If both wrapper attempts fail because the architecture has a different forward/output contract,
+    use the one remaining attempt for Step 2b-iv. Do not reset the counter.
 
-#### 2b-iv: Fallback -- Hand-written torch.onnx.export (unusual architectures) -- Max 3 Retries
-- If the wrapper fails after 3 retries because the model does not follow the standard
+#### 2b-iv: Fallback -- Hand-written torch.onnx.export (unusual architectures) -- Final Attempt
+- If the wrapper fails because the model does not follow the standard
   `logits` / `pred_boxes` detection contract, write the export inline and adjust the wrapper outputs:
   ```bash
   build/.venv_optimum/bin/python -c "
@@ -275,11 +335,13 @@ When the repo only has `.safetensors` (or `.bin`) files and no ONNX export, conv
   import onnx; d = onnx.load('models/$MODEL_NAME/model/$MODEL_NAME.onnx').graph.input[0].type.tensor_type.shape.dim
   print([x.dim_param or x.dim_value for x in d])"   # expect ['batch', 3, H, W]
   ```
-- **Retry policy**: If manual export fails, retry up to **3 times total** with adjustments:
-  - **Retry 1**: Try a different `AutoModel` class, or return different tensors from the wrapper
-  - **Retry 2**: Switch backend (TorchScript <-> dynamo), remembering `dynamic_axes` vs `dynamic_shapes`
-  - **Retry 3**: Drop the dynamic batch entirely and build a fixed-batch engine
-  - After 3 failed attempts, **stop and generate a failure report**
+- The manual fallback is the **third and final** export attempt. Choose the
+  `AutoModel` class, returned tensors, backend, and batch policy from the two
+  recorded wrapper failures before running it.
+- If it fails, write `models/$MODEL_NAME/reports/export_failure.md` with all
+  three commands, first causal error from each log, attempted adjustments, and
+  the missing architecture contract. Mark the route `BLOCKED`, return nonzero,
+  report that path to the user, and abort before Step 3.
 
 > **Gotchas for recent PyTorch/transformers** (verified on torch 2.13.0 + transformers 5.14.1
 > inside `nvcr.io/nvidia/deepstream:9.1-triton-multiarch`):
@@ -357,7 +419,8 @@ Only run `onnxsim` if TRT build fails with `ForeignNode` warnings — it is not 
 
 ### Step 2d: NGC Model Download (Category D)
 
-When the model comes from NVIDIA NGC (not HuggingFace), download using the `ngc` CLI if available, or fall back to `wget` for direct file download:
+When the model comes from NVIDIA NGC (not HuggingFace), use the vetted helper,
+which prefers the `ngc` CLI and otherwise uses validated HTTPS:
 
 ```bash
 # Vetted helper: prefers ngc CLI if installed, else falls back to authenticated
@@ -373,7 +436,7 @@ ls -lhR models/$MODEL_NAME/ngc_download/
 ```
 
 - Identify the ONNX file(s) in the downloaded archive (often inside a subdirectory named after the model version)
-- If the download contains a `.etlt` or `.engine` file only (TAO encrypted format), check if a plain ONNX is also provided; if not, use the TAO-provided engine directly and skip Step 4 (engine build)
+- If only `.engine`/`.plan` is available, route it through Step 0 and the supplied-engine approval/validation gate in `engine-approval.md`; never load it directly before that gate passes. A `.etlt` is not a TensorRT engine: without an explicitly supported converter, retain `BLOCKED` and request an ONNX artifact.
 - Copy the ONNX to the model directory:
   ```bash
   NGC_ONNX=$(find models/$MODEL_NAME/ngc_download -name "*.onnx" | head -1)
@@ -391,13 +454,13 @@ ls -lhR models/$MODEL_NAME/ngc_download/
     cp "$NGC_CONFIG" models/$MODEL_NAME/config/config.json
     echo "config.json extracted from: $NGC_CONFIG"
 
-    # Same helper the HF route uses: gates the architecture, then writes labels.txt.
-    # The NGC route reaches config.json later than the HF route, so without this a
-    # classification model would build an engine and a parser before anything noticed.
-    build/.venv_optimum/bin/python \
-      .claude/skills/deepstream-import-vision-model/scripts/model/config-to-labels.py \
-      --config models/$MODEL_NAME/config/config.json \
-      --labels models/$MODEL_NAME/config/labels.txt || exit 1
+    # Route the local artifact first. Labels are a detection-only follow-up.
+    if [ "$ROUTED_TASK" = "object-detection" ]; then
+      build/.venv_optimum/bin/python \
+        .claude/skills/deepstream-import-vision-model/scripts/model/config-to-labels.py \
+        --config models/$MODEL_NAME/config/config.json \
+        --labels models/$MODEL_NAME/config/labels.txt || exit 1
+    fi
   fi
   ```
 
@@ -406,7 +469,9 @@ ls -lhR models/$MODEL_NAME/ngc_download/
 The model directory structure was already created in the MANDATORY block at the top. Do NOT run `mkdir -p` again here — just download the file:
 
 ```bash
-wget -O "models/$MODEL_NAME/model/$MODEL_NAME.onnx" "${ONNX_URL}"
+bash .claude/skills/deepstream-import-vision-model/scripts/model/hf-download-file.sh \
+  "$HF_ORG" "$MODEL_NAME" "$PATH_FROM_TREE" \
+  "models/$MODEL_NAME/model/$MODEL_NAME.onnx" "$HF_REVISION"
 ```
 
 Where `$ONNX_URL` is the resolved URL constructed at the end of Step 2a (Category A) or derived from the NGC download path (Category D). Categories B and D write the ONNX directly to `models/$MODEL_NAME/model/$MODEL_NAME.onnx` during export/copy — Step 3 only applies to Category A.

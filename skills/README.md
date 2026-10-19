@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # DeepStream Coding Agent
 
 A project showcasing how to leverage **AI coding assistants** (Cursor, Claude Code, etc.) for accelerated [NVIDIA DeepStream SDK](https://developer.nvidia.com/deepstream-sdk) application development using a curated agentic skill and structured prompts.
@@ -14,7 +19,7 @@ A project showcasing how to leverage **AI coding assistants** (Cursor, Claude Co
 
 No GPU, SDK, or special hardware is required — the skill and example prompts work on any system.
 
-### For running the generated code
+### For running generated Service Maker code
 
 The following are required on the target execution environment:
 
@@ -24,9 +29,11 @@ The following are required on the target execution environment:
 - **CUDA 13.2** and **TensorRT 10.16.0.72**
 - **Supported OS:** Ubuntu 24.04 (x86_64 or ARM64/Jetson)
 
+> Individual command-line skills may support an earlier Python version. Follow each skill's own prerequisites.
+
 > The `deepstream-import-vision-model` and `deepstream-eval-and-finetune` skills run their toolchains inside `nvcr.io/nvidia/deepstream:9.1-triton-multiarch`; the host needs Docker, NVIDIA Container Toolkit, and a compatible NVIDIA driver. Their setup and preflight scripts create and verify the mounted Python environments and runtime tools.
 
-> For detailed environment setup, refer to the [DeepStream SDK Developer Guide](https://docs.nvidia.com/metropolis/deepstream/dev-guide/).
+> For detailed environment setup, refer to the [DeepStream SDK Developer Guide](https://docs.nvidia.com/deepstream/9.2).
 
 ### DeepStream Version Compatibility
 
@@ -45,12 +52,19 @@ deepstream/                                 # mono-repo root
 ├── skills/                                 # Agentic skills for guided DeepStream development
 │   ├── README.md                           # This file
 │   ├── deepstream-dev/                     # DeepStream development skill with condensed references
+│   ├── deepstream-inspect-stack/            # Read-only DeepStream installation and compatibility diagnostic skill
 │   ├── deepstream-generate-pipeline/       # Interactive gst-launch pipeline builder (BM25 retrieval over 270+ pipelines)
+│   ├── deepstream-generate-config/         # deepstream-app / deepstream-test5 config generator (spec → render → validate)
+│   ├── deepstream-audit-config/            # Audit/validate deepstream-app & deepstream-test5 configs
 │   ├── deepstream-profile-pipeline/        # Nsight Systems profiling & config derivation skill
-│   ├── deepstream-import-vision-model/     # Autonomous vision-model onboarding & benchmarking pipeline skill
+│   ├── deepstream-inspect-rtsp/            # RTSP ingest reliability diagnostic skill
+│   ├── deepstream-import-vision-model/     # Unified detection/classification/segmentation/2D-pose/depth import skill
 │   ├── deepstream-eval-and-finetune/       # DeepStream accuracy evaluation + AutoML fine-tuning skill
 │   ├── deepstream-run-mv3dt/               # MV3DT reference-app operations skill
 │   ├── deepstream-sop/                     # DeepStream SOP microservice skill (step-sequence compliance via GEBD + VLM)
+│   ├── deepstream-setup-on-wsl/            # DeepStream-in-Docker setup and verification for WSL2
+│   ├── deepstream-build-compute-stack/     # NVIDIA driver/CUDA/cuDNN/TensorRT host provisioning
+│   ├── inference-builder/                   # Declarative GPU inference pipeline generation skill
 │   ├── amc-setup-calibration-stack/        # AutoMagicCalib MS + UI launch skill
 │   ├── amc-run-sample-calibration/         # AutoMagicCalib bundled-sample validation skill
 │   ├── amc-run-video-calibration/          # AutoMagicCalib user-video calibration skill
@@ -78,17 +92,24 @@ An **agentic skill** is a structured knowledge package that an AI coding assista
 
 Each subdirectory under `skills/` contains a DeepStream agentic skill that follows the standard `SKILL.md` convention supported by AI coding assistants such as Cursor, Claude Code, and others.
 
-This project ships **fourteen complementary skills**:
+This project ships **twenty-one complementary skills**:
 
 | Skill | Mode | Use when you want to… |
 |-------|------|----------------------|
 | [`deepstream-dev`](deepstream-dev/) | Reference-rich (you write code, the agent consults docs) | Hand-author or refine a `pyservicemaker` / GStreamer DeepStream pipeline with the agent answering API questions correctly. |
+| [`deepstream-inspect-stack`](deepstream-inspect-stack/) | Read-only compatibility diagnosis + rerouting | Diagnose DeepStream installation, version, container, JetPack/CUDA/TensorRT/driver, GPU/Jetson, WSL2, and Python-binding mismatches; reroutes pipeline building and model import without generating implementation code. |
 | [`deepstream-generate-pipeline`](deepstream-generate-pipeline/) | Interactive questionnaire + retrieval | Generate a ready-to-run `gst-launch-1.0` pipeline by answering a few questions; the agent retrieves and adapts from 270+ verified pipelines and validates the result. |
+| [`deepstream-generate-config`](deepstream-generate-config/) | Interactive Q&A / spec → render → validate | Generate or repair a `deepstream-app` / `deepstream-test5-app` config (sources, streammux, GIE, tracker, sinks, RTSP/msgbroker) from quickstart, YAML spec, natural language, or guided Q&A — then validate and print the run command. |
+| [`deepstream-audit-config`](deepstream-audit-config/) | Offline validate + approval-gated probes | Audit or sanity-check an existing `deepstream-app` / `deepstream-test5` config (sources, streammux, GIE/tracker, sinks, msgbroker, nvmultiurisrcbin, RTSP/NTP policy) and get a Go ahead / conditions / Do not use yet verdict. |
 | [`deepstream-profile-pipeline`](deepstream-profile-pipeline/) | Measure-then-derive (Nsight Systems) | Build an efficient/performant pipeline or benchmark, tune, and measure FPS — the agent profiles with `nsys`, derives configs from the measured inference plateau batch and HW ceiling, and reports per-plugin NVTX timings. |
-| [`deepstream-import-vision-model`](deepstream-import-vision-model/) | Autonomous orchestration (the agent runs an end-to-end pipeline) | Take any HuggingFace or NGC object-detection model and produce a TensorRT engine, a DeepStream multi-stream benchmark, and a PDF report — fully unattended. |
+| [`deepstream-inspect-rtsp`](deepstream-inspect-rtsp/) | Diagnostic triage | Diagnose DeepStream and GStreamer RTSP ingest packet loss, latency, disconnects, frame drops, decoder saturation, artifacts, and camera/network faults without generating a production application. |
+| [`deepstream-import-vision-model`](deepstream-import-vision-model/) | Unified category-aware orchestration | Preserve the native end-to-end object-detection workflow and route image classification, semantic segmentation, 2D pose, or monocular depth through fail-closed type adapters, parity gates, structured output, and visual validation. |
 | [`deepstream-eval-and-finetune`](deepstream-eval-and-finetune/) | Accuracy evaluation + fine-tuning orchestration | Deploy an object-detection model to DeepStream (TensorRT FP16), measure mAP and performance on a KPI dataset through the real pipeline, fine-tune it with a single run or AutoML sweep, re-deploy, and produce a before/after report. |
 | [`deepstream-run-mv3dt`](deepstream-run-mv3dt/) | Reference-app operations (the agent sets up and runs MV3DT) | Run the DeepStream Multi-View 3D Tracking reference app on shipped samples or synchronized MP4 datasets, including calibration handoff, Kafka metadata, and OSD/BEV outputs. |
 | [`deepstream-sop`](deepstream-sop/) | Microservice scaffold + evaluate-and-fix loop | Build, deploy, evaluate, debug, or measure latency for a DeepStream SOP (Standard Operating Procedure) inference microservice — GPU-accelerated operator step-sequence compliance on industrial video via GEBD + VLM (Cosmos Reason 1/2), with file / RTSP / Basler camera inputs and SSE / Kafka output. |
+| [`deepstream-setup-on-wsl`](deepstream-setup-on-wsl/) | Consent-first setup and verification | Set up and verify DeepStream in Docker inside WSL2 on a supported local or remote Windows workstation, with secure remote access and GPU compatibility gates. |
+| [`deepstream-build-compute-stack`](deepstream-build-compute-stack/) | Version-pinned host provisioning | Provision an Ubuntu 24.04 x86_64 or ARM SBSA host with the NVIDIA open driver, CUDA, cuDNN, TensorRT, and NVIDIA Docker; optionally install DeepStream OS dependencies. |
+| [`inference-builder`](inference-builder/) | Declarative pipeline generation | Generate deployable GPU inference pipelines and containers from YAML for DeepStream, Triton, vLLM, TensorRT-LLM, or PyTorch backends. |
 | [`amc-setup-calibration-stack`](amc-setup-calibration-stack/) | Deployment runbook | Launch the AutoMagicCalib microservice and web UI from NGC release images via Docker Compose. |
 | [`amc-run-sample-calibration`](amc-run-sample-calibration/) | Validation runbook + script | Verify a running AMC stack with the bundled synthetic sample dataset. |
 | [`amc-run-video-calibration`](amc-run-video-calibration/) | Calibration runbook + script | Calibrate a camera rig from user-provided pre-recorded MP4 files via the AMC REST API. |
@@ -98,6 +119,35 @@ This project ships **fourteen complementary skills**:
 | [`rtvi-cv-scaffold-vss-service`](rtvi-cv-scaffold-vss-service/) | Microservice scaffold | Scaffold a custom RTVI CV microservice (YOLO26 reference) that publishes detection metadata to VSS via Kafka `mdx-raw`. |
 
 Skip ahead to [Skill: deepstream-import-vision-model](#skill-deepstream-import-vision-model) for the model-onboarding workflow, or [Skill: deepstream-run-mv3dt](#skill-deepstream-run-mv3dt) for the MV3DT reference-app workflow.
+
+### Skill: deepstream-inspect-rtsp
+
+`deepstream-inspect-rtsp` is a read-only diagnostic skill for DeepStream and GStreamer RTSP ingest reliability. It isolates the first failing stage—camera/network, jitterbuffer, decoder, streammux, sink/output, or lifecycle—before suggesting bounded configuration changes.
+
+#### Installing the skill
+
+```bash
+# Example: Cursor user-level
+cp -r skills/deepstream-inspect-rtsp ~/.cursor/skills/
+
+# Example: Claude Code user-level
+cp -r skills/deepstream-inspect-rtsp ~/.claude/skills/
+
+# Example: Codex user-level
+cp -r skills/deepstream-inspect-rtsp ~/.codex/skills/
+```
+
+Restart or reopen the coding assistant after copying the skill.
+
+#### Example prompts
+
+```text
+My DeepStream RTSP cameras have rising latency and frame drops. Diagnose the first failing stage and give me a minimal test.
+```
+
+```text
+DeepStream RTSP output is choppy in VLC from another workstation, but local fakesink FPS is healthy. What should I check first?
+```
 
 ```text
 My DeepStream app dynamically adds and removes RTSP sources and latency rises below the configured streammux batch size. Diagnose it without writing application code.
@@ -250,6 +300,122 @@ build a pipeline
 ```
 
 > **Tip:** Works best in **Agent mode**. Run the bundled test suite with `python3 -m unittest discover -s <skill-path>/tests -v`.
+
+---
+
+### Skill: deepstream-generate-config
+
+`deepstream-generate-config` generates ready-to-run **`deepstream-app` / `deepstream-test5-app` config files** from requirements. It drives a **spec → `render.py` → `validate.py` → run command** loop (never hand-writes configs in chat). Default mode is interactive Q&A; it also supports quickstart, YAML spec, and natural-language → spec.
+
+**Requirements:** Python 3.10+ with the PyYAML version pinned in `scripts/requirements.txt`; DeepStream SDK 9.2.x is required to run the generated config.
+
+**Modes:**
+
+| Mode | When | Behavior |
+|------|------|----------|
+| A — Quickstart | "quickstart", "starter", "just run", "I'm new" | Renders bundled `assets/templates/quickstart_spec.yaml` |
+| B — Spec file | `--spec`, pasted YAML, or a spec path | Renders the supplied spec |
+| C — Natural language | Detailed prose with ≥3 inferable fields | Builds YAML per schema, confirms assumptions, then renders |
+| D — Interactive Q&A (default) | Everything else | Guided questions from `references/interactive_qa.md` |
+
+**Supported profiles** (overlay applied by `render.py`; invalid values are rejected):
+
+| Profile | Goal |
+|---------|------|
+| `latency` | Lowest steady-state per-frame latency (FakeSink + nvdslogger defaults) |
+| `perf` | Throughput / max FPS measurement |
+| `display` | On-screen tiled display path |
+| `custom` | No profile overlay — spec values only |
+
+**Typical building blocks:** file / RTSP / V4L2 / CSI / `source-list` (`nvmultiurisrcbin`), streammux, primary/secondary GIE, NvDCF / IOU / NvSORT tracker, FakeSink / EGL / nv3dsink / file / RTSP-out / msgbroker sinks.
+
+**Bundled scripts:**
+
+| Script | Purpose |
+|--------|---------|
+| `scripts/render.py` | Spec → config (`--spec`, `--quickstart`, `--out`, `--print-resolved-spec`) |
+| `scripts/validate.py` | Config linter before run |
+| `scripts/spec_schema.yaml` | Spec field reference |
+| `scripts/render_infer.py` / `scripts/render_tracker.py` | Infer / tracker fragment helpers |
+
+**Bundled references:** `profiles.md`, `interactive_qa.md`, `natural_language_mapping.md`, `reference.md`, `examples.md`, `validator_pitfalls.md`.
+
+**Dependency:** install the pinned PyYAML version with
+`python3 -m pip install -r skills/deepstream-generate-config/scripts/requirements.txt`.
+
+**Install** (same paths as `deepstream-dev`):
+
+```bash
+cp -r skills/deepstream-generate-config ~/.cursor/skills/   # or ~/.claude/skills/ , ~/.codex/skills/
+```
+
+**Try it:**
+
+```text
+generate a deepstream-app config for 4 RTSP cameras, YOLO detect, NvDCF tracker, latency profile
+quickstart deepstream-app config
+deepstream-app config from this spec.yaml
+```
+
+```bash
+python3 scripts/render.py --quickstart --out ./quickstart_generated.txt
+python3 scripts/validate.py ./quickstart_generated.txt
+deepstream-app -c ./quickstart_generated.txt
+```
+
+> **Tip:** Always render via `scripts/render.py` and validate before running. Prefer a user-writable `--out` path (e.g. `./generated_config.txt`); do not write into root-owned sample dirs unless the user asks.
+
+---
+
+### Skill: deepstream-audit-config
+
+`deepstream-audit-config` audits existing `deepstream-app` / `deepstream-test5` configs and proposed design changes. `deepstream-generate-config` owns creation and its render-time validation; activate the auditor afterward only for an explicitly requested independent audit or when the user supplies the config later for review. It translates plain-language requests ("validate this config for 4 RTSP cameras and Kafka") into `scripts/validate_config.py`, defaults to **offline/static** checks, and runs runtime/network probes (`--probe-*`) only after explicit approval.
+
+**Do not use** when you need a brand-new config from requirements (`deepstream-generate-config`); do not load the auditor or run `validate_config.py` in that creation turn unless the user separately requests an independent audit. The repository has no bundled ONVIF-discovery skill; use `deepstream-inspect-rtsp` only to diagnose a known RTSP URI. Route nsys profiling to `deepstream-profile-pipeline`. Also do not use the auditor for NVBug fixes, custom GStreamer element code, or merely running a config that already passed validation (`deepstream-app -c`).
+
+**Workflow:**
+
+1. Collect the config path, pasted snippet, or design proposal.
+2. Infer use case from conversation + config (`--intent`).
+3. Run offline validation first (no `--probe-*`).
+4. Ask for approval before any runtime/network probes.
+5. Report **Go ahead**, **Go ahead with conditions**, or **Do not use yet** (2–3 lines); every ERROR/WARN gets a concrete fix.
+6. Offer safe edits only after approval, then re-validate.
+
+**Bundled script:**
+
+| Script | Purpose |
+|--------|---------|
+| `scripts/validate_config.py` | Config audit + approval-gated runtime probes (`--intent`, `--usecase`, `--target-platform`, `--json`, `--check-runtime`, `--probe-*`, `--timeout-sec`) |
+
+**Bundled references:**
+
+| Reference | Coverage |
+|-----------|----------|
+| `rules.md` | Parser-backed validation rules (do not invent keys) |
+| `probe_flags.md` | Runtime/network `--probe-*` flags |
+| `rtp_ntp_policy.md` | RTSP / NTP timestamp policy |
+| `config_edits.md` | Safe config edit patterns |
+| `design_review.md` | Design / code-change review guidance |
+| `examples.md` | Example findings (RTSP, msgbroker/test5, demux, tracker, probes) |
+
+**Install** (same paths as `deepstream-dev`):
+
+```bash
+cp -r skills/deepstream-audit-config ~/.cursor/skills/   # or ~/.claude/skills/ , ~/.codex/skills/
+```
+
+**Try it:**
+
+```text
+validate this config for 4 RTSP cameras and Kafka
+audit my deepstream-test5 config for nvmultiurisrcbin + REST stream add
+review this streammux / source setup before I run it
+```
+
+See the [complete static-audit prompt](../example_prompts/deepstream_audit_config.md).
+
+> **Tip:** Complements `deepstream-generate-config` — generate creates configs; audit validates them. Prefer fixing the generator/spec and re-rendering over hand-editing generated output in a loop.
 
 ---
 
@@ -659,6 +825,7 @@ The `example_prompts/` directory contains pre-built prompts for generating DeepS
 | `msgbroker_nats.md` | Publish detection results to NATS via a custom NATS protocol adapter (JetStream, auth, TLS) |
 | `ds_profiling_efficient_pipeline.md` | Build and profile an efficient multi-stream RTSP pipeline; report bottleneck and max sustainable streams (pairs with `deepstream-profile-pipeline`) |
 | `import_vision_model_detection_pipeline.md` | Interactive detection-model onboarding & benchmark prompt (pairs with `deepstream-import-vision-model`) |
+| `tiled_inference_accuracy.md` | Compare full-frame and tiled detection throughput and detection-count proxies |
 | `single_view_3d_tracker.md` | The single-view 3D tracking. Given the camera matrix and human model of a static camera, estimates and keeps tracking of object states in the 3D physical world |
 
 ---

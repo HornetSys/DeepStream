@@ -79,18 +79,15 @@ For more custom 3D preprocessing details, see source files in custom_sequence_pr
 To compile application deepstream-3d-action-recognition and custom lib
 custom_sequence_preprocess/libnvds_custom_sequence_preprocess.so:
 
-  $ Set CUDA_VER in the MakeFile as per platform.
-     For x86, Jetson & SBSA, CUDA_VER=13.2
+  $ export CUDA_VER=13.2 # x86, Jetson and SBSA. For IGX Thor, CUDA_VER=13.0
 
   $ cd custom_sequence_preprocess
-  $ sudo make install (sudo not required in case of docker containers)
+  $ make && sudo -E make install
 
   $ cd ..
-  $ sudo make install  (sudo not required in case of docker containers)
+  $ make && sudo -E make install
 
-
-NOTE: To compile the sources, run make with "sudo" or root permission.
-
+Skip sudo when already root (for example inside a container).
 
 ===============================================================================
 4. Usage:

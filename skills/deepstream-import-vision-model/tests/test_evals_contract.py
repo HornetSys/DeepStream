@@ -39,8 +39,8 @@ ANTI_NEGATION_CORPUS = [
     "This is out of scope, so I will not build a TensorRT engine or start a DeepStream pipeline.",
     "Local path detected - skipping huggingface_hub download entirely.",
     "The model is already on disk, so hf_hub_download is not needed.",
-    "Multiple variants found; I automatically choose model_fp16.onnx without prompting.",
-    "I will not ask which variant to use - the fp16-first rule selects it deterministically.",
+    "Multiple variants found; the approved fp16 preference selects model_fp16.onnx.",
+    "The fp16-first policy resolves the artifact under the confirmed model choice.",
     "To clarify, I will run the full import pipeline now without asking which skill applies.",
     "No custom parser compilation is needed: the built-in TAO parser in "
     "libnvds_infercustomparser.so is reused, so no g++ or cmake invocation is required.",
@@ -153,13 +153,24 @@ class TestBehaviorGrading(unittest.TestCase):
         negatives = [c for c in self.cases if c["should_trigger"] is False]
         self.assertGreaterEqual(len(negatives), 3, "too few anti-trigger cases")
 
-    def test_most_prompts_do_not_name_the_skill(self):
+    def test_report_intent_matches_activation_intent(self):
+        """The current report generator counts normalized expected_skill values."""
+        self.assertEqual(len(self.cases), 19)
+        skill_name = SKILL_ROOT.name
+        for case in self.cases:
+            with self.subTest(case=case["id"]):
+                normalized_skill = case.get("expected_skill", skill_name)
+                self.assertEqual(normalized_skill is not None, case["should_trigger"])
+        self.assertEqual(sum(c.get("expected_skill", skill_name) is not None for c in self.cases), 13)
+        self.assertEqual(sum(c.get("expected_skill", skill_name) is None for c in self.cases), 6)
+
+    def test_discoverability_prompts_do_not_name_the_skill(self):
         """Discoverability must be measured, not assumed (PROMPT_NAMES_SKILL)."""
         named = [c for c in self.cases if SKILL_ROOT.name in c["prompt"]]
-        self.assertLess(
-            len(named),
-            len(self.cases) / 2,
-            "over half the prompts name the skill outright, so discoverability is untested",
+        self.assertEqual(
+            named,
+            [],
+            "eval prompts must describe user intent without naming the skill",
         )
 
 
@@ -222,6 +233,17 @@ class TestCredentialGuard(unittest.TestCase):
 
     def test_the_suite_has_credential_guards(self):
         self.assertTrue(self.patterns)
+
+    def test_every_case_has_one_credential_guard(self):
+        for case in self.cases:
+            guards = [
+                assertion
+                for assertion in case["assertions"]
+                if assertion["type"] == "not_contains_pattern"
+                and CREDENTIAL_ASSERTION_MARKER in assertion["text"].lower()
+            ]
+            with self.subTest(case=case["id"]):
+                self.assertEqual(len(guards), 1)
 
     def test_all_credential_guards_are_identical(self):
         self.assertEqual(

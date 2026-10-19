@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2024-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -33,6 +33,17 @@ def load_json(path):
     with open(path) as file:
         data = json.load(file)
     return data
+
+
+def safe_join(base_dir, *paths):
+    """Join path components under base_dir and reject the result if it
+    would escape base_dir (e.g. via '..' segments coming from untrusted
+    JSON input), preventing path traversal."""
+    base_dir = os.path.realpath(base_dir)
+    full_path = os.path.realpath(os.path.join(base_dir, *paths))
+    if os.path.commonpath([base_dir, full_path]) != base_dir:
+        raise ValueError(f"Unsafe path detected outside of {base_dir}: {full_path}")
+    return full_path
 
 
 def convert_to_homogeneous(matrix):
@@ -163,10 +174,10 @@ if __name__ == "__main__":
                 lidar_to_camera_path = item.get("calib_virtuallidar_to_camera_path")
 
                 camera_intrinsic = load_json(
-                    os.path.join(infrastructure_side_data_path, camera_intrinsic_path)
+                    safe_join(infrastructure_side_data_path, camera_intrinsic_path)
                 )
                 lidar_to_camera = load_json(
-                    os.path.join(infrastructure_side_data_path, lidar_to_camera_path)
+                    safe_join(infrastructure_side_data_path, lidar_to_camera_path)
                 )
 
                 camera_intrinsic_matrix = convert_to_homogeneous(
@@ -207,8 +218,8 @@ if __name__ == "__main__":
             if dump_info[sequence_id] == 200:
                 continue
 
-            img_path = os.path.join(infrastructure_side_data_path, item["image_path"])
-            lidar_path = os.path.join(
+            img_path = safe_join(infrastructure_side_data_path, item["image_path"])
+            lidar_path = safe_join(
                 infrastructure_side_data_path, item["pointcloud_path"]
             )
 
@@ -232,9 +243,13 @@ if __name__ == "__main__":
 
     # 1.1 To demonstrate the case with batch size of 4
     # copy three more copies of the dataset.
-    shutil.copytree(base_path, os.path.join(dump_path, str(1)))
-    shutil.copytree(base_path, os.path.join(dump_path, str(2)))
-    shutil.copytree(base_path, os.path.join(dump_path, str(3)))
+    def copytree_replace(src, dst):
+        if os.path.isdir(dst):
+            shutil.rmtree(dst)
+        shutil.copytree(src, dst)
+    copytree_replace(base_path, os.path.join(dump_path, str(1)))
+    copytree_replace(base_path, os.path.join(dump_path, str(2)))
+    copytree_replace(base_path, os.path.join(dump_path, str(3)))
 
     # Image size (1920,1080)  -> (1536, 864)
     img_aug_matrix = np.array(

@@ -14,8 +14,17 @@
 # limitations under the License.
 
 CUDA_VER?=
+# Require CUDA_VER for every goal except a clean-only invocation.
+# A bare `make` has empty MAKECMDGOALS and still checks.
+ifneq ($(filter-out clean,$(MAKECMDGOALS)),)
+  _DS_NEED_CUDA_VER := 1
+else ifeq ($(MAKECMDGOALS),)
+  _DS_NEED_CUDA_VER := 1
+endif
+ifeq ($(_DS_NEED_CUDA_VER),1)
 ifeq ($(CUDA_VER),)
   $(error "CUDA_VER is not set")
+endif
 endif
 
 CXX=g++
@@ -24,7 +33,7 @@ APP:= deepstream-transfer-learning-app
 
 TARGET_DEVICE = $(shell gcc -dumpmachine | cut -f1 -d -)
 
-NVDS_VERSION:=9.1
+NVDS_VERSION:=9.2
 
 LIB_INSTALL_DIR?=/opt/nvidia/deepstream/deepstream-$(NVDS_VERSION)/lib/
 APP_INSTALL_DIR?=/opt/nvidia/deepstream/deepstream-$(NVDS_VERSION)/bin/
@@ -38,6 +47,7 @@ SRCS:= deepstream_transfer_learning_app_main.cpp image_meta_consumer.cpp image_m
 SRCS+= ../deepstream-app/deepstream_app.c ../deepstream-app/deepstream_app_config_parser.c \
        ../../../../src/utils/nvds_msgapi/common_src/nvds_utils.cpp
 SRCS+= $(wildcard ../../common/src/*.c)
+SRCS+= ../../common/src/frame_dump.cpp
 
 INCS:= $(wildcard *.h)
 
@@ -45,7 +55,7 @@ PKGS:= gstreamer-1.0 gstreamer-video-1.0 x11 json-glib-1.0
 
 OBJS:= $(patsubst %.c,%.o, $(patsubst %.cpp,%.o, $(SRCS)))
 
-CFLAGS+= -I../../common/includes \
+CFLAGS+= -I../../common/includes -I../../../gst-utils/gstnvdscustomhelper \
 		 -I../../../../includes \
 		 -I../deepstream-app/ -DDS_VERSION_MINOR=0 -DDS_VERSION_MAJOR=5 \
 		 -I /usr/local/cuda-$(CUDA_VER)/include
@@ -76,5 +86,4 @@ install: $(APP)
 
 clean:
 	rm -rf $(OBJS) $(APP)
-
 

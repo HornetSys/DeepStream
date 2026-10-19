@@ -1,6 +1,6 @@
 #!/bin/sh
 ################################################################################
-# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,26 +20,28 @@
 
 set -e
 
-echo "==================================================================="
+SEPARATOR="==================================================================="
+
+echo "$SEPARATOR"
 echo "begin download models for Mask2Former "
-echo "==================================================================="
+echo "$SEPARATOR"
 mkdir -p models/mask2former
 cd ./models/mask2former
 wget --content-disposition 'https://api.ngc.nvidia.com/v2/models/org/nvidia/team/tao/mask2former/mask2former_swint_deployable_v1.0/files?redirect=true&path=mask2former_swint.onnx' \
 -O mask2former.onnx
 
-echo "==================================================================="
+echo "$SEPARATOR"
 echo "begin downloading CitySemSegFormer model "
-echo "==================================================================="
+echo "$SEPARATOR"
 cd -
 mkdir -p ./models/citysemsegformer
 cd ./models/citysemsegformer
 wget --content-disposition 'https://api.ngc.nvidia.com/v2/models/org/nvidia/team/tao/citysemsegformer/deployable_onnx_v1.0/files?redirect=true&path=citysemsegformer.onnx' -O citysemsegformer.onnx && \
 wget --content-disposition 'https://api.ngc.nvidia.com/v2/models/org/nvidia/team/tao/citysemsegformer/deployable_onnx_v1.0/files?redirect=true&path=labels.txt' -O labels.txt
 
-echo "==================================================================="
+echo "$SEPARATOR"
 echo "begin downloading PeopleNet Transformer model "
-echo "==================================================================="
+echo "$SEPARATOR"
 cd -
 mkdir -p ./models/peoplenet_transformer
 cd ./models/peoplenet_transformer
@@ -47,9 +49,9 @@ wget --content-disposition 'https://api.ngc.nvidia.com/v2/models/org/nvidia/team
  -O resnet50_peoplenet_transformer_op17.onnx
 wget https://api.ngc.nvidia.com/v2/models/nvidia/tao/peoplenet_transformer/versions/deployable_v1.0/files/labels.txt -O labels.txt
 
-echo "==================================================================="
+echo "$SEPARATOR"
 echo "begin downloading Re-Identification model "
-echo "==================================================================="
+echo "$SEPARATOR"
 cd -
 mkdir -p ./models/reidentificationnet
 cd ./models/reidentificationnet
@@ -64,18 +66,18 @@ cd ./models/retail_object_detection_binary_dino
 wget 'https://api.ngc.nvidia.com/v2/models/nvidia/tao/retail_object_detection/versions/deployable_binary_v2.0/files/class_map.txt' -O class_map.txt
 wget --content-disposition 'https://api.ngc.nvidia.com/v2/models/org/nvidia/team/tao/retail_object_detection/deployable_retail_object_detection_binary_v2.2.2.3/files?redirect=true&path=retail_object_detection_binary_v2.2.2.3.onnx'  -O retail_object_detection_dino_binary.onnx
 
-echo "==================================================================="
+echo "$SEPARATOR"
 echo "begin downloading Retail Object Recognition model "
-echo "==================================================================="
+echo "$SEPARATOR"
 cd -
 mkdir -p ./models/retail_object_recognition
 cd ./models/retail_object_recognition
 wget --content-disposition 'https://api.ngc.nvidia.com/v2/models/org/nvidia/team/tao/retail_object_recognition/deployable_v2.0/files?redirect=true&path=FANDualHead_Base_NVIN_op16.onnx' -O retail_object_recognition.onnx
 wget https://api.ngc.nvidia.com/v2/models/nvidia/tao/retail_object_recognition/versions/deployable_v2.0/files/recognitionv2_name_list.txt -O retail_object_recognition_labels.txt
 
-echo "==================================================================="
+echo "$SEPARATOR"
 echo "begin downloading PeopleNet model "
-echo "==================================================================="
+echo "$SEPARATOR"
 cd -
 mkdir -p ./models/peoplenet
 cd ./models/peoplenet
@@ -83,25 +85,25 @@ wget --content-disposition 'https://api.ngc.nvidia.com/v2/models/org/nvidia/team
 wget --content-disposition 'https://api.ngc.nvidia.com/v2/models/org/nvidia/team/tao/peoplenet/pruned_quantized_decrypted_v2.3.4/files?redirect=true&path=resnet34_peoplenet_int8.txt' -O resnet34_peoplenet_int8.txt
 wget --content-disposition 'https://api.ngc.nvidia.com/v2/models/org/nvidia/team/tao/peoplenet/pruned_quantized_decrypted_v2.3.4/files?redirect=true&path=labels.txt' -O labels.txt
 
-echo "==================================================================="
+echo "$SEPARATOR"
 echo "begin downloading BodyPose3DNet model "
-echo "==================================================================="
+echo "$SEPARATOR"
 cd -
 mkdir -p ./models/bodypose3dnet
 cd ./models/bodypose3dnet
 wget --content-disposition 'https://api.ngc.nvidia.com/v2/models/org/nvidia/team/tao/bodypose3dnet/deployable_accuracy_onnx_1.0/files?redirect=true&path=bodypose3dnet_accuracy.onnx' -O bodypose3dnet_accuracy.onnx
 
-echo "==================================================================="
+echo "$SEPARATOR"
 echo "begin downloading poseclassificationnet model "
-echo "==================================================================="
+echo "$SEPARATOR"
 cd -
 mkdir -p ./models/poseclassificationnet
 cd ./models/poseclassificationnet
 wget --content-disposition 'https://api.ngc.nvidia.com/v2/models/org/nvidia/team/tao/poseclassificationnet/deployable_onnx_v1.0/files?redirect=true&path=st-gcn_3dbp_nvidia.onnx' -O st-gcn_3dbp_nvidia.onnx
 
-echo "==================================================================="
+echo "$SEPARATOR"
 echo "begin downloading nvocdr model "
-echo "==================================================================="
+echo "$SEPARATOR"
 cd -
 mkdir -p ./models/nvocdr
 cd ./models/nvocdr
@@ -110,9 +112,9 @@ wget --content-disposition 'https://api.ngc.nvidia.com/v2/models/org/nvidia/team
 wget --content-disposition 'https://api.ngc.nvidia.com/v2/models/org/nvidia/team/tao/ocrnet/deployable_v2.1.1/files?redirect=true&path=ocrnet-vit-pcb.onnx' -O ocrnet.onnx
 wget --content-disposition 'https://api.ngc.nvidia.com/v2/models/org/nvidia/team/tao/ocrnet/deployable_v2.0/files?redirect=true&path=character_list' -O character_list
 
-echo "==================================================================="
+echo "$SEPARATOR"
 echo "begin downloading CAR Plate models "
-echo "==================================================================="
+echo "$SEPARATOR"
 cd -
 mkdir -p ./models/trafficcamnet
 cd ./models/trafficcamnet
@@ -143,14 +145,14 @@ cd ./models/LPR_ch
 wget --content-disposition 'https://api.ngc.nvidia.com/v2/models/org/nvidia/team/tao/lprnet/deployable_onnx_v1.1/files?redirect=true&path=ch_lprnet_baseline18_deployable.onnx' -O ch_lprnet_baseline18_deployable.onnx
 touch labels_ch.txt
 
-echo "==================================================================="
+echo "$SEPARATOR"
 echo "begin downloading tracker model "
-echo "==================================================================="
+echo "$SEPARATOR"
 mkdir -p /opt/nvidia/deepstream/deepstream/samples/models/Tracker
 cd /opt/nvidia/deepstream/deepstream/samples/models/Tracker
 wget https://api.ngc.nvidia.com/v2/models/nvidia/tao/reidentificationnet/versions/deployable_v1.0/files/resnet50_market1501.etlt
 # cp ./models/reidentificationnet/resnet50_market1501_aicity156.onnx /opt/nvidia/deepstream/deepstream/samples/models/Tracker
 
-echo "==================================================================="
+echo "$SEPARATOR"
 echo "Download models successfully "
-echo "==================================================================="
+echo "$SEPARATOR"

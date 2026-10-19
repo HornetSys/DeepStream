@@ -22,7 +22,8 @@ SKIP_IMAGE_PULL=${SKIP_IMAGE_PULL:-0}
 SKIP_JUPYTER_SETUP=${SKIP_JUPYTER_SETUP:-0}
 
 section() {
-  printf '\n=== %s ===\n' "$1"
+  local section_name="$1"
+  printf '\n=== %s ===\n' "$section_name"
 }
 
 die() {
@@ -31,7 +32,8 @@ die() {
 }
 
 require_command() {
-  command -v "$1" >/dev/null 2>&1 || die "$1 is required but was not found"
+  local cmd="$1"
+  command -v "$cmd" >/dev/null 2>&1 || die "$cmd is required but was not found"
 }
 
 install_host_prerequisites() {

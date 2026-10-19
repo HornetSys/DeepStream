@@ -31,22 +31,46 @@
 # Usage:
 #   sudo bash scripts/install_artifacts.sh
 #   sudo INSTALL_METHOD=tar bash scripts/install_artifacts.sh
-#   sudo NVDS_VERSION=9.1 bash scripts/install_artifacts.sh
+#   sudo NVDS_VERSION=9.2.0 bash scripts/install_artifacts.sh
 #   sudo PLATFORM=x86 bash scripts/install_artifacts.sh
 #
 # Environment:
 #   INSTALL_METHOD            deb (default) | tar
-#   NVDS_VERSION              DeepStream version (default: 9.1)
+#   NVDS_VERSION              MAJOR.MINOR.PATCH (default: 9.2.0); the install
+#                             tree uses MAJOR.MINOR only. GitHub Release
+#                             proprietary-libs / sample-data assets are always
+#                             fetched from the v9.2.0 release (hardcoded;
+#                             not derived from NVDS_VERSION).
 #   PLATFORM                  x86 | aarch64 | sbsa (auto-detected if unset)
 #   ARTIFACTS_DIR             Local artifacts directory (default: <repo>/artifacts)
 #   ARTIFACTS_STAGE_STATE_FILE Stage resume file (default: build/.stage-state.artifacts)
+#   RESUME=1                  Skip stages already marked DONE (used by build.sh --resume).
+#                             Default 0: always reinstall; stage state is reset first.
 #   PROPRIETARY_LIBS_URL      Override proprietary tarball URL (tar method download fallback)
 #   ARTIFACTS_LOCAL_ONLY=1    Require local artifacts; do not download proprietary libs
 
 set -e
 
+# GitHub Release *tag* the proprietary-libs / sample-data assets are attached to.
+# Hardcoded (not derived from NVDS_VERSION) — this is the release page's tag name,
+# which does not necessarily match the assets' own filename version (see
+# GITHUB_ASSET_VERSION below): new patch-release assets are uploaded onto the
+# existing tag rather than cutting a new tag each patch, so older branches whose
+# build.sh still points at this same tag keep resolving.
+GITHUB_RELEASE_TAG="9.2.0"
+
+# Version embedded in the release asset filenames themselves (deepstream-binaries-*,
+# deepstream-sample-data_*, …). Bump by hand once newer-patch assets are uploaded.
+GITHUB_ASSET_VERSION="9.2.0"
+
 INSTALL_METHOD=${INSTALL_METHOD:-deb}
-NVDS_VERSION=${NVDS_VERSION:-9.1}
+NVDS_VERSION=${NVDS_VERSION:-9.2.0}
+if [[ ! "$NVDS_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  echo "error: invalid NVDS_VERSION='$NVDS_VERSION' (expected MAJOR.MINOR.PATCH, e.g. 9.2.0)" >&2
+  exit 1
+fi
+NVDS_FULL_VERSION="$NVDS_VERSION"
+NVDS_VERSION="${NVDS_FULL_VERSION%.*}"
 INSTALL_ROOT=/opt/nvidia/deepstream/deepstream-${NVDS_VERSION}
 DEEPSTREAM_BASE=/opt/nvidia/deepstream
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
@@ -54,6 +78,7 @@ REPO_ROOT=$(cd "$SCRIPT_DIR/.." && pwd)
 ARTIFACTS_DIR="${ARTIFACTS_DIR:-$REPO_ROOT/artifacts}"
 STAGE_STATE_FILE="${ARTIFACTS_STAGE_STATE_FILE:-$REPO_ROOT/build/.stage-state.artifacts}"
 ARTIFACTS_LOCAL_ONLY=${ARTIFACTS_LOCAL_ONLY:-0}
+RESUME=${RESUME:-0}
 
 case "$INSTALL_METHOD" in
   deb|tar) ;;
@@ -82,13 +107,16 @@ if [[ -z "${PLATFORM:-}" ]]; then
 fi
 
 # Tarball names mirror the .deb names (minus the arch/_all suffix).
-PROPRIETARY_TAR_NAME="deepstream-binaries-${PLATFORM}_${NVDS_VERSION}.0.tar.gz"
-GITHUB_RELEASE_URL="https://github.com/NVIDIA/DeepStream/releases/download/v${NVDS_VERSION}.0/${PROPRIETARY_TAR_NAME}"
+PROPRIETARY_TAR_NAME="deepstream-binaries-${PLATFORM}_${GITHUB_ASSET_VERSION}.tar.gz"
+GITHUB_RELEASE_URL="https://github.com/NVIDIA/DeepStream/releases/download/v${GITHUB_RELEASE_TAG}/${PROPRIETARY_TAR_NAME}"
 
-# Debian package name globs (version/arch are baked in at build time).
-PROPRIETARY_DEB_GLOB="deepstream-binaries-${PLATFORM}_*.deb"
-SAMPLE_TAR_NAME="deepstream-sample-data_${NVDS_VERSION}.0.tar.gz"
-SAMPLE_DEB_GLOB="deepstream-sample-data_*.deb"
+# Debian package name globs for local files in ARTIFACTS_DIR. They are pinned to
+# GITHUB_ASSET_VERSION: an unpinned glob matches every release left behind in
+# artifacts/ by earlier builds and the first (alphabetically oldest) match wins,
+# which installed the previous release's binaries instead of this one's.
+PROPRIETARY_DEB_GLOB="deepstream-binaries-${PLATFORM}_${GITHUB_ASSET_VERSION}_*.deb"
+SAMPLE_TAR_NAME="deepstream-sample-data_${GITHUB_ASSET_VERSION}.tar.gz"
+SAMPLE_DEB_GLOB="deepstream-sample-data_${GITHUB_ASSET_VERSION}.deb"
 
 # Exact deb/tar names and GitHub Release download URLs for each artifact.
 case "$PLATFORM" in
@@ -96,15 +124,17 @@ case "$PLATFORM" in
   aarch64) DEB_ARCH=arm64 ;;
   *)       DEB_ARCH=unknown ;;
 esac
-PROPRIETARY_DEB_NAME="deepstream-binaries-${PLATFORM}_${NVDS_VERSION}.0_${DEB_ARCH}.deb"
-SAMPLE_DEB_NAME="deepstream-sample-data_${NVDS_VERSION}.0.deb"
-GITHUB_RELEASE_BASE="https://github.com/NVIDIA/DeepStream/releases/download/v${NVDS_VERSION}.0"
+PROPRIETARY_DEB_NAME="deepstream-binaries-${PLATFORM}_${GITHUB_ASSET_VERSION}_${DEB_ARCH}.deb"
+SAMPLE_DEB_NAME="deepstream-sample-data_${GITHUB_ASSET_VERSION}.deb"
+GITHUB_RELEASE_BASE="https://github.com/NVIDIA/DeepStream/releases/download/v${GITHUB_RELEASE_TAG}"
 GITHUB_RELEASE_DEB_URL="${GITHUB_RELEASE_BASE}/${PROPRIETARY_DEB_NAME}"
 GITHUB_RELEASE_SAMPLE_DEB_URL="${GITHUB_RELEASE_BASE}/${SAMPLE_DEB_NAME}"
 GITHUB_RELEASE_SAMPLE_TAR_URL="${GITHUB_RELEASE_BASE}/${SAMPLE_TAR_NAME}"
 
 stage_is_done() {
   local stage=$1
+  # Manual / non-resume runs always execute; skip only when RESUME=1 (build.sh --resume).
+  [[ "$RESUME" -eq 1 ]] || return 1
   [[ -f "$STAGE_STATE_FILE" ]] && grep -qx "DONE ${stage}" "$STAGE_STATE_FILE"
 }
 
@@ -357,6 +387,13 @@ echo "    Platform    : $PLATFORM"
 echo "    Install root: $INSTALL_ROOT"
 echo "    Artifacts   : $ARTIFACTS_DIR"
 echo "    Stage state : $STAGE_STATE_FILE"
+echo "    Resume      : $RESUME"
+
+# Standalone / non-resume runs always reinstall; reset stage markers first.
+if [[ "$RESUME" -eq 0 ]]; then
+  mkdir -p "$(dirname "$STAGE_STATE_FILE")"
+  : >"$STAGE_STATE_FILE"
+fi
 
 install_setup_stage
 install_proprietary_stage

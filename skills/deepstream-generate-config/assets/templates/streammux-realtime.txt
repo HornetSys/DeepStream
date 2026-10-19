@@ -1,0 +1,28 @@
+# Realtime / latency streammux block.
+# batched-push-timeout=33333 (~30fps cadence); live-source=1.
+# Pre-fills the keys that the latency profile insists on.
+
+[streammux]
+gpu-id=0
+live-source=1
+batch-size=1
+batched-push-timeout=33333
+width=1920
+height=1080
+enable-padding=0
+nvbuf-memory-type=0
+drop-pipeline-eos=1
+cache-buffer=0
+sort-batch=0
+align-first-buffer=0
+attach-sys-ts-as-ntp=1
+buffer-pool-size=4
+
+[tiled-display]
+enable=0
+rows=1
+columns=1
+width=1280
+height=720
+gpu-id=0
+nvbuf-memory-type=0

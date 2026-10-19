@@ -1,3 +1,8 @@
+<!--
+SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES.
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # deepstream-import-vision-model tests
 
 Unit / validation tests for the hardened scripts in this skill. These run
@@ -14,7 +19,7 @@ package install required.
 | `TestNGCScripts` | `scripts/model/ngc-list-files.sh`, `ngc-download.sh` | NGC arg validation; `DEST_DIR` refuses `""`, `/`, path-traversal |
 | `TestKittiDumpUsage` | `scripts/deepstream/ds-kitti-dump.sh` | Usage message printed when required args missing |
 | `TestEmbedImages` | `scripts/report/md-to-html-pdf.py` | Local images inlined as `data:` URIs; remote / absolute / traversal paths left alone (proves `--enable-local-file-access` is safe to drop) |
-| `TestPowerShellInstaller` | `install.ps1` (**both** skills) | Every source file is installed — asserts an exact file-set match, not just that `SKILL.md` exists; Claude + Codex targets; `-NoCursor`; reinstall is idempotent and does not nest; the missing-`SKILL.md` guard throws |
+| `TestPowerShellInstaller` | Vision skill `install.ps1` | Exact installed file-set match, Claude/Codex targets, `-NoCursor`, safe reinstall, missing entrypoint guard |
 
 ### Note on `TestPowerShellInstaller`
 
@@ -38,16 +43,16 @@ fidelity.
 
 ## Run
 
-From the skill root:
+From the repository root:
 
 ```bash
-python3 -m unittest discover -s tests -v
+python3 -m unittest discover -s skills/deepstream-import-vision-model/tests -v
 ```
 
-Or a single class:
+Or a single test file:
 
 ```bash
-python3 -m unittest tests.test_hardened_scripts.TestInstallScript -v
+python3 -m unittest discover -s skills/deepstream-import-vision-model/tests -p test_hardened_scripts.py -v
 ```
 
 ## Adding tests

@@ -1,0 +1,72 @@
+# Quickstart / default spec.
+#
+# Designed to "just run" against a stock DeepStream install on a dGPU box.
+# Pipeline: 4 copies of the bundled 1080p sample mp4 -> trafficcamnet PGIE
+# -> NvDCF tracker -> EglSink display tiled 2x2 with OSD boxes.
+#
+# Profile is `display` so a totally new user gets a visible window proving
+# the install works. Switch profile to `perf` or `latency` once you're
+# comfortable.
+#
+# Render with (default: writable path in cwd):
+#   python3 scripts/render.py --quickstart --out ./quickstart_generated.txt
+#   deepstream-app -c ./quickstart_generated.txt
+#
+# Optional: stock samples dir under /opt/nvidia/deepstream/... only if the user
+# explicitly confirmed a root-owned destination.
+#
+# Or render with explicit --spec to customise:
+#   cp assets/templates/quickstart_spec.yaml ./my_spec.yaml
+#   # edit my_spec.yaml ...
+#   python3 scripts/render.py --spec ./my_spec.yaml
+
+deployment:
+  app: classic
+  format: txt
+  platform: dgpu
+  gpu_id: 0
+  ds_root: /opt/nvidia/deepstream/deepstream
+  # Agents should pass --out ./quickstart_generated.txt (or similar). The path
+  # below is the optional stock-samples convention only when the user confirmed
+  # writing under /opt/nvidia/deepstream/...
+  output_path: ./quickstart_generated.txt
+
+profile: display
+
+sources:
+  kind: multi_uri
+  uris:
+    - file://${DS_ROOT}/samples/streams/sample_1080p_h264.mp4
+  num_sources: 4
+  live: false
+
+streammux:
+  batch_size: auto
+  batched_push_timeout: auto
+  width: 1920
+  height: 1080
+
+primary_gie:
+  enable: true
+  preset: trafficcamnet
+  interval: 0
+
+tracker:
+  enable: true
+  preset: NvDCF_perf
+
+secondary_gies: []
+
+osd:
+  enable: true
+
+tiled_display:
+  enable: auto
+  rows: auto
+  columns: auto
+
+sinks:
+  - type: egl
+
+tests:
+  file_loop: 0

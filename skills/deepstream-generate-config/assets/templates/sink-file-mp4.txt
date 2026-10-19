@@ -1,0 +1,16 @@
+# File sink: encode + mux to mp4 / mkv on disk.
+# container: 1=mp4, 2=mkv
+# codec: 1=h264, 2=h265, 3=mpeg4 (sw only)
+# enc-type: 0=HW, 1=SW
+
+[sink0]
+enable=1
+type=3
+sync=0
+source-id=0
+container=1
+codec=1
+enc-type=0
+bitrate=4000000
+profile=0
+output-file=out.mp4

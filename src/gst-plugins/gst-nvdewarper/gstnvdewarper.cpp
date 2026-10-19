@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2019-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -1434,4 +1434,4 @@ GST_PLUGIN_DEFINE (GST_VERSION_MAJOR,
     GST_VERSION_MINOR,
     nvdsgst_dewarper,
     PACKAGE_DESCRIPTION,
-    nvdewarper_init, "9.1", PACKAGE_LICENSE, PACKAGE_NAME, PACKAGE_URL)
+    nvdewarper_init, "9.2", PACKAGE_LICENSE, PACKAGE_NAME, PACKAGE_URL)

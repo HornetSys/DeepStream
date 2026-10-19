@@ -1,6 +1,6 @@
 #!/bin/sh
 ################################################################################
-# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2021-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,10 +19,12 @@
 # Check following part for how to download the TAO models:
 # https://docs.nvidia.com/tao/tao-toolkit/text/ds_tao/deepstream_tao_integration.html
 
-echo "==================================================================="
+SEPARATOR="==================================================================="
+
+echo "$SEPARATOR"
 echo "begin download models for vehiclemakenet / vehicletypenet"
 echo " / trafficcamnet"
-echo "==================================================================="
+echo "$SEPARATOR"
 mkdir -p ../../models/tao_pretrained_models/vehiclemakenet && \
 wget --content-disposition 'https://api.ngc.nvidia.com/v2/models/org/nvidia/team/tao/vehiclemakenet/pruned_onnx_v1.1.0/files?redirect=true&path=resnet18_pruned.onnx' \
 -O ../../models/tao_pretrained_models/vehiclemakenet/resnet18_pruned.onnx
@@ -45,9 +47,9 @@ wget --content-disposition 'https://api.ngc.nvidia.com/v2/models/org/nvidia/team
 wget --content-disposition 'https://api.ngc.nvidia.com/v2/models/org/nvidia/team/tao/trafficcamnet/pruned_onnx_v1.0.4/files?redirect=true&path=resnet18_trafficcamnet_pruned_int8.txt' \
 -O ../../models/tao_pretrained_models/trafficcamnet/resnet18_trafficcamnet_pruned_int8.txt
 
-echo "==================================================================="
+echo "$SEPARATOR"
 echo "begin download models for peopleNet "
-echo "==================================================================="
+echo "$SEPARATOR"
 mkdir -p ../../models/tao_pretrained_models/peopleNet/
 wget --content-disposition 'https://api.ngc.nvidia.com/v2/models/org/nvidia/team/tao/peoplenet/pruned_quantized_decrypted_v2.3.4/files?redirect=true&path=labels.txt' \
 -O ../../models/tao_pretrained_models/peopleNet/labels.txt
@@ -56,13 +58,13 @@ wget --content-disposition 'https://api.ngc.nvidia.com/v2/models/org/nvidia/team
 wget --content-disposition 'https://api.ngc.nvidia.com/v2/models/org/nvidia/team/tao/peoplenet/pruned_quantized_decrypted_v2.3.4/files?redirect=true&path=resnet34_peoplenet_int8.txt' \
 -O ../../models/tao_pretrained_models/peopleNet/resnet34_peoplenet_int8.txt
 
-echo "==================================================================="
+echo "$SEPARATOR"
 echo "begin download models for peoplenet_transformer_v2 "
-echo "==================================================================="
+echo "$SEPARATOR"
 mkdir -p ../../models/tao_pretrained_models/peoplenet_transformer_v2/
 wget https://api.ngc.nvidia.com/v2/models/nvidia/tao/peoplenet_transformer/versions/deployable_v1.0/files/labels.txt -O ../../models/tao_pretrained_models/peoplenet_transformer_v2/labels.txt
 wget --content-disposition 'https://api.ngc.nvidia.com/v2/models/org/nvidia/team/tao/peoplenet_transformer_v2/deployable_v1.0/files?redirect=true&path=dino_fan_small_astro_delta.onnx' -O ../../models/tao_pretrained_models/peoplenet_transformer_v2/dino_fan_small_astro_delta.onnx
 
-echo "==================================================================="
+echo "$SEPARATOR"
 echo "Download models successfully "
-echo "==================================================================="
+echo "$SEPARATOR"

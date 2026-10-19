@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2018-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * SPDX-License-Identifier: Apache-2.0
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,7 +19,7 @@
 #define __NVGSTDS_APP_VERSION_H__
 
 #define NVDS_APP_VERSION_MAJOR 9
-#define NVDS_APP_VERSION_MINOR 1
+#define NVDS_APP_VERSION_MINOR 2
 #define NVDS_APP_VERSION_MICRO 0
 
 #endif

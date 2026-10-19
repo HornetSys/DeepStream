@@ -1,0 +1,14 @@
+# Per-source URI/file template. render.py duplicates this section per source
+# (or sets num-sources for MultiURI replication).
+#
+# Source type values: 1=CameraV4L2 2=URI 3=MultiURI 4=RTSP 5=CSI
+# - type=2 is one URI per source group.
+# - type=3 (MultiURI) replicates the same URI num-sources times.
+
+[source0]
+enable=1
+type=3
+uri=file:///opt/nvidia/deepstream/deepstream/samples/streams/sample_1080p_h264.mp4
+num-sources=1
+gpu-id=0
+cudadec-memtype=0

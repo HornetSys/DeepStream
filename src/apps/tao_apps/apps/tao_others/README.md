@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -68,6 +68,8 @@ Please enable Triton or Triton gRPC inferencing with the app YAML configurations
     sudo apt install git-lfs
     git lfs install --skip-repo
     git clone https://github.com/NVIDIA/DeepStream.git
+    cd DeepStream
+    git submodule update --init --recursive
 ```
 2. Prepare Models and TensorRT engine
 
@@ -75,7 +77,8 @@ There are pre-trained TAO models available in [NGC](https://ngc.nvidia.com/catal
 Please run the following script to download pre-trained models.
 
 ```
-    cd DeepStream/src/apps/tao_apps
+    cd src/apps/tao_apps
+    cp deepstream-nvocdr-app/Makefile.nvocdr deepstream-nvocdr-app/nvocdr/deepstream/Makefile
     chmod 755 download_models.sh
     ./download_models.sh
 ```
@@ -90,19 +93,19 @@ Build the application
 Start to run the nvocdr application
 Please prepare the nvocdr libs first, you can refer to [NVOCDR_README](./deepstream-nvocdr-app/README.md)
 ```
-    cd DeepStream-nvocdr-app
+    cd deepstream-nvocdr-app
     ./deepstream-nvocdr-app <app YAML config file>
 ```
 
 Start to run the pose classification application
 ```
-    cd DeepStream-pose-classification
+    cd deepstream-pose-classification
     ./deepstream-pose-classification-app <app YAML config file>
 ```
 
 Start to run the mdx perception application
 ```
-    cd DeepStream-mdx-perception-app
+    cd deepstream-mdx-perception-app
     ./deepstream-mdx-perception-app -c <txt config file>
 OR
     ./deepstream-mdx-perception-app <app YAML config file>

@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+instances:
+  - url: https://nvidia-deepstream.docs.buildwithfern.com/deepstream
+    custom-domain: docs.nvidia.com/deepstream
+    multi-source: true
+
+
+title: DeepStream
+
+global-theme: nvidia
+
+logo:
+  right-text: DeepStream
+
+navbar-links:
+  - type: github
+    value: https://github.com/NVIDIA/DeepStream
+
+experimental:
+  mdx-components:
+    - ./components
+
+versions:
+  - display-name: "9.2"
+    path: versions/9.2.yml
+    slug: "9.2"
+  - display-name: "Archives"
+    path: versions/archives.yml
+    slug: "archives"

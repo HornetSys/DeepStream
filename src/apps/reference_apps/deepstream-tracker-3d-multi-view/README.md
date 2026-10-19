@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,12 +21,12 @@ limitations under the License.
 
 ## Introduction
 
-This repository provides sample applications for Multi-View 3D Tracking (MV3DT) with DeepStream 9.1 SDK. MV3DT is a distributed, real-time multi-view multi-target 3D tracking framework built for large-scale, calibrated camera networks. It is designed to deliver robust object tracking and identity consistency across complex environments, leveraging camera calibration data as a prerequisite for accurate geometric reasoning. The sample applications support three detector models: [PeopleNet Transformer](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/peoplenet_transformer_v2?version=deployable_v1.0), a general-purpose people detection transformer model, [PeopleNet v2.6.3](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/peoplenet), a high-performance people detection model based on DetectNet_v2, and [RT-DETR 2D Warehouse](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/rtdetr_2d_warehouse?version=deployable_efficientvit_l2_v1.0), a real-time DETR model optimized for warehouse environments with multiple object classes.
+This repository provides sample applications for Multi-View 3D Tracking (MV3DT) with DeepStream 9.2 SDK. MV3DT is a distributed, real-time multi-view multi-target 3D tracking framework built for large-scale, calibrated camera networks. It is designed to deliver robust object tracking and identity consistency across complex environments, leveraging camera calibration data as a prerequisite for accurate geometric reasoning. The sample applications support three detector models: [PeopleNet Transformer](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/peoplenet_transformer_v2?version=deployable_v1.0), a general-purpose people detection transformer model, [PeopleNet v2.6.3](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/peoplenet), a high-performance people detection model based on DetectNet_v2, and [RT-DETR 2D Warehouse](https://catalog.ngc.nvidia.com/orgs/nvidia/teams/tao/models/rtdetr_2d_warehouse?version=deployable_efficientvit_l2_v1.0), a real-time DETR model optimized for warehouse environments with multiple object classes.
 
 This repository aims to demonstrate MV3DT through live visualization of 3D tracking results, and is structured as follows:
 - **[Prerequisites](#prerequisites)** - System requirements and setup instructions
 - **[Option 1: Sample applications using DeepStream Container](#option-1-running-mv3dt-using-deepstream-container)** - The DeepStream Container has the DeepStream SDK pre-installed. The samples automate MV3DT config generation and launch the DeepStream app inside the container.
-- **[Option 2: Sample applications using Inference Builder](#option-2-running-mv3dt-using-inference-builder)** - Inference Builder is an open-source tool that automates inference pipeline generation across AI frameworks and packages them as deployable containers. The samples in this repo are solely intended to demonstrate building and running MV3DT using Inference Builder. For additional capabilities, see the [Inference Builder README](https://github.com/NVIDIA-AI-IOT/inference_builder/tree/3f0c09f2e3da076cbbb75e17bdebd565b03d1a18).
+- **[Option 2: Sample applications using Inference Builder](#option-2-running-mv3dt-using-inference-builder)** - Inference Builder automates inference pipeline generation across AI frameworks and packages them as deployable containers. These samples demonstrate building and running MV3DT with the [in-tree Inference Builder](../../../../tools/inference_builder/README.md).
 - **[Output Visualization Explanations](#output-visualization)** - Expected visualization from DeepStream On-Screen Display (OSD) and real-time Bird's Eye View (BEV) app
 - **[Receiving 3D Tracking Metadata from Kafka](#receiving-3d-tracking-metadata-from-kafka)** - How to consume MV3DT tracking metadata from Kafka broker for downstream applications
 - **[Customization](#customization)** - How to use MV3DT on custom datasets, and how to convert existing 2D DeepStream tracking pipelines to MV3DT pipeline
@@ -46,7 +46,7 @@ The sample applications in this repository require Ubuntu 24.04 and NVIDIA drive
 
 #### Setup
 
-1. Please check [DeepStream Container Prerequisites](https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_docker_containers.html#prerequisites) for DeepStream container setup.
+1. Please check [DeepStream Container Prerequisites](https://docs.nvidia.com/deepstream/9.2/text/DS_docker_containers#prerequisites) for DeepStream container setup.
 
 2. Git clone the current `deepstream_reference_apps` repository to the host machine and enter `deepstream-tracker-3d-multi-view` directory
     ```bash
@@ -54,8 +54,8 @@ The sample applications in this repository require Ubuntu 24.04 and NVIDIA drive
     sudo apt install git-lfs
     git lfs install
 
-    git clone https://github.com/NVIDIA/DeepStream.git
-    cd DeepStream/src/apps/reference_apps/deepstream-tracker-3d-multi-view
+    git clone https://github.com/NVIDIA/deepstream.git
+    cd deepstream/src/apps/reference_apps/deepstream-tracker-3d-multi-view
     git lfs pull  # In case repo is already cloned before installing git-lfs
     ```
 
@@ -76,20 +76,21 @@ The sample applications in this repository require Ubuntu 24.04 and NVIDIA drive
 
     **Environment Variables:**
     - `USE_INFERENCE_BUILDER` - Enable Inference Builder setup (default: false, DeepStream Container only)
-    - `BASE_DIR` - Base directory for Kafka and Inference Builder installations (default: `$HOME`)
-    - `DEEPSTREAM_IMAGE` - DeepStream Docker image (default: `nvcr.io/nvidia/deepstream:9.1-triton-multiarch` for x86 and Jetson platforms)
+    - `BASE_DIR` - Base directory for the Kafka installation (default: `$HOME`)
+    - `INFERENCE_BUILDER_DIR` - Inference Builder component path (default: `<deepstream-root>/tools/inference_builder`)
+    - `DEEPSTREAM_IMAGE` - DeepStream Docker image (default: `ghcr.io/nvidia/deepstream:9.2-triton-multiarch` for x86 and Jetson platforms)
 
-    * **Use case 1: If you want to use a different base directory** for Kafka and Inference Builder installations other than `$HOME`, you can set the `BASE_DIR` environment variable before running the script.
+    * **Use case 1: If you want to use a different base directory** for Kafka, set the `BASE_DIR` environment variable before running the script. Override `INFERENCE_BUILDER_DIR` only when testing a different checkout.
         ```bash
         export BASE_DIR=/path/to/your/preferred/base/directory
         # If you want to use Inference Builder (Option 2), uncomment the lines below
         # export USE_INFERENCE_BUILDER=true
-        # export INFERENCE_BUILDER_DIR="$BASE_DIR/inference_builder"
+        # export INFERENCE_BUILDER_DIR=/path/to/another/inference_builder
         ./scripts/setup_prerequisites.sh
         ```
     * **Use case 2: If you are on ARM SBSA platforms**, the DeepStream docker image will be different from the default one. Please set the `DEEPSTREAM_IMAGE` environment variable before running the script.
         ```bash
-        export DEEPSTREAM_IMAGE=nvcr.io/nvidia/deepstream:9.1-triton-arm-sbsa
+        export DEEPSTREAM_IMAGE=ghcr.io/nvidia/deepstream:9.2-triton-sbsa-dgx-spark
         # If you want to use Inference Builder (Option 2), uncomment the line below
         # export USE_INFERENCE_BUILDER=true
         ./scripts/setup_prerequisites.sh
@@ -143,7 +144,7 @@ Two separate windows will be launched. One named **Bird-Eye View of Multi-View 3
 - This window shows the DeepStream on-screen display (OSD) of 4 camera views in a grid. This window is directly from Deepstream pipeline, and will show as black window at the beginning.
 - To view a specific camera view in the DeepStream OSD window, left-click on the desired view. To return to the multi-camera grid view, simply right-click anywhere in the window.
 - **The DeepStreamTest5App will exit automatically. To quit the DeepStreamTest5App window early, select the window and press 'q'.** After you press 'q', the app will terminate within a few seconds, and finally you will see "App run successful" printed.
-- Note about window name: MV3DT is built upon DeepStreamTest5App with specific config files, which is why the window displays "DeepStreamTest5App" as its title. This base application provides essential IoT protocol support (Kafka and MQTT) required by MV3DT. Currently, the window name cannot be changed. For more details, see the [DeepStreamTest5App documentation](https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_ref_app_test5.html).
+- Note about window name: MV3DT is built upon DeepStreamTest5App with specific config files, which is why the window displays "DeepStreamTest5App" as its title. This base application provides essential IoT protocol support (Kafka and MQTT) required by MV3DT. Currently, the window name cannot be changed. For more details, see the [DeepStreamTest5App documentation](https://docs.nvidia.com/deepstream/9.2/text/DS_ref_app_test5).
 
 
 **Expected output during engine generation period from window overview/spread:**
@@ -193,8 +194,8 @@ Run the provided script to quickly start the 4-camera DeepStream Inference Build
 ```bash
 # sudo xhost + # give container access to display
 
-# If you changed BASE_DIR in the prerequisites setup, you need to export INFERENCE_BUILDER_DIR to the correct path
-# export INFERENCE_BUILDER_DIR=<path-to-inference-builder-repo>
+# The script uses tools/inference_builder by default. Override only for another checkout:
+# export INFERENCE_BUILDER_DIR=/path/to/another/inference_builder
 
 # chmod +x scripts/test_4cam_ib.sh
 ./scripts/test_4cam_ib.sh
@@ -238,8 +239,8 @@ For detailed window explanations and important notes, see the [4-camera DeepStre
 ```bash
 # sudo xhost + # give container access to display
 
-# If you changed BASE_DIR in the prerequisites setup, you need to export INFERENCE_BUILDER_DIR to the correct path
-# export INFERENCE_BUILDER_DIR=<path-to-inference-builder-repo>
+# The script uses tools/inference_builder by default. Override only for another checkout:
+# export INFERENCE_BUILDER_DIR=/path/to/another/inference_builder
 
 # chmod +x scripts/test_12cam_ib.sh
 ./scripts/test_12cam_ib.sh
@@ -360,7 +361,7 @@ This section provides customization options for the MV3DT pipeline. If you are n
    └── transforms.yml (optional, for BEV visualization)
    ```
 
-2. **Create camera calibration files** following the format of `datasets/mtmc_4cam/camInfo/Warehouse_Synthetic_Cam001.yml`. Replace the `projectionMatrix_3x4_w2p` values with your camera's projection matrix. For more details about these files, please refer to the [Single-View 3D Tracking](https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_plugin_gst-nvtracker.html#single-view-3d-tracking) and [The 3x4 Camera Projection Matrix](https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_plugin_gst-nvtracker.html#the-3x4-camera-projection-matrix) sections of the DeepStream documentation.
+2. **Create camera calibration files** following the format of `datasets/mtmc_4cam/camInfo/Warehouse_Synthetic_Cam001.yml`. Replace the `projectionMatrix_3x4_w2p` values with your camera's projection matrix. For more details about these files, please refer to the [Single-View 3D Tracking](https://docs.nvidia.com/deepstream/9.2/text/DS_plugin_gst-nvtracker#single-view-3d-tracking) and [The 3x4 Camera Projection Matrix](https://docs.nvidia.com/deepstream/9.2/text/DS_plugin_gst-nvtracker#the-3x4-camera-projection-matrix) sections of the DeepStream documentation.
 
 3. **Optional: BEV visualization setup** - Prepare a BEV map image and create a `transforms.yml` file specifying the projection matrix that maps world coordinates (in meters) to BEV image coordinates, following the sample format in `datasets/mtmc_4cam/transforms.yml`.
 
@@ -446,7 +447,7 @@ If you have an existing 2D detection and tracking pipeline using DeepStream, the
         -v /tmp/.X11-unix/:/tmp/.X11-unix \
         -e DISPLAY=$DISPLAY \
         -w /workspace/experiments \
-        nvcr.io/nvidia/deepstream:9.1-triton-multiarch \
+        ghcr.io/nvidia/deepstream:9.2-triton-multiarch \
         deepstream-test5-app -c config_deepstream.txt
     ```
 
@@ -482,7 +483,4 @@ For detailed usage and all available options, see the **[Auto-Configurator Docum
 
 For more details on python utility scripts including auto-configuration generators and visualization tools, see
 📁 **[Python Util Scripts Documentation](utils/README.md)**
-
-
-
 

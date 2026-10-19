@@ -1,0 +1,115 @@
+{
+    "skill_name": "deepstream-inspect-stack",
+    "evals": [
+        {
+            "id": "1",
+            "name": "blackwell-on-old-deepstream",
+            "prompt": "I have an RTX Pro 6000 Blackwell workstation, Ubuntu 22.04, DeepStream 7.0. nvinfer fails at startup with a cuInit error. What's wrong?",
+            "expected_output": "The agent uses deepstream-inspect-stack to diagnose Blackwell plus DeepStream 7.0 as a known incompatible stack. It returns the mandatory five sections, sets Risk to HIGH or BLOCKED, cites the matrix row showing Blackwell support starts with DeepStream 8.0, and recommends the current DeepStream 9.1 path with Ubuntu 24.04, Driver 595.58.03+, and nvcr.io/nvidia/deepstream:9.1-triton-multiarch.",
+            "files": [],
+            "assertions": [
+                "Returns HIGH or BLOCKED risk in the report header because Blackwell + DS 7.0 is known-incompatible",
+                "Names DeepStream 8.0 as the first Blackwell-supported DS version or DS 9.1 as the recommended current version",
+                "Recommends the NGC Blackwell container tag",
+                "Renders the Verify section as a copy-paste bash block, not as inline prose",
+                "Names the 595-series driver requirement for current Blackwell guidance",
+                "Uses the mandatory five diagnostic section headers in order",
+                "Marks the matrix-backed compatibility row with a provenance label",
+                "Does NOT generate pipeline code (this is a triage skill, not a builder)",
+                "Does NOT leak a secret-shaped credential, token, password, or API key"
+            ]
+        },
+        {
+            "id": "2",
+            "name": "thor-on-deepstream-6x",
+            "prompt": "I have a Jetson Thor module. I tried to install DeepStream 6.4 via dpkg and the install fails. Help.",
+            "expected_output": "The agent diagnoses Jetson Thor with DeepStream 6.4 as a blocked platform mismatch. It returns the mandatory five sections, sets Risk to BLOCKED, states that Thor requires a newer public DeepStream row, and recommends the current DeepStream 9.1 JetPack 7.2 path or another public Thor row if the user is pinned to an older release.",
+            "files": [],
+            "assertions": [
+                "Returns BLOCKED risk in the report header because Thor + DS 6.x is known-impossible",
+                "Names DS 8.0 as the first public Thor row or DS 9.1 as recommended",
+                "Recommends the DS 9.1 multi-arch tag or another public Thor row",
+                "Includes a Jetson-specific verify command",
+                "Uses the mandatory five diagnostic section headers in order",
+                "Marks the matrix-backed compatibility row with a provenance label",
+                "Does NOT generate pipeline code",
+                "Does NOT leak a secret-shaped credential, token, password, or API key"
+            ]
+        },
+        {
+            "id": "3",
+            "name": "venv-pyservicemaker-not-found",
+            "prompt": "I created a fresh python3 venv inside the official DeepStream 9.0 container. After activating it, from pyservicemaker import Pipeline raises ModuleNotFoundError: No module named 'pyservicemaker'. Is my DeepStream install broken?",
+            "expected_output": "The agent diagnoses the DeepStream 9.0 Python virtualenv binding gap, not a broken SDK install. It returns the mandatory five sections, sets Risk to LOW, explains that venvs do not inherit pyservicemaker automatically, and gives the bundled wheel plus pyyaml fix for the activated venv.",
+            "files": [],
+            "assertions": [
+                "Returns LOW risk in the report header because this is documented setup behavior, not a real incompat",
+                "Names the pyservicemaker wheel install path",
+                "Includes pyyaml in the install command (per deepstream-dev rule 14)",
+                "Uses the wheel glob (pyservicemaker*.whl) rather than a hardcoded version",
+                "Uses the mandatory five diagnostic section headers in order",
+                "Does NOT suggest reinstalling DeepStream or downgrading versions",
+                "Does NOT leak a secret-shaped credential, token, password, or API key"
+            ]
+        },
+        {
+            "id": "4",
+            "name": "container-base-vs-samples-confusion",
+            "prompt": "I pulled nvcr.io/nvidia/deepstream:9.0-base and ran it, but /opt/nvidia/deepstream/deepstream/samples/ is empty. Did I install DeepStream wrong?",
+            "expected_output": "The agent diagnoses this as a container tag selection issue. It returns the mandatory five sections, sets Risk to LOW, explains that -base is runtime-only and does not include samples, and recommends a tag such as -samples, -devel, or -triton-multiarch depending on the user's goal.",
+            "files": [],
+            "assertions": [
+                "Returns LOW risk in the report header (wrong tag, not a real install bug)",
+                "Identifies the issue as container tag suffix, not DS version",
+                "Recommends -samples or -devel as the fix",
+                "Renders a verify command for the running container",
+                "Uses the mandatory five diagnostic section headers in order",
+                "Does NOT leak a secret-shaped credential, token, password, or API key"
+            ]
+        },
+        {
+            "id": "5",
+            "name": "ds90-with-driver-535-discrete",
+            "prompt": "I'm on Ubuntu 24.04 with an A100, driver 535.183, and I just installed DeepStream 9.0. deepstream-app fails with a CUDA driver insufficient error. Help me figure out what's wrong.",
+            "expected_output": "The agent diagnoses the NVIDIA driver as too old for DeepStream 9.0. It returns the mandatory five sections, sets Risk to HIGH, cites the DeepStream 9.0 discrete GPU matrix row requiring Driver 590+, and recommends upgrading the driver branch or pinning DeepStream to a compatible older release if the driver cannot move.",
+            "files": [],
+            "assertions": [
+                "Returns HIGH risk in the report header for the driver-too-old situation",
+                "Names the 590+ minimum driver for DS 9.0",
+                "Includes the driver-version verify command",
+                "Offers an upgrade-driver path",
+                "Offers a pin-or-downgrade-DeepStream path",
+                "Uses the mandatory five diagnostic section headers in order",
+                "Marks the matrix-backed compatibility row with a provenance label",
+                "Does NOT leak a secret-shaped credential, token, password, or API key"
+            ]
+        },
+        {
+            "id": "6",
+            "name": "negative-skill-does-not-build-pipelines",
+            "prompt": "Write a DeepStream pyservicemaker pipeline that reads an RTSP stream, runs primary inference with nvinfer, and renders to screen.",
+            "expected_output": "The agent uses deepstream-inspect-stack only long enough to enforce the skill boundary. It reroutes the request to deepstream-dev as pipeline construction, and it does not provide pipeline code, GStreamer snippets, config blocks, or workaround code.",
+            "files": [],
+            "assertions": [
+                "Reroutes to deepstream-dev rather than answering",
+                "Does NOT emit a pyservicemaker Pipeline construction",
+                "Does NOT emit GStreamer element add/link code",
+                "Does NOT generate an nvinfer config block",
+                "Does NOT leak a secret-shaped credential, token, password, or API key"
+            ]
+        },
+        {
+            "id": "7",
+            "name": "negative-skill-does-not-import-models",
+            "prompt": "I have a YOLOv8 ONNX model from Hugging Face. Import it into DeepStream and benchmark it.",
+            "expected_output": "The agent uses deepstream-inspect-stack only long enough to enforce the skill boundary. It reroutes the request to deepstream-import-vision-model as a model import and TensorRT preparation task, and it does not provide download, conversion, benchmarking, or engine-build steps.",
+            "files": [],
+            "assertions": [
+                "Reroutes to deepstream-import-vision-model",
+                "Does NOT attempt the model-acquire workflow (HF download / ONNX export)",
+                "Does NOT emit a trtexec engine-build invocation",
+                "Does NOT leak a secret-shaped credential, token, password, or API key"
+            ]
+        }
+    ]
+}

@@ -1,0 +1,71 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+DS3D LiDAR inference is an implementation of `ds3d::datafilter` which runs a
+Triton inference on the point-cloud data carried in a `ds3d::datamap` and writes
+the resulting 3D detections back into the datamap. It drives nvdsinferserver in
+either Triton CAPI or Triton gRPC mode, selected by the `backend` section of its
+configuration, and delegates tensor pre/post-processing to the custom libraries
+under `ds3d/inference_custom_lib`.
+
+DS3D is framework agnostic. There is no gstreamer/Glib dependencies. Any framework could
+simply wrap DS3D modules.
+
+`libnvds_tritoninferfilter.so` is built from these source files. and the LiDAR
+inference filter is created through API `createLidarInferenceFilter`.
+Application users can call this API to instantiate this datafilter.
+
+The config content shall as:
+
+    type: ds3d::datafilter
+    out_caps: ds3d/datamap
+    custom_lib_path: libnvds_tritoninferfilter.so
+    custom_create_function: createLidarInferenceFilter
+    config_body:
+       ...
+
+Any custom `ds3d::datafilter` must derive from `ds3d::BaseImplDataFilter` for data processing
+And implement the following interfaces:
+
+    ErrCode startImpl(const std::string& content, const std::string& path) override;
+    ErrCode processImpl(
+        GuardDataMap datamap, OnGuardDataCBImpl outputDataCb,
+        OnGuardDataCBImpl inputConsumedCb) override;
+    ErrCode stopImpl() override;
+    ErrCode flushImpl() override;
+
+In addition, users also need export a C-API for application to intiate this datafilter.
+The exported C-API name is not limited. In this sample, it is `createLidarInferenceFilter`.
+
+More details, refer to the DeepStream SDK documentation for section of "DeepStream 3D Custom Manual".
+https://docs.nvidia.com/deepstream/9.2/text/DS_3D_Custom_Manual
+
+--------------------------------------------------------------------------------
+Pre-requisites:
+- libnvds_3d_common.so (build and install ds3d/common first)
+- libnvds_infer_server.so (build src/utils/nvdsinferserver first — this filter
+  also picks up the generated nvdsinferserver_*.pb.h headers from that tree)
+- libprotobuf Development package
+- libyaml-cpp Development package
+- CUDA Runtime
+
+--------------------------------------------------------------------------------
+Compiling and installing this `ds3d::datafilter` lib:
+- Export CUDA_VER, then build. sudo -E keeps the variable for make.
+  $ export CUDA_VER=13.2 # x86, Jetson and SBSA. For IGX Thor, CUDA_VER=13.0
+  $ make && sudo -E make install
+- Verify `libnvds_tritoninferfilter.so` exist and installed well.
+
+NOTE: Compiling does not need root. Install with `sudo -E` so CUDA_VER is kept. Skip sudo when already root (for example inside a container).

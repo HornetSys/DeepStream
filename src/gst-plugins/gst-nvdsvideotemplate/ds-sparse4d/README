@@ -1,0 +1,362 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+The library `libnvdsgst_sparse4d.so` is a custom DeepStream video-template
+implementation for Sparse4D multi-camera 3D perception. It performs real-time
+3D object detection, tracking, and multi-view fusion across camera streams
+using temporal and spatial modeling.
+
+It is loaded by `gst-nvdsvideotemplate` through `customlib-name` (not a
+standalone GStreamer plugin). `bash build/build.sh` builds and installs it as
+part of the gst-plugins stage after `scripts/install_opensource_deps.sh` runs
+`configs/install_dependencies.sh`.
+
+Refer to the DeepStream SDK documentation for more details.
+
+--------------------------------------------------------------------------------
+Pre-requisites:
+- NVIDIA DeepStream SDK 9.2 (helpers, meta, nvbufsurface, nvdspreprocess)
+- CUDA runtime (`CUDA_VER=13.2` on x86, Jetson and SBSA; `13.0` on IGX Thor)
+- TensorRT development libraries (`nvinfer`, `nvonnxparser`)
+- PyTorch 2.9.0+cu130 at `/usr/local/lib/python3/dist-packages/torch`
+  (override with `TORCH_PATH` if installed elsewhere)
+- libeigen3-dev, nlohmann-json3-dev, libyaml-cpp-dev
+- GStreamer 1.0 development packages
+- Camera calibration files for the target dataset
+
+`scripts/install_opensource_deps.sh` installs the apt packages and PyTorch by
+running `configs/install_dependencies.sh`. To install those deps only:
+
+  $ sudo bash configs/install_dependencies.sh
+
+--------------------------------------------------------------------------------
+Compiling and installing the library:
+
+  $ export CUDA_VER=13.2 # x86, Jetson and SBSA. For IGX Thor, CUDA_VER=13.0
+  $ make && sudo -E make install
+
+Skip sudo when already root (for example inside a container).
+
+The library libnvdsgst_sparse4d.so is installed at
+/opt/nvidia/deepstream/deepstream/lib/
+
+--------------------------------------------------------------------------------
+Features:
+- Multi-camera 3D object detection and tracking
+- Support for TensorRT optimization (FP16/FP32)
+- Camera calibration and projection matrix handling
+- Temporal instance tracking with feedback mechanism
+- Integration with DeepStream analytics pipeline
+- Support for various input formats (RTSP, file, etc.)
+- Instance re-identification across frames
+- Birds-Eye-View (BEV) perception
+- Real-time performance optimizations
+
+## Configuration
+
+### Main Configuration File (config.yaml)
+The plugin uses a YAML configuration file that controls all aspects of the Sparse4D pipeline:
+
+#### Inference Properties
+- `onnx_file`: Path to the Sparse4D ONNX model
+- `engine_file`: Path for TensorRT engine serialization
+- `labels_file`: Path to class labels file
+- `gpu_id`: GPU ID to use for tensor operations
+- `batch_size`: Sparse4D model batch size
+- `num_sensors`: Number of sensors/cameras
+- `enable_fp16`: Enable FP16 precision for inference
+- `force_engine_rebuild`: Force rebuilding of TensorRT engine
+- `feedback`: Enable feedback mechanism for temporal tracking
+
+#### Calibration Properties
+- `calib_file_path`: Path to camera calibration file
+- `bev_group_name`: BEV group name in calibration file
+- `calib_mode`: Calibration mode (synthetic, etc.)
+- `use_camera_groups`: Group cameras for multi-view fusion
+- `recentering`: Recalculate camera coordinates from reference point
+
+#### Preprocessing Properties
+- `preprocessed_height`: Height of preprocessed images
+- `preprocessed_width`: Width of preprocessed images
+- `aug_configs`: Image augmentation configuration
+
+#### Instance Bank Properties
+- `num_anchor`: Number of anchors for instance bank
+- `embed_dims`: Embedding dimensions
+- `anchor`: Path to anchor file
+- `anchor_handler`: Handler class for anchor processing
+- `num_temp_instances`: Maximum temporary instances
+- `default_time_interval`: Default time interval for temporal projection
+- `confidence_decay`: Confidence decay for tracked instances
+- `max_time_interval`: Maximum time interval for tracking
+
+#### Decoder Properties
+- `num_output`: Maximum number of output bounding boxes
+- `object_confidence_threshold`: Confidence threshold for filtering
+
+#### Visualisation Properties
+- `generate_3d_bbox`: Generate 3D bounding boxes for display
+- `bbox_color_mode`: Color mode for bounding boxes
+- `display_class_labels`: Display class labels
+- `display_instance_ids`: Display instance IDs
+- `display_class_score`: Display class score
+
+#### Debugging Properties
+- `silent`: Suppress perf logs
+- `display_tensor_info`: Display tensor information
+- `display_bbox_list_info`: Display bboxlist information
+- `max_objects_to_display`: Maximum number of objects to display in bboxlist
+- `dump_frames`: Enable frame dumping for debugging
+- `dump_max_frames`: Number of frames to dump
+- `gpu_postprocess`: Perform postprocessing on GPU
+
+### DeepStream Integration
+
+Add the following to your DeepStream application config to use the plugin:
+
+```
+[primary-gie]
+enable=1
+plugin-type=2
+config-file=videotemplate_custom_lib_config.txt
+```
+
+Configure the plugin in `videotemplate_custom_lib_config.txt`:
+
+```
+gpu-id=0
+customlib-name=/opt/nvidia/deepstream/deepstream-9.2/lib/libnvdsgst_sparse4d.so
+```
+
+## Example Pipeline
+
+The DeepStream pipeline for Sparse4D processing typically includes:
+1. Source elements (File/RTSP/HTTP)
+2. Streammux
+3. Video conversion and preprocessing
+4. ds-sparse4d plugin for 3D detection and tracking
+5. On-screen display for Visualisation
+6. Output (display/file/message broker)
+
+Example pipeline configurations are provided in the `configs` directory:
+- `deepstream_test5_app_sparse4d.txt`: Basic pipeline with MEGA configuration
+- `deepstream_test5_app_sparse4d_filesrc.txt`: File source configuration
+- `deepstream_test5_app_sparse4d_realtime.txt`: Real-time streaming configuration
+
+## Usage Examples
+
+### Sparse4D Setup
+The `sparse4d_setup.sh` script automates the setup process for the Sparse4D plugin. It handles the following tasks:
+
+1. Configures the environment based on your systems GPU architecture
+2. Copies and validates configuration files
+3. Checks for required model files (ONNX, labels)
+4. Validates the camera calibration file
+5. Either uses a pre-built TensorRT engine or generates one from your ONNX model
+
+You can customize the setup by setting these environment variables before running the script:
+- `SPARSE4D_CONFIG_PATH`: Custom path for configuration files
+- `ONNX_MODEL_PATH`: Custom path to ONNX model
+- `MODEL_LABELS_PATH`: Custom path to labels file
+
+To run the setup script:
+```bash
+sh configs/sparse4d_setup.sh
+```
+
+### Run with DeepStream Test App
+To run the plugin with a file source-based pipeline:
+```bash
+deepstream-test5-app -c configs/deepstream_test5_app_sparse4d_filesrc.txt
+```
+
+## Common Scenarios
+
+### Scenario 1: Changing Number of Input Streams
+
+When changing the number of input streams/cameras, you must update the batch size settings in multiple configuration files to ensure consistency. This is critical for proper operation of the Sparse4D pipeline.
+
+#### Required Configuration Updates:
+
+1. **config.yaml** (Sparse4D config):
+   ```yaml
+   # Update the number of sensors to match your stream count
+   num_sensors: 12  # Change this to your desired number of streams
+   ```
+
+2. **deepstream_test5_app_sparse4d.txt** (DeepStream pipeline config):
+   ```
+   [source-list]
+   # In case of filesrc config, set num-source-bins to match your camera count
+   num-source-bins=12
+
+   # Update max-batch-size to match the number of streams
+   max-batch-size=12  # Change this to your desired number of streams
+
+   [streammux]
+   # Update batch-size (though this is typically ignored when using source-list)
+   batch-size=12  # Change this to your desired number of streams
+
+   [tiled-display]
+   # IF display is enabled, update rows and columns to match your camera count
+   rows=3
+   columns=4
+   ```
+
+3. **config_preprocess.txt** (Preprocessing config):
+   ```
+   # Update network-input-shape 1st value in the preprocess configuration
+   network-input-shape= 12;3;512;1408  # Change this to your desired number of streams
+   ```
+
+### Scenario 2: Changing the Sparse4D Model
+
+The Sparse4D plugin supports model swapping, allowing you to use different Sparse4D models based on your specific use case. Follow these steps to change the model:
+
+#### 1. Update the Configuration File
+
+Modify the `config.yaml` file with the following parameters:
+
+```yaml
+# Model configuration
+onnx_file: /path/to/new/sparse4d/model.onnx  # Path to your new ONNX model
+labels_file: /path/to/labels.txt             # Update if the new model has different classes
+force_engine_rebuild: True                   # Force TensorRT engine rebuild for the new model
+```
+
+#### 2. Model Compatibility Requirements
+
+Ensure your new model meets these requirements:
+- Uses the same input tensor names and shapes as expected by the plugin
+- Has compatible output format with the post-processing logic
+- Follows the Sparse4D architecture pattern for 3D object detection
+
+### Scenario 3: Component-wise Performance Measurement
+
+To enable detailed performance measurements for each component in the Sparse4D pipeline, set the `silent` parameter to `false` in your `config.yaml` file:
+
+```yaml
+# Debugging properties
+silent: False  # Set to False to enable performance measurements
+```
+
+With performance measurement enabled, you will see detailed timing information for each processing stage in the pipeline. Example output:
+
+```
+ProcessBuffer Frame-668 │ ⚡ Starting
+   │    │
+   │    ├─► PreProcess │ ⚡ Starting
+   │    └─ Found NVDS_PREPROCESS_BATCH_META
+   │    └─ Tensor Shape: 1x12x3x512x1408
+   │    └─ Tensor Name: img
+   │    └─ Updated TensorRT binding for input tensor[img] with preprocessed buffer
+   │    ├─► PreProcess │ ⏱    0.04ms │ ✔ Completed
+   │    │
+   │    ├─► TensorRT Inference │ ⚡ Starting
+   │    ├─► TensorRT Inference │ ⏱   25.41ms │ ✔ Completed
+   │    │
+   │    ├─► Postprocessing Tensors │ ⚡ Starting
+   │    │    │
+   │    │    ├─► Cloning Inference Output Tensors to CPU │ ⚡ Starting
+   │    │    ├─► Cloning Inference Output Tensors to CPU │ ⏱    0.47ms │ ✔ Completed
+   │    │    │
+   │    │    ├─► Instance Bank │ ⚡ Starting
+   │    │    └─ Updating Instance Bank
+   │    │    └─ Caching Instance Bank
+   │    │    └─ Getting Instance ID
+   │    │    └─ Getting Feedback tensors from instance bank
+   │    │    └─ Updating Feedback Tensor: Interval Mask Tensor
+   │    │    └─ Updating Feedback Tensor: Input Cached Anchor
+   │    │    └─ Updating Feedback Tensor: Input Cached Feature
+   │    │    ├─► Instance Bank │ ⏱    1.06ms │ ✔ Completed
+   │    │    │
+   │    │    ├─► Decoding Tensors │ ⚡ Starting
+   │    │    └─ Found 1 decoded batch with 299 detections
+   │    │    ├─► Decoding Tensors │ ⏱    0.58ms │ ✔ Completed
+   │    │    │
+   │    │    ├─► Attaching bbox3dList to batch_meta as a user meta │ ⚡ Starting
+   │    │    ├─► Attaching bbox3dList to batch_meta as a user meta │ ⏱    0.23ms │ ✔ Completed
+   │    │    │
+   │    ├─► Postprocessing Tensors │ ⏱    2.43ms │ ✔ Completed
+   │    │
+ProcessBuffer Frame-668 │ ⏱   27.95ms │ ✔ Completed
+```
+
+This output provides detailed timing information for each component:
+- PreProcess: 0.04ms
+- TensorRT Inference: 25.41ms
+- Postprocessing: 2.43ms
+  - Cloning Inference Output Tensors: 0.47ms
+  - Instance Bank processing: 1.06ms
+  - Decoding Tensors: 0.58ms
+  - Attaching metadata: 0.23ms
+- Total processing time: 27.95ms
+
+### Scenario 4: Enabling BBox Detection Display
+
+To visualize the detection results from the Sparse4D plugin, you need to configure both the Sparse4D Visualisation properties and the DeepStream display components. This allows you to see the detected objects with bounding boxes directly on the video feed.
+
+#### 1. Enable Visualisation Properties in config.yaml
+
+Update the following Visualisation properties in your `config.yaml` file:
+
+```yaml
+# Visualisation properties
+generate_3d_bbox: True          # Generate 3D bounding boxes for display
+bbox_color_mode: class_id       # Color mode: "class_id" or "instance_id"
+display_class_labels: True      # Display class labels
+display_instance_ids: True      # Display instance IDs
+```
+
+#### 2. Configure DeepStream Display Components
+
+Update your DeepStream application config file (e.g., `deepstream_test5_app_sparse4d_filesrc.txt`) to enable Visualisation components:
+
+```
+# Enable tiled-display for multi-camera view
+[tiled-display]
+enable=1
+rows=3                # Adjust based on your camera count
+columns=4             # Adjust based on your camera count
+width=1920            # Display resolution width
+height=1080           # Display resolution height
+gpu-id=0
+nvbuf-memory-type=0
+
+# Enable on-screen display for bounding boxes
+[osd]
+enable=1
+gpu-id=0
+border-width=2
+text-size=15
+text-color=1;1;1;1;   # White text (RGBA)
+text-bg-color=0.3;0.3;0.3;0.7   # Semi-transparent background
+font=Arial
+show-clock=0
+clock-x-offset=800
+clock-y-offset=820
+clock-text-size=12
+clock-color=1;0;0;0
+nvbuf-memory-type=0
+
+# Enable display output (EglSink)
+[sink0]
+enable=1
+type=2                # 2=EglSink for display output
+sync=0
+source-id=0
+gpu-id=0
+nvbuf-memory-type=0
+```

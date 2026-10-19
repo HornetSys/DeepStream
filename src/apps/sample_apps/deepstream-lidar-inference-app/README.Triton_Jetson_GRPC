@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,7 +20,7 @@ start Triton server docker on DGPU device.
 ```
     #start Triton docker.
     $ docker run --gpus all -it  --ipc=host --net=host --rm -v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY=$DISPLAY -w \
-    /opt/nvidia/deepstream/deepstream/sources/apps/sample_apps/deepstream_lidar_inference_app  nvcr.io/nvidia/deepstream:6.2-triton
+    /opt/nvidia/deepstream/deepstream/sources/apps/sample_apps/deepstream_lidar_inference_app  ghcr.io/nvidia/deepstream:9.2-triton-multiarch
 ```
 Generate inference engines on DGPU
 ```

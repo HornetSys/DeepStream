@@ -57,7 +57,7 @@ def resolve_input_size(model_dir: str, override: int | None) -> tuple[int, int]:
 
 
 def assert_detection_architecture(model_id: str, revision: str) -> None:
-    """Fail fast on non-detection models, matching the skill's stated scope."""
+    """Fail fast when this detection-specific exporter receives another task."""
     try:
         config = AutoConfig.from_pretrained(model_id, revision=revision)
     except Exception as exc:  # noqa: BLE001 - surface the loader's own message
@@ -66,9 +66,9 @@ def assert_detection_architecture(model_id: str, revision: str) -> None:
     arch_list = getattr(config, "architectures", None) or []
     if arch_list and not any(a.endswith(DETECTION_SUFFIXES) for a in arch_list):
         sys.exit(
-            f"ERROR: deepstream-import-vision-model supports object detection models only. "
-            f"Detected architecture: {arch_list[0]}. Classification, segmentation, and other "
-            f"vision tasks are not supported."
+            f"ERROR: safetensors_to_onnx.py is the object-detection exporter. "
+            f"Detected architecture: {arch_list[0]}. Use route_task.py and a "
+            f"task-specific export wrapper for this category."
         )
 
 

@@ -27,9 +27,9 @@ ifeq ($(TARGET_DEVICE),aarch64)
   LIB_INSTALL_DIR?=/usr/lib/aarch64-linux-gnu/tegra/
   CFLAGS:=
 else
-  NVDS_VERSION ?=9.1
+  NVDS_VERSION ?=9.2
   LIB_INSTALL_DIR ?=/opt/nvidia/deepstream/deepstream-$(NVDS_VERSION)/lib/
-  CFLAGS:= -DDS_VERSION=\"9.1.0\"
+  CFLAGS:= -DDS_VERSION=\"9.2.0\"
 endif
 
 CFLAGS+= -fPIC

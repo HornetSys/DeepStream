@@ -16,7 +16,7 @@
 cmake_minimum_required(VERSION 3.16)
 
 project(Sample)
-set(DS_PATH "/opt/nvidia/deepstream/deepstream-9.1")
+set(DS_PATH "/opt/nvidia/deepstream/deepstream-9.2")
 
 find_package(nvds_service_maker REQUIRED PATHS "${CMAKE_CURRENT_SOURCE_DIR}/../../../cmake")
 find_package(CUDA)

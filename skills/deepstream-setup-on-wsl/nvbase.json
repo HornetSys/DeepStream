@@ -1,0 +1,4 @@
+{
+  "extra_allowed_dirs": ["pipelines", "tests"],
+  "notes": "pipelines/ contains container verification scripts; tests/ validates security boundaries. No scanner categories are skipped."
+}

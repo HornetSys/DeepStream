@@ -1,5 +1,5 @@
 <!--
-SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-FileCopyrightText: Copyright (c) 2022-2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 SPDX-License-Identifier: Apache-2.0
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,9 +23,9 @@ The parallel inferencing application constructs the parallel inferencing branche
 
 ## Main Features
 
-* Support multiple models inference with [nvinfer](https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_plugin_gst-nvinfer.html)(TensorRT) or [nvinferserver](https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_plugin_gst-nvinferserver.html)(Triton) in parallel
-* Support sources selection for different models with [nvstreammux](https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_plugin_gst-nvstreammux.html) and [nvstreamdemux](https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_plugin_gst-nvstreamdemux.html)
-* Support [new nvstreammux](https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_plugin_gst-nvstreammux2.html). you can set "export USE_NEW_NVSTREAMMUX=yes" to use new streammux.
+* Support multiple models inference with [nvinfer](https://docs.nvidia.com/deepstream/9.2/text/DS_plugin_gst-nvinfer)(TensorRT) or [nvinferserver](https://docs.nvidia.com/deepstream/9.2/text/DS_plugin_gst-nvinferserver)(Triton) in parallel
+* Support sources selection for different models with [nvstreammux](https://docs.nvidia.com/deepstream/9.2/text/DS_plugin_gst-nvstreammux) and [nvstreamdemux](https://docs.nvidia.com/deepstream/9.2/text/DS_plugin_gst-nvstreamdemux)
+* Support [new nvstreammux](https://docs.nvidia.com/deepstream/9.2/text/DS_plugin_gst-nvstreammux2). you can set "export USE_NEW_NVSTREAMMUX=yes" to use new streammux.
 * Support to mux output meta from different sources and different models with **gst-nvdsmetamux** plugin newly introduced in DeepStream 6.1.1 or above
 * Support latency measurement and frame rate measurement with the enviroment varialble enabling.
 
@@ -39,8 +39,8 @@ The parallel inferencing application constructs the parallel inferencing branche
 # Prerequisites
 - If you are using a deepstream docker above DeepStream 6.1.1 version, please execute /opt/nvidia/deepstream/deepstream/user_additional_install.sh to install tools such as x264enc which is used in this sample.
 - DeepStream 6.1.1 or above, especially
-  - [nvmsgbroker](https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_plugin_gst-nvmsgbroker.html) if you want to enable nvmsgbroker sink, e.g. [Kafka](https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_plugin_gst-nvmsgbroker.html#nvds-kafka-proto-kafka-protocol-adapter)
-  - [nvinferserver](https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_plugin_gst-nvinferserver.html) if running model with Triton
+  - [nvmsgbroker](https://docs.nvidia.com/deepstream/9.2/text/DS_plugin_gst-nvmsgbroker) if you want to enable nvmsgbroker sink, e.g. [Kafka](https://docs.nvidia.com/deepstream/9.2/text/DS_plugin_gst-nvmsgbroker#nvds_kafka_proto-kafka-protocol-adapter)
+  - [nvinferserver](https://docs.nvidia.com/deepstream/9.2/text/DS_plugin_gst-nvinferserver) if running model with Triton
 - Cloud server, e.g. Kafka server (version >= kafka_2.12-3.2.0), if you want to enable broker sink
 
 
@@ -54,7 +54,7 @@ The sample should be downloaded and built with **root** permission.
    ```
    apt install git-lfs
    git lfs install --skip-repo
-   cd DeepStream/src/apps/reference_apps/deepstream_parallel_inference_app
+   cd deepstream/src/apps/reference_apps/deepstream_parallel_inference_app
    git lfs pull
    ```
 
@@ -99,9 +99,9 @@ The sample should be downloaded and built with **root** permission.
 
 # Application Configuration Semantics
 
-The parallel inferencing app uses the YAML configuration file to config GIEs, sources, and other features of the pipeline. The basic group semantics is the same as [deepstream-app](https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_ref_app_deepstream.html#expected-output-for-the-deepstream-reference-application-deepstream-app).
+The parallel inferencing app uses the YAML configuration file to config GIEs, sources, and other features of the pipeline. The basic group semantics is the same as [deepstream-app](https://docs.nvidia.com/deepstream/9.2/text/DS_ref_app_deepstream#expected-output-for-the-deepstream-reference-application-deepstream-app).
 
-Please refer to deepstream-app [Configuration Groups](https://docs.nvidia.com/metropolis/deepstream/dev-guide/text/DS_ref_app_deepstream.html#configuration-groups) part for the semantics of corresponding groups.
+Please refer to deepstream-app [Configuration Groups](https://docs.nvidia.com/deepstream/9.2/text/DS_ref_app_deepstream#configuration-groups) part for the semantics of corresponding groups.
 
 There are additional new groups introduced by the parallel inferencing app which enable the app to select sources for different inferencing branches and to select output metadata for different inferencing GIEs:
 

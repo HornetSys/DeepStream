@@ -1,0 +1,97 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# Audited SkillSpector suppressions for this skill — both false positives and
+# findings that are accurate but represent accepted, documented, load-bearing
+# behavior (see each rule's `reason`).
+#
+# Every field is an fnmatch glob that must match in full, and SkillSpector matches
+# against its own finding fields rather than the decorated forms the report renders.
+# So each field carries wildcards:
+#   id      "*PE3*"      matches the bare rule ID and the rendered "Credential Access (PE3)"
+#   path    "*<file>"    matches whether the path is skill-relative or repo/scan-root prefixed
+#   message "*keyring*"  matches the finding title, the matched text, and the long description
+#
+# `path` still pins each rule to one specific file, and `message` still pins it to the
+# APT-keyring match, so unrelated or newly introduced findings remain active.
+version: 2
+scanner_version: "2.11.0"
+
+rules:
+  - id: "*PE3*"
+    path: "*roles/cuda/defaults/main.yml"
+    message: "*keyring*"
+    reason: >-
+      False positive: these values are public CUDA APT signing-package SHA-256
+      checksums, not credentials or private key material.
+
+  - id: "*PE3*"
+    path: "*roles/cuda/tasks/main.yml"
+    message: "*keyring*"
+    reason: >-
+      False positive: these tasks download, checksum, and install NVIDIA's public
+      CUDA APT signing-key package; they do not access a user credential store or
+      private key material.
+
+  - id: "*PE3*"
+    path: "*roles/nvidia-docker/tasks/main.yml"
+    message: "*keyring*"
+    reason: >-
+      False positive: these tasks install NVIDIA's public repository signing key
+      under the system APT trust path (/usr/share/keyrings); they do not access a
+      user credential store or private key material.
+
+  - id: "*PE3*"
+    path: "*compute-stack-provisioning/ubuntu_setup.yml"
+    message: "*keyring*"
+    reason: >-
+      False positive: the match is an explanatory comment about CUDA APT repository
+      setup and performs no credential access.
+
+  - id: "*PE2*"
+    path: "README.md"
+    message: "*sudo*"
+    reason: >-
+      Accurate, accepted finding, not a false positive: sudo/root on both the
+      control machine (installing ansible/sshpass) and the target host
+      (installing the NVIDIA driver, CUDA, cuDNN, TensorRT, and Docker) is this
+      skill's documented, load-bearing requirement — see the Prerequisites and
+      Credentials sections here and SKILL.md section 1's scope table
+      ("Privileges | Requires sudo/become on the target"). There is no
+      lower-privilege way to install a kernel driver or system packages, and
+      provisioning is already gated behind an explicit operator approval step
+      (SKILL.md hard rule 4) before it touches a shared/lab host.
+
+  - id: "*PE2*"
+    path: "SKILL.md"
+    message: "*sudo*"
+    reason: >-
+      Accurate, accepted finding, not a false positive: same justification as
+      the README.md PE2 suppression above — sudo/become is the documented,
+      load-bearing requirement for both the control-machine tooling install
+      and the target-host provisioning steps this file walks through (section
+      1 scope table, section 4.1 Ansible preflight, section 4.3 credential
+      handling, section 6 troubleshooting).
+
+  - id: "*PE2*"
+    path: "references/troubleshooting.md"
+    message: "*sudo*"
+    reason: >-
+      Accurate, accepted finding, not a false positive: the troubleshooting
+      commands use sudo only for the documented root-only recovery actions of
+      installing sshpass or accessing Docker before group membership is active.
+      They are alternatives to normal least-privilege operation, not an
+      instruction to run the complete workflow as root.
+
+  - id: "*PE2*"
+    path: "references/provisioning.md"
+    message: "*sudo*"
+    reason: >-
+      Accurate, accepted finding, not a false positive: these instructions use
+      sudo only to install Ansible or sshpass when the required control-machine
+      tools are absent. They provide rootless alternatives and keep target-host
+      elevation limited to the driver and system-package operations that require
+      Ansible become privileges.
+
+
+fingerprints: []
