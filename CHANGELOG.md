@@ -1,4 +1,4 @@
-# DeepStream 9.2.0
+# DeepStream 9.2.0 (19 October 2026)
 
 ## Source availability
 
